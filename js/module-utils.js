@@ -11,8 +11,21 @@
         navigateToModule: function(moduleId) {
             // Check if we have a current client
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!currentClient) {
-                alert("Please select or create a client first.");
+            
+            // List of modules that require a client
+            const clientRequiredModules = [
+                'notes', 'p-and-gs', 'demolish', 'concrete', 'toolhire', 'earthworks',
+                'foundations', 'brickwork', 'surfacebeds', 'plaster', 'steel',
+                'roofing', 'windows', 'ceilings', 'flooring', 'carpentry',
+                'painting', 'plumbing', 'electrical', 'waterproofing', 'fireplaces',
+                'external', 'fees'
+            ];
+            
+            // Check if this module requires a client
+            const requiresClient = clientRequiredModules.includes(moduleId);
+            
+            if (requiresClient && !currentClient) {
+                alert("Please select or create a client first to access this module.");
                 return false;
             }
             
