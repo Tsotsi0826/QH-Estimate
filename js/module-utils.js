@@ -9,7 +9,7 @@
     const ModuleUtils = {
         // Navigate to a specific module
         navigateToModule: function(moduleId) {
-            // Check if we have a current client
+            // Check if we have a current client for client-required modules
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             
             // List of modules that require a client
@@ -29,6 +29,9 @@
                 return false;
             }
             
+            // Set a flag to indicate we're navigating to a module
+            localStorage.setItem('navigationState', 'fromModulePage');
+            
             // Navigate to the module page
             window.location.href = moduleId + '.html';
             return true;
@@ -36,7 +39,23 @@
         
         // Return to the dashboard
         returnToDashboard: function() {
+            // Set the navigation state to indicate we're returning from a module
+            localStorage.setItem('navigationState', 'returningToDashboard');
+            
+            // Navigate back to the index page
             window.location.href = 'index.html';
+        },
+        
+        // Log out the current client
+        logoutClient: function() {
+            // Clear the client
+            window.ConstructionApp.ClientManager.clearCurrentClient();
+            
+            // Set the navigation state to indicate manual logout
+            localStorage.setItem('navigationState', 'manualLogout');
+            
+            // Refresh the page to update the UI
+            window.location.reload();
         },
         
         // Format currency (Rand)
