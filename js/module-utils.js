@@ -9,7 +9,7 @@
     const ModuleUtils = {
         // Navigate to a specific module
         navigateToModule: function(moduleId) {
-            // Check if we have a current client for client-required modules
+            // Check if we have a current client
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             
             // List of modules that require a client
@@ -37,10 +37,16 @@
             return true;
         },
         
-        // Return to the dashboard
+        // Return to dashboard
         returnToDashboard: function() {
             // Set the navigation state to indicate we're returning from a module
             localStorage.setItem('navigationState', 'returningToDashboard');
+            
+            // Ensure the current client is properly stored
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (currentClient) {
+                localStorage.setItem('currentClient', JSON.stringify(currentClient));
+            }
             
             // Navigate back to the index page
             window.location.href = 'index.html';
