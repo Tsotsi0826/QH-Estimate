@@ -602,6 +602,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM loaded, initializing app");
             
+            // Load modules from Firebase
+            loadModulesFromFirebase();
+            
             // Initialize app
             initApp();
             
@@ -683,6 +686,113 @@
 
             // Set up drag and drop functionality
             setupDragAndDrop();
+        }
+        
+        // Load modules from Firebase
+        async function loadModulesFromFirebase() {
+            if (window.ConstructionApp.Firebase) {
+                try {
+                    // Load saved modules
+                    const savedModules = await window.ConstructionApp.Firebase.loadModules();
+                    
+                    if (savedModules && savedModules.length > 0) {
+                        console.log("Loaded modules from Firebase:", savedModules);
+                        
+                        // Clear existing modules in the DOM
+                        const modulesContainer = document.getElementById('modules-container');
+                        // Keep default modules (Notes and P&Gs)
+                        const defaultModules = modulesContainer.querySelectorAll('.module-item[data-module-id="notes"], .module-item[data-module-id="p-and-gs"]');
+                        modulesContainer.innerHTML = '';
+                        defaultModules.forEach(module => {
+                            modulesContainer.appendChild(module);
+                        });
+                        
+                        // Add loaded modules to appData and to the DOM
+                        savedModules.forEach(moduleData => {
+                            // Skip Notes and P&Gs which are already in the DOM
+                            if (moduleData.id === 'notes' || moduleData.id === 'p-and-gs') {
+                                return;
+                            }
+                            
+                            // Add to appData.modules if not already there
+                            if (!appData.modules.some(m => m.id === moduleData.id)) {
+                                appData.modules.push({
+                                    id: moduleData.id,
+                                    name: moduleData.name,
+                                    requiresClient: moduleData.requiresClient,
+                                    renderTemplate: function(client) {
+                                        return `
+                                            <h3>${moduleData.name}</h3>
+                                            <p>This is a custom module. You can create an HTML file named "${moduleData.id}.html" to implement this module.</p>
+                                            <p>For now, this is a placeholder.</p>
+                                        `;
+                                    },
+                                    saveData: function() {
+                                        return {};
+                                    }
+                                });
+                            }
+                            
+                            // Create DOM element for the module
+                            const moduleElement = document.createElement('div');
+                            moduleElement.className = 'module-item';
+                            moduleElement.draggable = true;
+                            moduleElement.setAttribute('data-module-id', moduleData.id);
+                            moduleElement.setAttribute('data-requires-client', moduleData.requiresClient ? 'true' : 'false');
+                            
+                            moduleElement.innerHTML = `
+                                <div class="module-drag-handle">≡</div>
+                                <div class="module-icon">
+                                    ...
+                                    <div class="dropdown-menu">
+                                        <div class="dropdown-item edit-module">Edit</div>
+                                        <div class="dropdown-item delete-module">Delete</div>
+                                    </div>
+                                </div>
+                                <span>${moduleData.name}</span>
+                            `;
+                            
+                            // Add to the DOM
+                            modulesContainer.appendChild(moduleElement);
+                            
+                            // Add event listeners
+                            const moduleText = moduleElement.querySelector('span');
+                            moduleText.addEventListener('click', function() {
+                                const moduleId = moduleElement.getAttribute('data-module-id');
+                                const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
+                                
+                                if (requiresClient) {
+                                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                                } else {
+                                    // For non-client modules, just navigate directly
+                                    window.location.href = moduleId + '.html';
+                                }
+                            });
+                            
+                            // Setup dropdown and drag
+                            setupDropdownForModule(moduleElement);
+                            setupDragForModule(moduleElement);
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error loading modules from Firebase:", error);
+                }
+            }
+        }
+
+        // Save modules to Firebase
+        function saveModulesToFirebase() {
+            // Save only the necessary data (not the functions)
+            const modulesToSave = appData.modules.map(module => ({
+                id: module.id,
+                name: module.name,
+                requiresClient: module.requiresClient
+            }));
+            
+            // Save to Firebase
+            if (window.ConstructionApp.Firebase) {
+                window.ConstructionApp.Firebase.saveModules(modulesToSave);
+            }
         }
 
         // Add module button setup
@@ -776,6 +886,9 @@
                     return {};
                 }
             });
+            
+            // Save modules to Firebase
+            saveModulesToFirebase();
             
             // Notify user
             alert(`New module "${moduleName}" created with ID "${moduleId}". Create a file named "${moduleId}.html" to implement this module.`);
@@ -972,6 +1085,9 @@
                 const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
                 if (moduleIndex !== -1) {
                     appData.modules[moduleIndex].name = newName;
+                    
+                    // Save modules to Firebase
+                    saveModulesToFirebase();
                 }
 
                 // Show success message
@@ -990,6 +1106,9 @@
                 const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
                 if (moduleIndex !== -1) {
                     appData.modules.splice(moduleIndex, 1);
+                    
+                    // Save modules to Firebase
+                    saveModulesToFirebase();
                 }
 
                 // Show success message
@@ -1391,16 +1510,55 @@
             document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
         }
 
+        // Update module order and save to Firebase
         function updateModuleOrder() {
-            // This function could be implemented to update the underlying data structure
-            // based on the new order of modules in the DOM
             const moduleItems = document.querySelectorAll('.module-item');
-            const newOrder = Array.from(moduleItems).map(item => item.querySelector('span').textContent.trim());
+            const newOrder = Array.from(moduleItems).map(item => {
+                const moduleId = item.getAttribute('data-module-id');
+                const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                const moduleName = item.querySelector('span').textContent.trim();
+                
+                return {
+                    id: moduleId,
+                    name: moduleName,
+                    requiresClient: requiresClient
+                };
+            });
 
-            // For now, just log the new order
+            // Log the new order
             console.log('New module order:', newOrder);
-
-            // In a full implementation, you would rearrange your data array to match this order
+            
+            // Update appData.modules to match the new order
+            appData.modules = newOrder.map(orderData => {
+                // Find the original module to preserve functions
+                const existingModule = appData.modules.find(m => m.id === orderData.id);
+                
+                if (existingModule) {
+                    // Update name and requiresClient
+                    existingModule.name = orderData.name;
+                    existingModule.requiresClient = orderData.requiresClient;
+                    return existingModule;
+                } else {
+                    // Create a new module object if not found
+                    return {
+                        id: orderData.id,
+                        name: orderData.name,
+                        requiresClient: orderData.requiresClient,
+                        renderTemplate: function(client) {
+                            return `
+                                <h3>${orderData.name}</h3>
+                                <p>This is a custom module.</p>
+                            `;
+                        },
+                        saveData: function() {
+                            return {};
+                        }
+                    };
+                }
+            });
+            
+            // Save the updated order to Firebase
+            saveModulesToFirebase();
         }
     </script>
 </body>
