@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P & Gs | Construction Estimator</title>
+    
+    <!-- Firebase Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    
+    <!-- Shared JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -113,10 +122,11 @@
             background-color: #4eca8b;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
             margin-right: 10px;
+            margin-bottom: 20px;
         }
 
         .btn:hover {
@@ -148,7 +158,7 @@
         }
 
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: left;
         }
 
@@ -487,159 +497,57 @@
     </div>
 
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "qh-dashboard-d67cf.firebaseapp.com",
-            projectId: "qh-dashboard-d67cf",
-            storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
-            messagingSenderId: "939838453148",
-            appId: "1:939838453148:web:2bf49c6ec240343b934459"
-        };
-
-        // Initialize Firebase
-        let db;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase initialized successfully");
-        } catch (error) {
-            console.error("Firebase initialization error:", error);
-            // Fallback for demo/testing
-            db = createMockDatabase();
-            console.log("Using mock database for testing");
-        }
-
-        // Mock database for testing
-        function createMockDatabase() {
-            return {
-                collection: function(name) {
-                    return {
-                        doc: function(id) {
-                            return {
-                                set: function(data, options) {
-                                    console.log(`Mock DB: saving ${name} document ${id}:`, data, options);
-                                    return Promise.resolve();
-                                },
-                                get: function() {
-                                    return Promise.resolve({
-                                        exists: false,
-                                        data: function() { return null; }
-                                    });
-                                },
-                                update: function(data) {
-                                    console.log(`Mock DB: updating ${name} document ${id}:`, data);
-                                    return Promise.resolve();
-                                }
-                            };
-                        }
-                    };
-                }
-            };
-        }
-
-        // Available units for dropdown
-        const availableUnits = [
-            'Weeks', 
-            'Months', 
-            'Days', 
-            'm', 
-            'm²', 
-            'm³', 
-            'kg', 
-            'ton', 
-            'each', 
-            '1', 
-            'sum'
-        ];
-
-        // Define P&Gs items with default values
-        const defaultPgItems = [
-            { id: 'contracts-manager', description: 'Contracts manager as required', rate: 6500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'site-agent', description: 'Site Agent', rate: 8500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'architect', description: 'Architect - Snag List', rate: 2500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'deliveries', description: 'Deliveries', rate: 0.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'phones', description: 'Phones / radios', rate: 500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'vehicle', description: 'Vehicle & Petrol', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'site-office', description: 'Site Office', rate: 1250.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'site-container', description: 'Site Container', rate: 750.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'toilet-subbies', description: 'Temp. Chemical Toilet Subbies', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'toilet-manager', description: 'Temp. Chemical Toilet Manager', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'electrical-connection', description: 'Temp. Electrical connection', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'electrical-usage', description: 'Temporary Electrical usage', rate: 100.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'fencing', description: 'Temporary Fencing', rate: 300.00, unit: 'm', allow: false, qty: 0, isDefault: true },
-            { id: 'water-connection', description: 'Water Supply connection', rate: 5000.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'water-usage', description: 'Water usage', rate: 150.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'head-office', description: 'Head Office Overheads', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'insurances', description: 'Insurances', rate: 12500.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'land-surveyor', description: 'Land Surveyor', rate: 12000.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'health-safety-file', description: 'Health & safety file', rate: 7000.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'health-safety-visits', description: 'Health & safety visits', rate: 2500.00, unit: 'Months', allow: false, qty: 0, isDefault: true },
-            { id: 'site-board', description: 'Site Board', rate: 5500.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'hoa-deposit', description: 'HOA/Builders Deposit', rate: 15000.00, unit: '1', allow: false, qty: 0, isDefault: true },
-            { id: 'rubble-removal', description: 'General Rubble Removal', rate: 1700.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
-            { id: 'builders-clean', description: 'Builders Clean at End', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true }
-        ];
-
-        // Current client and module data
-        let currentClient = null;
-        let moduleData = {
-            items: []
-        };
+        // Module-specific data
+        let pgItems = []; // Will hold our working copy of items
         
-        // Working copy of items that includes both default and custom items
-        let pgItems = [];
-
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Load client data from localStorage
-            loadClient();
+            // Load client using the shared client manager
+            const currentClient = window.ConstructionApp.ClientManager.loadCurrentClientFromStorage();
+            if (currentClient) {
+                updateClientDisplay(currentClient);
+                
+                // Load P&Gs items
+                const savedItems = currentClient.moduleData && 
+                                   currentClient.moduleData['p-and-gs'] ? 
+                                   currentClient.moduleData['p-and-gs'].items : null;
+                
+                // Use the shared data model to merge with defaults
+                pgItems = window.ConstructionApp.DataModels.getPAndGsItems(savedItems);
+                
+                // Populate the table
+                populateTable();
+            } else {
+                document.getElementById('client-info').innerHTML = 'No client selected. Please return to dashboard and select a client.';
+            }
             
             // Set up event listeners
+            setupEventListeners();
+            
+            // Set up module navigation
+            setupModuleNavigation();
+        });
+
+        // Update client display in the UI
+        function updateClientDisplay(client) {
+            // Update client info in the UI
+            document.getElementById('client-info').innerHTML = `
+                <strong>Client:</strong> ${client.name}<br>
+                <strong>Address:</strong> ${client.address || 'Not specified'}
+            `;
+            document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Button event listeners
             document.getElementById('back-btn').addEventListener('click', function() {
-                window.location.href = 'index.html';
+                // Use the shared utility
+                window.ConstructionApp.ModuleUtils.returnToDashboard();
             });
             
             document.getElementById('save-btn').addEventListener('click', saveEstimate);
             document.getElementById('add-item-btn').addEventListener('click', addNewItem);
-            
-            // Set up module navigation
-            setupModuleNavigation();
-            
-            // Initialize the items array
-            initializeItems();
-            
-            // Populate the table
-            populateTable();
-        });
-
-        // Initialize items by combining default items with any custom items from saved data
-        function initializeItems() {
-            pgItems = [...defaultPgItems]; // Start with default items
-            
-            // If we have saved data, add any custom items
-            if (moduleData.items && moduleData.items.length > 0) {
-                // First update any default items with saved values
-                moduleData.items.forEach(savedItem => {
-                    const defaultIndex = pgItems.findIndex(item => item.id === savedItem.id);
-                    if (defaultIndex >= 0) {
-                        // Update default item with saved values
-                        pgItems[defaultIndex] = {
-                            ...pgItems[defaultIndex],
-                            allow: savedItem.allow,
-                            qty: savedItem.qty,
-                            rate: savedItem.rate,
-                            unit: savedItem.unit
-                        };
-                    } else if (!savedItem.isDefault) {
-                        // Add custom item
-                        pgItems.push({
-                            ...savedItem,
-                            isDefault: false
-                        });
-                    }
-                });
-            }
         }
 
         // Set up module navigation
@@ -648,36 +556,11 @@
                 item.addEventListener('click', function() {
                     const moduleId = this.getAttribute('data-module-id');
                     if (moduleId !== 'p-and-gs') {
-                        window.location.href = moduleId + '.html';
+                        // Use the shared utility
+                        window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
                     }
                 });
             });
-        }
-
-        // Load client info from localStorage
-        function loadClient() {
-            const clientData = localStorage.getItem('currentClient');
-            if (clientData) {
-                try {
-                    currentClient = JSON.parse(clientData);
-                    // Update client info in the UI
-                    document.getElementById('client-info').innerHTML = `
-                        <strong>Client:</strong> ${currentClient.name}<br>
-                        <strong>Address:</strong> ${currentClient.address || 'Not specified'}
-                    `;
-                    document.getElementById('client-name-display').textContent = `Client: ${currentClient.name}`;
-
-                    // Load existing module data if available
-                    if (currentClient.moduleData && currentClient.moduleData['p-and-gs']) {
-                        moduleData = currentClient.moduleData['p-and-gs'];
-                    }
-                } catch (error) {
-                    console.error("Error parsing client data:", error);
-                    document.getElementById('client-info').innerHTML = 'Error loading client information.';
-                }
-            } else {
-                document.getElementById('client-info').innerHTML = 'No client selected. Please return to dashboard and select a client.';
-            }
         }
 
         // Populate the table with P&Gs items
@@ -700,16 +583,13 @@
         // Create a table row for an item
         function createItemRow(item, index) {
             // Calculate total
-            const total = item.allow ? item.qty * item.rate : 0;
+            const total = window.ConstructionApp.ModuleUtils.calculateItemTotal(item);
             
             // Create table row
             const row = document.createElement('tr');
             
-            // Create unit options dropdown
-            let unitOptions = '';
-            availableUnits.forEach(unit => {
-                unitOptions += `<option value="${unit}" ${item.unit === unit ? 'selected' : ''}>${unit}</option>`;
-            });
+            // Get unit options using the shared utility
+            const unitOptions = window.ConstructionApp.ModuleUtils.getUnitSelectHtml(item.unit);
             
             row.innerHTML = `
                 <td>
@@ -729,7 +609,7 @@
                         ${unitOptions}
                     </select>
                 </td>
-                <td class="currency total-cell" data-index="${index}">R${total.toFixed(2)}</td>
+                <td class="currency total-cell" data-index="${index}">${window.ConstructionApp.ModuleUtils.formatCurrency(total)}</td>
                 <td class="action-cell">
                     <button class="remove-item" data-index="${index}" ${item.isDefault ? 'style="display:none;"' : ''}>Remove</button>
                 </td>
@@ -857,34 +737,37 @@
             const item = pgItems[index];
             const totalCell = document.querySelector(`.total-cell[data-index="${index}"]`);
             
-            const total = item.allow ? item.qty * item.rate : 0;
-            totalCell.textContent = `R${total.toFixed(2)}`;
+            // Calculate total using the shared utility
+            const total = window.ConstructionApp.ModuleUtils.calculateItemTotal(item);
+            
+            // Format currency using the shared utility
+            totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
         }
 
         // Update total calculations
         function updateTotals() {
-            let totalAmount = 0;
+            // Calculate total using the shared utility
+            const totalAmount = window.ConstructionApp.ModuleUtils.calculateModuleTotal(pgItems);
             
-            pgItems.forEach((item, index) => {
-                const total = item.allow ? item.qty * item.rate : 0;
-                totalAmount += total;
-            });
+            // Format currency
+            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalAmount);
             
             // Update totals in the UI
-            document.getElementById('pgs-total').textContent = `R${totalAmount.toFixed(2)}`;
-            document.getElementById('header-total').textContent = `P&Gs Total: R${totalAmount.toFixed(2)}`;
-            document.getElementById('top-total').textContent = `R${totalAmount.toFixed(2)}`;
+            document.getElementById('pgs-total').textContent = formattedTotal;
+            document.getElementById('header-total').textContent = `P&Gs Total: ${formattedTotal}`;
+            document.getElementById('top-total').textContent = formattedTotal;
         }
 
         // Save the estimate
         function saveEstimate() {
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             if (!currentClient) {
                 alert('No client selected. Please return to dashboard and select a client.');
                 return;
             }
             
-            // Prepare module data - only save items that have been modified from defaults or are custom
-            moduleData = {
+            // Prepare module data
+            const moduleData = {
                 items: pgItems.map(item => ({
                     id: item.id,
                     description: item.description,
@@ -896,41 +779,11 @@
                 }))
             };
             
-            // Update client data
-            if (!currentClient.moduleData) {
-                currentClient.moduleData = {};
-            }
+            // Use the shared client manager to save
+            window.ConstructionApp.ClientManager.saveModuleData('p-and-gs', moduleData);
             
-            currentClient.moduleData['p-and-gs'] = moduleData;
-            
-            // Save to localStorage
-            localStorage.setItem('currentClient', JSON.stringify(currentClient));
-            
-            // Save to Firebase if available
-            if (db) {
-                const clientRef = db.collection('clients').doc(currentClient.id);
-                
-                clientRef.set({
-                    moduleData: {
-                        'p-and-gs': moduleData
-                    }
-                }, { merge: true })
-                .then(() => {
-                    console.log('P&Gs data saved to Firestore');
-                })
-                .catch(error => {
-                    console.error('Error saving to Firestore:', error);
-                });
-            }
-            
-            // Show success message
-            const successAlert = document.getElementById('success-alert');
-            successAlert.style.display = 'block';
-            
-            // Hide message after 3 seconds
-            setTimeout(() => {
-                successAlert.style.display = 'none';
-            }, 3000);
+            // Show success message using the shared utility
+            window.ConstructionApp.ModuleUtils.showSuccessMessage('P&Gs data saved successfully!');
         }
     </script>
 </body>
