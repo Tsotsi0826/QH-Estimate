@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P & Gs | Construction Estimator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 25%;
+            background-color: #1c2639;
+            color: #fff;
+            height: 100%;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            color: #333;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        .section-title {
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .modules-list {
+            padding: 10px 0;
+        }
+
+        .module-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .module-item:hover {
+            background-color: #2d364a;
+        }
+
+        .module-item.active {
+            background-color: #4eca8b;
+            color: white;
+        }
+
+        .dashboard-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #1c2639;
+            color: #fff;
+        }
+
+        .dashboard-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-description {
+            padding: 10px 20px;
+            color: #aaa;
+            background-color: #1c2639;
+        }
+
+        .dashboard-content {
+            padding: 20px;
+            background-color: #fff;
+            margin: 0;
+            color: #333;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .btn {
+            background-color: #4eca8b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background-color: #3db97a;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .module-actions {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #e9e9e9;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .success-alert {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .checkbox-centered {
+            text-align: center;
+        }
+
+        .rate-cell {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .unit-cell {
+            text-align: center;
+        }
+
+        .currency {
+            text-align: right;
+        }
+
+        .scroll-container {
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Custom scrollbar styling for sidebar */
+        .scroll-container::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Custom scrollbar styling for content */
+        .dashboard-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .dashboard-content::-webkit-scrollbar-thumb {
+            background-color: #aaa;
+            border-radius: 4px;
+        }
+
+        .dashboard-content::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        .client-info {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4eca8b;
+        }
+
+        .table-container {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .remove-item {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .remove-item:hover {
+            background-color: #bd2130;
+        }
+
+        .action-cell {
+            text-align: center;
+        }
+
+        .align-right {
+            text-align: right;
+        }
+        
+        .btn-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 20px;
+            line-height: 1;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .top-total {
+            background-color: #f0f8ff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-left: 4px solid #4eca8b;
+        }
+        
+        .top-total span {
+            color: #1c2639;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">Construction Estimator</div>
+
+        <div class="section-title">Modules</div>
+        <div class="scroll-container">
+            <div class="modules-list" id="modules-container">
+                <div class="module-item" data-module-id="notes">
+                    <span>Notes</span>
+                </div>
+                <div class="module-item active" data-module-id="p-and-gs">
+                    <span>P & Gs</span>
+                </div>
+                <div class="module-item" data-module-id="demolish">
+                    <span>Demolish & Strip</span>
+                </div>
+                <div class="module-item" data-module-id="toolhire">
+                    <span>Toolhire</span>
+                </div>
+                <div class="module-item" data-module-id="earthworks">
+                    <span>Earthworks</span>
+                </div>
+                <div class="module-item" data-module-id="foundations">
+                    <span>Foundations</span>
+                </div>
+                <div class="module-item" data-module-id="brickwork">
+                    <span>Brickwork & Cavity Fill</span>
+                </div>
+                <div class="module-item" data-module-id="surfacebeds">
+                    <span>Surfacebeds</span>
+                </div>
+                <div class="module-item" data-module-id="plaster">
+                    <span>Plaster</span>
+                </div>
+                <div class="module-item" data-module-id="concrete">
+                    <span>Concrete Slab & Stairs</span>
+                </div>
+                <div class="module-item" data-module-id="steel">
+                    <span>Specialized Steel</span>
+                </div>
+                <div class="module-item" data-module-id="roofing">
+                    <span>Roofing</span>
+                </div>
+                <div class="module-item" data-module-id="windows">
+                    <span>Alu Windows and Doors</span>
+                </div>
+                <div class="module-item" data-module-id="ceilings">
+                    <span>Ceilings</span>
+                </div>
+                <div class="module-item" data-module-id="flooring">
+                    <span>Floor and Wall Covering</span>
+                </div>
+                <div class="module-item" data-module-id="carpentry">
+                    <span>Carpentry and Joinery</span>
+                </div>
+                <div class="module-item" data-module-id="painting">
+                    <span>Painting</span>
+                </div>
+                <div class="module-item" data-module-id="plumbing">
+                    <span>Plumbing</span>
+                </div>
+                <div class="module-item" data-module-id="electrical">
+                    <span>Electrical</span>
+                </div>
+                <div class="module-item" data-module-id="waterproofing">
+                    <span>Waterproofing</span>
+                </div>
+                <div class="module-item" data-module-id="fireplaces">
+                    <span>Fireplace's & Braai's</span>
+                </div>
+                <div class="module-item" data-module-id="external">
+                    <span>External Works</span>
+                </div>
+                <div class="module-item" data-module-id="fees">
+                    <span>Fee's</span>
+                </div>
+                <div class="module-item" data-module-id="admin">
+                    <span>Admin</span>
+                </div>
+                <div class="module-item" data-module-id="renovation">
+                    <span>Renovation Quote</span>
+                </div>
+                <div class="module-item" data-module-id="quote">
+                    <span>Quote</span>
+                </div>
+                <div class="module-item" data-module-id="data">
+                    <span>Data</span>
+                </div>
+                <div class="module-item" data-module-id="price_list">
+                    <span>Price List</span>
+                </div>
+                <div class="module-item" data-module-id="pc_items">
+                    <span>PC Items</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                Preliminaries & General Items (P&Gs)
+            </div>
+            <div id="client-name-display"></div>
+            <div class="total-cost" id="header-total">
+                P&Gs Total: R0.00
+            </div>
+        </div>
+
+        <div class="dashboard-description">
+            Define and calculate your preliminaries and general items.
+        </div>
+
+        <div class="dashboard-content">
+            <div id="client-info" class="client-info">Loading client information...</div>
+            
+            <div id="success-alert" class="success-alert">
+                Estimate saved successfully!
+            </div>
+            
+            <div class="module-actions">
+                <div>
+                    <button id="back-btn" class="btn btn-secondary">Back to Dashboard</button>
+                    <button id="save-btn" class="btn">Save Estimate</button>
+                    <button id="add-item-btn" class="btn btn-circle">+</button>
+                </div>
+                <div>
+                    <div class="top-total">Total: <span id="top-total">R0.00</span></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">P&G's</th>
+                            <th style="width: 8%;">Allow</th>
+                            <th style="width: 8%;">Qty</th>
+                            <th style="width: 15%;">Rate</th>
+                            <th style="width: 12%;">Unit</th>
+                            <th style="width: 15%;">Total</th>
+                            <th style="width: 7%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pgs-table-body">
+                        <!-- Table rows will be inserted here via JavaScript -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="5" class="align-right">TOTAL PRELIMINARIES & GENERAL ITEMS</td>
+                            <td class="currency" id="pgs-total">R0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "qh-dashboard-d67cf.firebaseapp.com",
+            projectId: "qh-dashboard-d67cf",
+            storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
+            messagingSenderId: "939838453148",
+            appId: "1:939838453148:web:2bf49c6ec240343b934459"
+        };
+
+        // Initialize Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            // Fallback for demo/testing
+            db = createMockDatabase();
+            console.log("Using mock database for testing");
+        }
+
+        // Mock database for testing
+        function createMockDatabase() {
+            return {
+                collection: function(name) {
+                    return {
+                        doc: function(id) {
+                            return {
+                                set: function(data, options) {
+                                    console.log(`Mock DB: saving ${name} document ${id}:`, data, options);
+                                    return Promise.resolve();
+                                },
+                                get: function() {
+                                    return Promise.resolve({
+                                        exists: false,
+                                        data: function() { return null; }
+                                    });
+                                },
+                                update: function(data) {
+                                    console.log(`Mock DB: updating ${name} document ${id}:`, data);
+                                    return Promise.resolve();
+                                }
+                            };
+                        }
+                    };
+                }
+            };
+        }
+
+        // Available units for dropdown
+        const availableUnits = [
+            'Weeks', 
+            'Months', 
+            'Days', 
+            'm', 
+            'm²', 
+            'm³', 
+            'kg', 
+            'ton', 
+            'each', 
+            '1', 
+            'sum'
+        ];
+
+        // Define P&Gs items with default values
+        const defaultPgItems = [
+            { id: 'contracts-manager', description: 'Contracts manager as required', rate: 6500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'site-agent', description: 'Site Agent', rate: 8500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'architect', description: 'Architect - Snag List', rate: 2500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'deliveries', description: 'Deliveries', rate: 0.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'phones', description: 'Phones / radios', rate: 500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'vehicle', description: 'Vehicle & Petrol', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'site-office', description: 'Site Office', rate: 1250.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'site-container', description: 'Site Container', rate: 750.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'toilet-subbies', description: 'Temp. Chemical Toilet Subbies', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'toilet-manager', description: 'Temp. Chemical Toilet Manager', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'electrical-connection', description: 'Temp. Electrical connection', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'electrical-usage', description: 'Temporary Electrical usage', rate: 100.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'fencing', description: 'Temporary Fencing', rate: 300.00, unit: 'm', allow: false, qty: 0, isDefault: true },
+            { id: 'water-connection', description: 'Water Supply connection', rate: 5000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'water-usage', description: 'Water usage', rate: 150.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'head-office', description: 'Head Office Overheads', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'insurances', description: 'Insurances', rate: 12500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'land-surveyor', description: 'Land Surveyor', rate: 12000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'health-safety-file', description: 'Health & safety file', rate: 7000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'health-safety-visits', description: 'Health & safety visits', rate: 2500.00, unit: 'Months', allow: false, qty: 0, isDefault: true },
+            { id: 'site-board', description: 'Site Board', rate: 5500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'hoa-deposit', description: 'HOA/Builders Deposit', rate: 15000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+            { id: 'rubble-removal', description: 'General Rubble Removal', rate: 1700.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+            { id: 'builders-clean', description: 'Builders Clean at End', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true }
+        ];
+
+        // Current client and module data
+        let currentClient = null;
+        let moduleData = {
+            items: []
+        };
+        
+        // Working copy of items that includes both default and custom items
+        let pgItems = [];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load client data from localStorage
+            loadClient();
+            
+            // Set up event listeners
+            document.getElementById('back-btn').addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('save-btn').addEventListener('click', saveEstimate);
+            document.getElementById('add-item-btn').addEventListener('click', addNewItem);
+            
+            // Set up module navigation
+            setupModuleNavigation();
+            
+            // Initialize the items array
+            initializeItems();
+            
+            // Populate the table
+            populateTable();
+        });
+
+        // Initialize items by combining default items with any custom items from saved data
+        function initializeItems() {
+            pgItems = [...defaultPgItems]; // Start with default items
+            
+            // If we have saved data, add any custom items
+            if (moduleData.items && moduleData.items.length > 0) {
+                // First update any default items with saved values
+                moduleData.items.forEach(savedItem => {
+                    const defaultIndex = pgItems.findIndex(item => item.id === savedItem.id);
+                    if (defaultIndex >= 0) {
+                        // Update default item with saved values
+                        pgItems[defaultIndex] = {
+                            ...pgItems[defaultIndex],
+                            allow: savedItem.allow,
+                            qty: savedItem.qty,
+                            rate: savedItem.rate,
+                            unit: savedItem.unit
+                        };
+                    } else if (!savedItem.isDefault) {
+                        // Add custom item
+                        pgItems.push({
+                            ...savedItem,
+                            isDefault: false
+                        });
+                    }
+                });
+            }
+        }
+
+        // Set up module navigation
+        function setupModuleNavigation() {
+            document.querySelectorAll('.module-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const moduleId = this.getAttribute('data-module-id');
+                    if (moduleId !== 'p-and-gs') {
+                        window.location.href = moduleId + '.html';
+                    }
+                });
+            });
+        }
+
+        // Load client info from localStorage
+        function loadClient() {
+            const clientData = localStorage.getItem('currentClient');
+            if (clientData) {
+                try {
+                    currentClient = JSON.parse(clientData);
+                    // Update client info in the UI
+                    document.getElementById('client-info').innerHTML = `
+                        <strong>Client:</strong> ${currentClient.name}<br>
+                        <strong>Address:</strong> ${currentClient.address || 'Not specified'}
+                    `;
+                    document.getElementById('client-name-display').textContent = `Client: ${currentClient.name}`;
+
+                    // Load existing module data if available
+                    if (currentClient.moduleData && currentClient.moduleData['p-and-gs']) {
+                        moduleData = currentClient.moduleData['p-and-gs'];
+                    }
+                } catch (error) {
+                    console.error("Error parsing client data:", error);
+                    document.getElementById('client-info').innerHTML = 'Error loading client information.';
+                }
+            } else {
+                document.getElementById('client-info').innerHTML = 'No client selected. Please return to dashboard and select a client.';
+            }
+        }
+
+        // Populate the table with P&Gs items
+        function populateTable() {
+            const tableBody = document.getElementById('pgs-table-body');
+            tableBody.innerHTML = '';
+            
+            pgItems.forEach((item, index) => {
+                const row = createItemRow(item, index);
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to inputs
+            setupInputListeners();
+            
+            // Update totals
+            updateTotals();
+        }
+
+        // Create a table row for an item
+        function createItemRow(item, index) {
+            // Calculate total
+            const total = item.allow ? item.qty * item.rate : 0;
+            
+            // Create table row
+            const row = document.createElement('tr');
+            
+            // Create unit options dropdown
+            let unitOptions = '';
+            availableUnits.forEach(unit => {
+                unitOptions += `<option value="${unit}" ${item.unit === unit ? 'selected' : ''}>${unit}</option>`;
+            });
+            
+            row.innerHTML = `
+                <td>
+                    <input type="text" class="description-input" data-index="${index}" value="${item.description}">
+                </td>
+                <td class="checkbox-centered">
+                    <input type="checkbox" class="allow-checkbox" data-index="${index}" ${item.allow ? 'checked' : ''}>
+                </td>
+                <td>
+                    <input type="number" class="qty-input" data-index="${index}" value="${item.qty}" min="0" step="1" ${!item.allow ? 'disabled' : ''}>
+                </td>
+                <td class="rate-cell">
+                    R<input type="number" class="rate-input" data-index="${index}" value="${item.rate.toFixed(2)}" min="0" step="0.01">
+                </td>
+                <td class="unit-cell">
+                    <select class="unit-select" data-index="${index}">
+                        ${unitOptions}
+                    </select>
+                </td>
+                <td class="currency total-cell" data-index="${index}">R${total.toFixed(2)}</td>
+                <td class="action-cell">
+                    <button class="remove-item" data-index="${index}" ${item.isDefault ? 'style="display:none;"' : ''}>Remove</button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        // Add a new custom item
+        function addNewItem() {
+            const newItem = {
+                id: 'custom-' + Date.now(), // Create a unique ID
+                description: 'New Item',
+                rate: 0.00,
+                unit: 'Weeks',
+                allow: false,
+                qty: 0,
+                isDefault: false
+            };
+            
+            pgItems.push(newItem);
+            
+            // Add the new row to the table
+            const tableBody = document.getElementById('pgs-table-body');
+            const row = createItemRow(newItem, pgItems.length - 1);
+            tableBody.appendChild(row);
+            
+            // Set up event listeners for the new row
+            setupInputListeners();
+            
+            // Focus the description field
+            const descriptionInput = row.querySelector('.description-input');
+            if (descriptionInput) {
+                descriptionInput.focus();
+                descriptionInput.select();
+            }
+        }
+
+        // Setup event listeners for inputs
+        function setupInputListeners() {
+            // Allow checkboxes
+            document.querySelectorAll('.allow-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const qtyInput = document.querySelector(`.qty-input[data-index="${index}"]`);
+                    
+                    // Enable/disable quantity input
+                    qtyInput.disabled = !this.checked;
+                    
+                    // Update the item data
+                    pgItems[index].allow = this.checked;
+                    
+                    // Update calculations
+                    calculateItemTotal(index);
+                    updateTotals();
+                });
+            });
+            
+            // Quantity inputs
+            document.querySelectorAll('.qty-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    // Update the item data
+                    pgItems[index].qty = parseFloat(this.value) || 0;
+                    
+                    // Update calculations
+                    calculateItemTotal(index);
+                    updateTotals();
+                });
+            });
+            
+            // Rate inputs
+            document.querySelectorAll('.rate-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    // Update the item data
+                    pgItems[index].rate = parseFloat(this.value) || 0;
+                    
+                    // Update calculations
+                    calculateItemTotal(index);
+                    updateTotals();
+                });
+            });
+            
+            // Description inputs
+            document.querySelectorAll('.description-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    // Update the item data
+                    pgItems[index].description = this.value;
+                });
+            });
+            
+            // Unit selects
+            document.querySelectorAll('.unit-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    // Update the item data
+                    pgItems[index].unit = this.value;
+                });
+            });
+            
+            // Remove buttons
+            document.querySelectorAll('.remove-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    if (confirm('Are you sure you want to remove this item?')) {
+                        // Remove the item from the data array
+                        pgItems.splice(index, 1);
+                        
+                        // Redraw the table
+                        populateTable();
+                    }
+                });
+            });
+        }
+
+        // Calculate total for a specific item
+        function calculateItemTotal(index) {
+            const item = pgItems[index];
+            const totalCell = document.querySelector(`.total-cell[data-index="${index}"]`);
+            
+            const total = item.allow ? item.qty * item.rate : 0;
+            totalCell.textContent = `R${total.toFixed(2)}`;
+        }
+
+        // Update total calculations
+        function updateTotals() {
+            let totalAmount = 0;
+            
+            pgItems.forEach((item, index) => {
+                const total = item.allow ? item.qty * item.rate : 0;
+                totalAmount += total;
+            });
+            
+            // Update totals in the UI
+            document.getElementById('pgs-total').textContent = `R${totalAmount.toFixed(2)}`;
+            document.getElementById('header-total').textContent = `P&Gs Total: R${totalAmount.toFixed(2)}`;
+            document.getElementById('top-total').textContent = `R${totalAmount.toFixed(2)}`;
+        }
+
+        // Save the estimate
+        function saveEstimate() {
+            if (!currentClient) {
+                alert('No client selected. Please return to dashboard and select a client.');
+                return;
+            }
+            
+            // Prepare module data - only save items that have been modified from defaults or are custom
+            moduleData = {
+                items: pgItems.map(item => ({
+                    id: item.id,
+                    description: item.description,
+                    allow: item.allow,
+                    qty: item.qty,
+                    rate: item.rate,
+                    unit: item.unit,
+                    isDefault: item.isDefault
+                }))
+            };
+            
+            // Update client data
+            if (!currentClient.moduleData) {
+                currentClient.moduleData = {};
+            }
+            
+            currentClient.moduleData['p-and-gs'] = moduleData;
+            
+            // Save to localStorage
+            localStorage.setItem('currentClient', JSON.stringify(currentClient));
+            
+            // Save to Firebase if available
+            if (db) {
+                const clientRef = db.collection('clients').doc(currentClient.id);
+                
+                clientRef.set({
+                    moduleData: {
+                        'p-and-gs': moduleData
+                    }
+                }, { merge: true })
+                .then(() => {
+                    console.log('P&Gs data saved to Firestore');
+                })
+                .catch(error => {
+                    console.error('Error saving to Firestore:', error);
+                });
+            }
+            
+            // Show success message
+            const successAlert = document.getElementById('success-alert');
+            successAlert.style.display = 'block';
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                successAlert.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
