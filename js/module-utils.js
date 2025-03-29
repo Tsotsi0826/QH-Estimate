@@ -29,6 +29,12 @@
                 return false;
             }
             
+            // Ensure the current client is properly stored before navigation
+            if (currentClient) {
+                localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                console.log("Client saved to localStorage before module navigation:", currentClient.name);
+            }
+            
             // Set a flag to indicate we're navigating to a module
             localStorage.setItem('navigationState', 'fromModulePage');
             
@@ -39,14 +45,15 @@
         
         // Return to dashboard
         returnToDashboard: function() {
-            // Set the navigation state to indicate we're returning from a module
-            localStorage.setItem('navigationState', 'returningToDashboard');
-            
             // Ensure the current client is properly stored
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             if (currentClient) {
                 localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                console.log("Client saved to localStorage before returning to dashboard:", currentClient.name);
             }
+            
+            // Set the navigation state to indicate we're returning from a module
+            localStorage.setItem('navigationState', 'returningToDashboard');
             
             // Navigate back to the index page
             window.location.href = 'index.html';
