@@ -453,15 +453,19 @@
         }
         
         /* Styles for logout button */
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 0.9em;
-            background-color: #6c757d;
-        }
+      .btn-small {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    background-color: #6c757d;
+}
 
-        .header-actions {
-            display: flex;
-            align-items: center;
+.btn-small:hover {
+    background-color: #5a6268;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
         }
     </style>
 </head>
@@ -518,18 +522,18 @@
     </div>
 
     <div class="main-content">
-        <div class="dashboard-header">
-            <div class="dashboard-title">
-                <i>D</i> Dashboard
-            </div>
-            <div id="client-name-display" style="margin-left: 20px;"></div>
-            <div class="header-actions">
-                <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
-            </div>
-            <div class="total-cost" id="total-project-cost">
-                Total Project Cost: R0.00
-            </div>
-        </div>
+       <div class="dashboard-header">
+    <div class="dashboard-title">
+        <i>D</i> Dashboard
+    </div>
+    <div id="client-name-display" style="margin-left: 20px;"></div>
+    <div class="header-actions">
+        <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
+    </div>
+    <div class="total-cost" id="total-project-cost">
+        Total Project Cost: R0.00
+    </div>
+</div>
 
         <div class="dashboard-description">
             Overview of project data.
@@ -616,63 +620,69 @@
         });
 
         // Initialize app function 
-        function initApp() {
-            console.log("Initializing app");
-            
-            // Check the navigation state
-            const navigationState = localStorage.getItem('navigationState');
-            console.log("Navigation state:", navigationState);
-            
-            // Handle app initialization based on navigation state
-            if (navigationState === 'returningToDashboard') {
-                // We're returning from a module, retain the client
-                const storedClient = localStorage.getItem('currentClient');
-                if (storedClient) {
-                    try {
-                        const clientData = JSON.parse(storedClient);
-                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
-                        console.log("Returning from module, client retained:", clientData.name);
-                    } catch (error) {
-                        console.error("Error parsing stored client:", error);
-                        window.ConstructionApp.ClientManager.clearCurrentClient();
-                    }
-                }
-            } else if (navigationState === 'manualLogout') {
-                // User manually logged out, client already cleared
-                console.log("User manually logged out");
-            } else {
-                // First load or refresh - clear the client
+      function initApp() {
+    console.log("Initializing app");
+    
+    // Check the navigation state
+    const navigationState = localStorage.getItem('navigationState');
+    console.log("Navigation state:", navigationState);
+    
+    // Handle app initialization based on navigation state
+    if (navigationState === 'returningToDashboard') {
+        // We're returning from a module, retain the client
+        const storedClient = localStorage.getItem('currentClient');
+        if (storedClient) {
+            try {
+                const clientData = JSON.parse(storedClient);
+                window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                console.log("Returning from module, client retained:", clientData.name);
+            } catch (error) {
+                console.error("Error parsing stored client:", error);
                 window.ConstructionApp.ClientManager.clearCurrentClient();
-                console.log("Fresh load or refresh, client cleared");
             }
-            
-            // Clear the navigation state for future navigations
-            localStorage.removeItem('navigationState');
-            
-            // Attach click event listeners to module items
-            document.querySelectorAll('.module-item').forEach(item => {
-                // Only attach the event to the text part, not the icon
-                const moduleText = item.querySelector('span');
-                if (moduleText) {
-                    moduleText.addEventListener('click', function() {
-                        const moduleId = item.getAttribute('data-module-id');
-                        
-                        // Check if client is required for this module
-                        const requiresClient = item.getAttribute('data-requires-client') === 'true';
-                        
-                        if (requiresClient) {
-                            // These modules require a client
-                            window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
-                        } else {
-                            // These modules don't require a client (like setup modules)
-                            window.location.href = moduleId + '.html';
-                        }
-                    });
+        }
+    } else if (navigationState === 'manualLogout') {
+        // User manually logged out, client already cleared
+        console.log("User manually logged out");
+        // Make sure client is fully cleared
+        window.ConstructionApp.ClientManager.clearCurrentClient();
+    } else {
+        // First load or refresh - clear the client
+        window.ConstructionApp.ClientManager.clearCurrentClient();
+        console.log("Fresh load or refresh, client cleared");
+    }
+    
+    // Clear the navigation state for future navigations
+    localStorage.removeItem('navigationState');
+    
+    // Debug: Log current client after initialization
+    const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+    console.log("Current client after initialization:", currentClient ? currentClient.name : "None");
+    
+    // Attach click event listeners to module items
+    document.querySelectorAll('.module-item').forEach(item => {
+        // Only attach the event to the text part, not the icon
+        const moduleText = item.querySelector('span');
+        if (moduleText) {
+            moduleText.addEventListener('click', function() {
+                const moduleId = item.getAttribute('data-module-id');
+                
+                // Check if client is required for this module
+                const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                
+                if (requiresClient) {
+                    // These modules require a client
+                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                } else {
+                    // These modules don't require a client (like setup modules)
+                    window.location.href = moduleId + '.html';
                 }
             });
+        }
+    });
 
-            // Set up drag and drop functionality
-            setupDragAndDrop();
+    // Set up drag and drop functionality
+    setupDragAndDrop();
         }
 
         // Add module button setup
