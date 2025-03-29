@@ -630,29 +630,46 @@
             const navigationState = localStorage.getItem('navigationState');
             console.log("Navigation state:", navigationState);
             
+            // Debug: Check localStorage for client
+            const storedClient = localStorage.getItem('currentClient');
+            console.log("Client in localStorage:", storedClient ? JSON.parse(storedClient).name : "None");
+            
             // Handle app initialization based on navigation state
             if (navigationState === 'returningToDashboard') {
-                // We're returning from a module, retain the client
-                const storedClient = localStorage.getItem('currentClient');
+                // We're returning from a module, retain the client from localStorage
                 if (storedClient) {
                     try {
                         const clientData = JSON.parse(storedClient);
+                        // Use the ClientManager to set the current client
                         window.ConstructionApp.ClientManager.setCurrentClient(clientData);
-                        console.log("Returning from module, client retained:", clientData.name);
+                        console.log("Returning from module, client restored:", clientData.name);
                     } catch (error) {
                         console.error("Error parsing stored client:", error);
-                        window.ConstructionApp.ClientManager.clearCurrentClient();
                     }
+                } else {
+                    console.log("No stored client found when returning from module");
                 }
             } else if (navigationState === 'manualLogout') {
-                // User manually logged out, client already cleared
+                // User manually logged out, ensure client is fully cleared
                 console.log("User manually logged out");
-                // Make sure client is fully cleared
                 window.ConstructionApp.ClientManager.clearCurrentClient();
-            } else {
-                // First load or refresh - clear the client
-                window.ConstructionApp.ClientManager.clearCurrentClient();
-                console.log("Fresh load or refresh, client cleared");
+            } else if (!navigationState || navigationState === 'firstLoad') {
+                // First load - check if there's a client in localStorage
+                console.log("Fresh load or no navigation state");
+                if (storedClient) {
+                    try {
+                        // Keep any existing client in localStorage on first load
+                        const clientData = JSON.parse(storedClient);
+                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                        console.log("Restored client from localStorage on fresh load:", clientData.name);
+                    } catch (error) {
+                        console.error("Error parsing stored client on fresh load:", error);
+                        window.ConstructionApp.ClientManager.clearCurrentClient();
+                    }
+                } else {
+                    // No client in localStorage, ensure client is cleared
+                    window.ConstructionApp.ClientManager.clearCurrentClient();
+                }
             }
             
             // Clear the navigation state for future navigations
