@@ -605,8 +605,34 @@
         function initApp() {
             console.log("Initializing app");
             
-            // Clear current client on page load/refresh
-            window.ConstructionApp.ClientManager.clearCurrentClient();
+            // Check if we are returning from a module page by looking for client in localStorage
+            const storedClient = localStorage.getItem('currentClient');
+            
+            if (storedClient) {
+                // We're returning from a module page, so load the client
+                try {
+                    const clientData = JSON.parse(storedClient);
+                    
+                    // Find client in our list or add it
+                    const clients = window.ConstructionApp.ClientManager.getAllClients();
+                    const existingClientIndex = clients.findIndex(c => c.id === clientData.id);
+                    
+                    // Set as current client
+                    window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                    
+                    // Update dashboard
+                    updateDashboard(clientData);
+                    
+                    console.log("Returned from module page, client loaded:", clientData.name);
+                } catch (error) {
+                    console.error("Error parsing stored client:", error);
+                    window.ConstructionApp.ClientManager.clearCurrentClient();
+                }
+            } else {
+                // This is a fresh load or refresh, so clear the client
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+                console.log("Fresh page load, client cleared");
+            }
             
             // Attach click event listeners to module items
             document.querySelectorAll('.module-item').forEach(item => {
