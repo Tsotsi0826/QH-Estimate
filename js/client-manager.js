@@ -161,6 +161,24 @@
             return true;
         },
         
+        // Debug function to check state
+        debugClientState: function() {
+            console.log("--- Client Manager Debug ---");
+            console.log("Current navigation state:", localStorage.getItem('navigationState'));
+            console.log("Current client:", _currentClient ? _currentClient.name : "None");
+            
+            const storedClient = localStorage.getItem('currentClient');
+            console.log("localStorage client:", storedClient ? 
+                JSON.parse(storedClient).name : "None");
+                
+            console.log("---------------------------");
+            return {
+                navState: localStorage.getItem('navigationState'),
+                currentClient: _currentClient,
+                storedClient: storedClient ? JSON.parse(storedClient) : null
+            };
+        },
+        
         // Event handler for client changes - to be implemented by consumers
         onClientChanged: null
     };
