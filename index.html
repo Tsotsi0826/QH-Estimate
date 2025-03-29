@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Estimator</title>
+    
+    <!-- Firebase Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    
+    <!-- Shared JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 25%;
+            background-color: #1c2639;
+            color: #fff;
+            height: 100%;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            color: #333;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        .section-title {
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .client-actions {
+            padding: 0 20px;
+        }
+
+        .client-action {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+        }
+
+        .client-action i {
+            margin-right: 10px;
+        }
+
+        .client-action:hover {
+            color: #4eca8b;
+        }
+
+        /* Add New Module Button */
+        .add-module-btn {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #2d364a;
+            color: #fff;
+            cursor: pointer;
+            margin: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .add-module-btn:hover {
+            background-color: #4eca8b;
+        }
+
+        .add-module-btn i {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* Client Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 500px;
+            max-width: 90%;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5em;
+            color: #888;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background-color: #ddd;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .client-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .client-list-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .client-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-list-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .client-list-item.active {
+            background-color: #e9e9e9;
+        }
+
+        .search-container {
+            padding: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #2d364a;
+            color: #fff;
+        }
+
+        .search-input::placeholder {
+            color: #aaa;
+        }
+
+        .modules-list {
+            padding: 10px 0;
+        }
+
+        .module-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .module-item:hover {
+            background-color: #2d364a;
+        }
+
+        .module-item.dragging {
+            opacity: 0.5;
+            background-color: #3a4967;
+            border: 1px dashed #aaa;
+        }
+
+        .module-item.drag-over {
+            border-top: 2px solid #4eca8b;
+        }
+
+        .module-icon {
+            margin-right: 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            width: 20px;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+        }
+
+        .module-drag-handle {
+            cursor: move;
+            position: absolute;
+            left: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .module-item:hover .module-drag-handle {
+            opacity: 0.7;
+        }
+
+        /* Dropdown styles */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 120px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            left: 0;
+            top: 100%;
+            color: #333;
+        }
+
+        .module-icon:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 12px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #1c2639;
+            color: #fff;
+        }
+
+        .dashboard-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-title i {
+            margin-right: 10px;
+        }
+
+        .total-cost {
+            font-size: 1.2em;
+            color: #4eca8b;
+        }
+
+        .dashboard-description {
+            padding: 10px 20px;
+            color: #aaa;
+            background-color: #1c2639;
+        }
+
+        .dashboard-content {
+            padding: 20px;
+            background-color: #fff;
+            margin: 0;
+            color: #333;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Custom scrollbar styling */
+        .dashboard-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .dashboard-content::-webkit-scrollbar-thumb {
+            background-color: #aaa;
+            border-radius: 4px;
+        }
+
+        .dashboard-content::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        .dashboard-content-header {
+            margin-bottom: 20px;
+        }
+
+        .dashboard-content-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-content-description {
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 5px;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #e9e9e9;
+        }
+
+        .btn {
+            background-color: #4eca8b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #3db97a;
+        }
+
+        .scroll-container {
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Custom scrollbar styling for sidebar */
+        .scroll-container::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Style for non-client modules */
+        .module-item[data-requires-client="false"] {
+            position: relative;
+        }
+        
+        .module-item[data-requires-client="false"]::after {
+            content: "⚙️";
+            position: absolute;
+            right: 10px;
+            font-size: 14px;
+        }
+        
+        /* Styles for logout button */
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #6c757d;
+        }
+
+        .btn-small:hover {
+            background-color: #5a6268;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">Construction Estimator</div>
+
+        <div class="section-title">Clients</div>
+        <div class="client-actions">
+            <div class="client-action" id="new-client-btn">
+                <i>+</i> New Client
+            </div>
+            <div class="client-action" id="open-client-btn">
+                <i>O</i> Open Client
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search modules...">
+        </div>
+
+        <!-- Add New Module Button -->
+        <div class="add-module-btn" id="add-module-btn">
+            <i>+</i> Add New Module
+        </div>
+
+        <div class="scroll-container">
+            <div class="modules-list" id="modules-container">
+                <div class="module-item" draggable="true" data-module-id="notes" data-requires-client="true">
+                    <div class="module-drag-handle">≡</div>
+                    <div class="module-icon">
+                        ...
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item edit-module">Edit</div>
+                            <div class="dropdown-item delete-module">Delete</div>
+                        </div>
+                    </div>
+                    <span>Notes</span>
+                </div>
+                <div class="module-item" draggable="true" data-module-id="p-and-gs" data-requires-client="true">
+                    <div class="module-drag-handle">≡</div>
+                    <div class="module-icon">
+                        ...
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item edit-module">Edit</div>
+                            <div class="dropdown-item delete-module">Delete</div>
+                        </div>
+                    </div>
+                    <span>P & Gs</span>
+                </div>
+                <!-- Other module items here - add data-requires-client="true" to each -->
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <i>D</i> Dashboard
+            </div>
+            <div id="client-name-display" style="margin-left: 20px;"></div>
+            <div class="header-actions">
+                <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
+            </div>
+            <div class="total-cost" id="total-project-cost">
+                Total Project Cost: R0.00
+            </div>
+        </div>
+
+        <div class="dashboard-description">
+            Overview of project data.
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-content-header">
+                <div class="dashboard-content-title">Project Dashboard</div>
+                <div class="dashboard-content-description">Welcome to the dashboard! Here's where key project information will be displayed.</div>
+            </div>
+
+            <div id="module-content">
+                <!-- Dashboard content will be loaded here -->
+                <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                    <h3>Getting Started</h3>
+                    <p>To start using the Construction Estimator:</p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>Create a new client or open an existing client</li>
+                        <li>Select a module from the sidebar to begin estimating</li>
+                        <li>Add new modules using the "Add New Module" button</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application data structure 
+        const appData = {
+            modules: [
+                {
+                    id: 'notes',
+                    name: 'Notes',
+                    requiresClient: true,
+                    renderTemplate: function(client) {
+                        const notesData = client?.moduleData?.notes?.notes || '';
+                        return `
+                            <h3>Project Notes</h3>
+                            <textarea id="project-notes" rows="10" style="width: 100%; padding: 10px;" placeholder="Enter project notes here...">${notesData}</textarea>
+                            <button class="btn module-save-btn" data-module="notes" style="margin-top: 10px;">Save Notes</button>
+                        `;
+                    },
+                    saveData: function() {
+                        const notes = document.getElementById('project-notes').value;
+                        return { notes: notes };
+                    }
+                },
+                {
+                    id: 'p-and-gs',
+                    name: 'P & Gs',
+                    requiresClient: true,
+                    renderTemplate: function(client) {
+                        // We would render a preview here, but now we navigate to separate page
+                        return `
+                            <h3>Preliminaries and General Conditions</h3>
+                            <p>Click the P & Gs module in the sidebar to access the full estimator.</p>
+                            <button class="btn" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('p-and-gs')">Open P & Gs Module</button>
+                        `;
+                    }
+                },
+                // Other modules here
+            ],
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing app");
+            
+            // Initialize app
+            initApp();
+            
+            // Setup dropdowns, client management, and module button
+            setupDropdownMenus();
+            setupClientManagement();
+            setupAddModuleButton();
+            
+            // Load clients using the shared client manager
+            window.ConstructionApp.ClientManager.loadClients().then(() => {
+                console.log("Clients loaded");
+            });
+            
+            // Set up client change handler
+            window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
+        });
+
+        // Initialize app function 
+        function initApp() {
+            console.log("Initializing app");
+            
+            // Check the navigation state
+            const navigationState = localStorage.getItem('navigationState');
+            console.log("Navigation state:", navigationState);
+            
+            // Handle app initialization based on navigation state
+            if (navigationState === 'returningToDashboard') {
+                // We're returning from a module, retain the client
+                const storedClient = localStorage.getItem('currentClient');
+                if (storedClient) {
+                    try {
+                        const clientData = JSON.parse(storedClient);
+                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                        console.log("Returning from module, client retained:", clientData.name);
+                    } catch (error) {
+                        console.error("Error parsing stored client:", error);
+                        window.ConstructionApp.ClientManager.clearCurrentClient();
+                    }
+                }
+            } else if (navigationState === 'manualLogout') {
+                // User manually logged out, client already cleared
+                console.log("User manually logged out");
+                // Make sure client is fully cleared
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+            } else {
+                // First load or refresh - clear the client
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+                console.log("Fresh load or refresh, client cleared");
+            }
+            
+            // Clear the navigation state for future navigations
+            localStorage.removeItem('navigationState');
+            
+            // Debug: Log current client after initialization
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            console.log("Current client after initialization:", currentClient ? currentClient.name : "None");
+            
+            // Attach click event listeners to module items
+            document.querySelectorAll('.module-item').forEach(item => {
+                // Only attach the event to the text part, not the icon
+                const moduleText = item.querySelector('span');
+                if (moduleText) {
+                    moduleText.addEventListener('click', function() {
+                        const moduleId = item.getAttribute('data-module-id');
+                        
+                        // Check if client is required for this module
+                        const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                        
+                        if (requiresClient) {
+                            // These modules require a client
+                            window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                        } else {
+                            // These modules don't require a client (like setup modules)
+                            window.location.href = moduleId + '.html';
+                        }
+                    });
+                }
+            });
+
+            // Set up drag and drop functionality
+            setupDragAndDrop();
+        }
+
+        // Add module button setup
+        function setupAddModuleButton() {
+            const addModuleBtn = document.getElementById('add-module-btn');
+            if (addModuleBtn) {
+                addModuleBtn.addEventListener('click', function() {
+                    addNewModule();
+                });
+            }
+        }
+
+        // Add a new module
+        function addNewModule() {
+            // Prompt for module name
+            const moduleName = prompt("Enter new module name:");
+            
+            if (!moduleName || moduleName.trim() === '') {
+                return; // User cancelled or entered empty name
+            }
+            
+            // Generate a module ID (lowercase, no spaces, dashes for spaces)
+            const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            // Check if module ID already exists
+            const existingModuleElement = document.querySelector(`.module-item[data-module-id="${moduleId}"]`);
+            if (existingModuleElement) {
+                alert(`A module with the ID "${moduleId}" already exists. Please choose a different name.`);
+                return;
+            }
+            
+            // Ask if this module requires a client selection
+            const requiresClient = confirm("Does this module require a client selection?\n\nClick OK if this module needs client data.\nClick Cancel if this is a setup/config module that doesn't need client data.");
+            
+            // Create a new module element
+            const moduleElement = document.createElement('div');
+            moduleElement.className = 'module-item';
+            moduleElement.draggable = true;
+            moduleElement.setAttribute('data-module-id', moduleId);
+            moduleElement.setAttribute('data-requires-client', requiresClient ? 'true' : 'false');
+            
+            moduleElement.innerHTML = `
+                <div class="module-drag-handle">≡</div>
+                <div class="module-icon">
+                    ...
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item edit-module">Edit</div>
+                        <div class="dropdown-item delete-module">Delete</div>
+                    </div>
+                </div>
+                <span>${moduleName}</span>
+            `;
+            
+            // Add to the DOM
+            const modulesContainer = document.getElementById('modules-container');
+            modulesContainer.appendChild(moduleElement);
+            
+            // Add event listeners
+            const moduleText = moduleElement.querySelector('span');
+            moduleText.addEventListener('click', function() {
+                const moduleId = moduleElement.getAttribute('data-module-id');
+                const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
+                
+                if (requiresClient) {
+                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                } else {
+                    // For non-client modules, just navigate directly
+                    window.location.href = moduleId + '.html';
+                }
+            });
+            
+            // Setup dropdown menu
+            setupDropdownForModule(moduleElement);
+            
+            // Setup drag and drop
+            setupDragForModule(moduleElement);
+            
+            // Add to appData modules array
+            appData.modules.push({
+                id: moduleId,
+                name: moduleName,
+                requiresClient: requiresClient,
+                renderTemplate: function(client) {
+                    return `
+                        <h3>${moduleName}</h3>
+                        <p>This is a custom module. You can create an HTML file named "${moduleId}.html" to implement this module.</p>
+                        <p>For now, this is a placeholder.</p>
+                    `;
+                },
+                saveData: function() {
+                    return {};
+                }
+            });
+            
+            // Notify user
+            alert(`New module "${moduleName}" created with ID "${moduleId}". Create a file named "${moduleId}.html" to implement this module.`);
+        }
+
+        // Setup dropdown for a single module
+        function setupDropdownForModule(moduleElement) {
+            const icon = moduleElement.querySelector('.module-icon');
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.querySelector('.dropdown-menu');
+                if (dropdown) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        if (menu !== dropdown && menu.style.display === 'block') {
+                            menu.style.display = 'none';
+                        }
+                    });
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                }
+            });
+            
+            // Edit button
+            const editBtn = moduleElement.querySelector('.edit-module');
+            editBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const moduleName = moduleElement.querySelector('span').textContent.trim();
+                editModule(moduleName, moduleElement);
+            });
+            
+            // Delete button
+            const deleteBtn = moduleElement.querySelector('.delete-module');
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const moduleName = moduleElement.querySelector('span').textContent.trim();
+                deleteModule(moduleName, moduleElement);
+            });
+        }
+
+        // Setup drag for a single module
+        function setupDragForModule(moduleElement) {
+            let draggedItem = null;
+            
+            // Drag start event
+            moduleElement.addEventListener('dragstart', function(e) {
+                draggedItem = this;
+                setTimeout(() => this.classList.add('dragging'), 0);
+                
+                // Store data about the dragged item
+                e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            // Drag end event
+            moduleElement.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.module-item').forEach(item => item.classList.remove('drag-over'));
+            });
+            
+            // Drag over event
+            moduleElement.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                if (this !== draggedItem) {
+                    this.classList.add('drag-over');
+                }
+            });
+            
+            // Drag leave event
+            moduleElement.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            // Drop event
+            moduleElement.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                if (this !== draggedItem) {
+                    const modulesContainer = document.getElementById('modules-container');
+                    const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
+                    const draggedIndex = allItems.indexOf(draggedItem);
+                    const targetIndex = allItems.indexOf(this);
+                    
+                    // If dropping after the target, insert after, otherwise insert before
+                    if (draggedIndex < targetIndex) {
+                        this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                    } else {
+                        this.parentNode.insertBefore(draggedItem, this);
+                    }
+                    
+                    // Update the data array order if needed
+                    updateModuleOrder();
+                }
+            });
+            
+            // Add click handler for the drag handle
+            const dragHandle = moduleElement.querySelector('.module-drag-handle');
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', function(e) {
+                    // Prevent the dropdown from opening when drag starts
+                    e.stopPropagation();
+                });
+            }
+        }
+        
+        // Set up module-specific interactions
+        function setupModuleInteractions(moduleId) {
+            // Add event listeners for the save buttons in the module
+            const saveButtons = document.querySelectorAll('.module-save-btn');
+            saveButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const moduleId = this.getAttribute('data-module');
+                    saveModuleData(moduleId);
+                });
+            });
+
+            // Add specific handling for each module type if needed
+        }
+
+        // Save module data to the current client
+        function saveModuleData(moduleId) {
+            const module = appData.modules.find(m => m.id === moduleId);
+            if (module && module.saveData) {
+                const data = module.saveData();
+                
+                // Use the shared client manager to save module data
+                window.ConstructionApp.ClientManager.saveModuleData(moduleId, data);
+                
+                // Show success message
+                window.ConstructionApp.ModuleUtils.showSuccessMessage('Module data saved successfully!');
+                
+                // Recalculate total project cost
+                updateTotalProjectCost();
+            }
+        }
+
+        // Setup dropdown menus
+        function setupDropdownMenus() {
+            // Module icons dropdown
+            document.querySelectorAll('.module-icon').forEach(icon => {
+                icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dropdown = this.querySelector('.dropdown-menu');
+                    if (dropdown) {
+                        // Close other open dropdowns
+                        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                            if (menu !== dropdown && menu.style.display === 'block') {
+                                menu.style.display = 'none';
+                            }
+                        });
+
+                        // Toggle this dropdown
+                        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                    }
+                });
+            });
+
+            // Edit and delete module handlers
+            document.querySelectorAll('.edit-module').forEach(editBtn => {
+                editBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const moduleItem = this.closest('.module-item');
+                    const moduleName = moduleItem.querySelector('span').textContent.trim();
+                    editModule(moduleName, moduleItem);
+                });
+            });
+
+            document.querySelectorAll('.delete-module').forEach(deleteBtn => {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const moduleItem = this.closest('.module-item');
+                    const moduleName = moduleItem.querySelector('span').textContent.trim();
+                    deleteModule(moduleName, moduleItem);
+                });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            });
+        }
+
+        // Edit a module
+        function editModule(moduleName, moduleElement) {
+            // Create a simple edit prompt
+            const newName = prompt(`Edit module name:`, moduleName);
+
+            if (newName && newName.trim() !== '' && newName !== moduleName) {
+                // Update the module name
+                moduleElement.querySelector('span').textContent = newName;
+
+                // Find and update the module in data if it exists
+                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
+                if (moduleIndex !== -1) {
+                    appData.modules[moduleIndex].name = newName;
+                }
+
+                // Show success message
+                alert(`Module renamed to "${newName}"`);
+            }
+        }
+
+        // Delete a module
+        function deleteModule(moduleName, moduleElement) {
+            // Confirm before deleting
+            if (confirm(`Are you sure you want to delete the "${moduleName}" module?`)) {
+                // Remove the module element from DOM
+                moduleElement.remove();
+
+                // Remove from data array if it exists
+                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
+                if (moduleIndex !== -1) {
+                    appData.modules.splice(moduleIndex, 1);
+                }
+
+                // Show success message
+                alert(`Module "${moduleName}" has been deleted`);
+            }
+        }
+
+        // Setup drag and drop functionality
+        function setupDragAndDrop() {
+            const moduleItems = document.querySelectorAll('.module-item');
+            let draggedItem = null;
+
+            moduleItems.forEach(item => {
+                // Drag start event
+                item.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    setTimeout(() => this.classList.add('dragging'), 0);
+
+                    // Store data about the dragged item
+                    e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                // Drag end event
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    moduleItems.forEach(item => item.classList.remove('drag-over'));
+                });
+
+                // Drag over event
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    if (this !== draggedItem) {
+                        this.classList.add('drag-over');
+                    }
+                });
+
+                // Drag leave event
+                item.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+
+                // Drop event
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+
+                    if (this !== draggedItem) {
+                        const modulesContainer = document.getElementById('modules-container');
+                        const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
+                        const draggedIndex = allItems.indexOf(draggedItem);
+                        const targetIndex = allItems.indexOf(this);
+
+                        // If dropping after the target, insert after, otherwise insert before
+                        if (draggedIndex < targetIndex) {
+                            this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                        } else {
+                            this.parentNode.insertBefore(draggedItem, this);
+                        }
+
+                        // Update the data array order if needed
+                        updateModuleOrder();
+                    }
+                });
+            });
+        }
+
+        // Set up client management
+        function setupClientManagement() {
+            console.log("Setting up client management");
+            const newClientBtn = document.getElementById('new-client-btn');
+            const openClientBtn = document.getElementById('open-client-btn');
+            
+            // Create modal overlay if it doesn't exist
+            let modalOverlay = document.querySelector('.modal-overlay');
+            if (!modalOverlay) {
+                modalOverlay = document.createElement('div');
+                modalOverlay.className = 'modal-overlay';
+                document.body.appendChild(modalOverlay);
+            }
+
+            // New client button event listener
+            newClientBtn.addEventListener('click', () => {
+                const clientModal = createClientModal('new');
+                
+                // Clear any existing content
+                modalOverlay.innerHTML = '';
+                modalOverlay.appendChild(clientModal);
+                modalOverlay.style.display = 'flex';
+            });
+
+            // Open client button event listener
+            openClientBtn.addEventListener('click', () => {
+                const clientModal = createClientModal('open');
+                
+                // Clear any existing content
+                modalOverlay.innerHTML = '';
+                modalOverlay.appendChild(clientModal);
+                modalOverlay.style.display = 'flex';
+            });
+
+            // Close modal when clicking outside
+            modalOverlay.addEventListener('click', (event) => {
+                if (event.target === modalOverlay) {
+                    modalOverlay.style.display = 'none';
+                }
+            });
+        }
+
+        // Create client modal dialog
+        function createClientModal(type) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+
+            if (type === 'new') {
+                // New client modal content
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h2 class="modal-title">New Client</h2>
+                        <span class="modal-close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="client-name">Client Name:</label>
+                            <input type="text" id="client-name" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-address">Client Address:</label>
+                            <input type="text" id="client-address" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-cancel">Cancel</button>
+                        <button class="btn btn-save">Save</button>
+                    </div>
+                `;
+
+                // Set up event handlers
+                setTimeout(() => {
+                    // Setup close and cancel buttons
+                    setupModalCloseButtons(modal);
+
+                    const saveBtn = modal.querySelector('.btn-save');
+                    saveBtn.addEventListener('click', () => {
+                        const name = document.getElementById('client-name').value;
+                        const address = document.getElementById('client-address').value;
+
+                        if (name.trim() === '') {
+                            alert('Client name is required');
+                            return;
+                        }
+
+                        // Create new client
+                        const newClient = {
+                            name: name,
+                            address: address,
+                            moduleData: {}
+                        };
+
+                        // Add client using the shared client manager
+                        const client = window.ConstructionApp.ClientManager.addClient(newClient);
+                        window.ConstructionApp.ClientManager.setCurrentClient(client);
+
+                        alert(`Client "${name}" created and selected.`);
+                        modal.closest('.modal-overlay').style.display = 'none';
+                    });
+                }, 0);
+            } else if (type === 'open') {
+                // Get clients from the shared client manager
+                const clients = window.ConstructionApp.ClientManager.getAllClients();
+                
+                // Generate client list HTML
+                let clientListHTML = '';
+                if (clients.length > 0) {
+                    clientListHTML = clients.map((client, index) => 
+                        `<div class="client-list-item" data-client-index="${index}">${client.name}</div>`
+                    ).join('');
+                } else {
+                    clientListHTML = '<div class="client-list-item">No clients found</div>';
+                }
+
+                // Open client modal content
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h2 class="modal-title">Open Client</h2>
+                        <span class="modal-close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="client-search">Search Clients:</label>
+                            <input type="text" id="client-search" class="form-control">
+                        </div>
+                        <div class="client-list">
+                            ${clientListHTML}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-cancel">Cancel</button>
+                    </div>
+                `;
+
+                // Set up event handlers
+                setTimeout(() => {
+                    // Setup close and cancel buttons
+                    setupModalCloseButtons(modal);
+
+                    // Set up client selection
+                    setupClientListSelection(modal);
+
+                    // Set up search filtering
+                    setupClientSearch(modal);
+                }, 0);
+            }
+
+            return modal;
+        }
+
+        // Set up modal close buttons
+        function setupModalCloseButtons(modal) {
+            const closeBtn = modal.querySelector('.modal-close');
+            closeBtn.addEventListener('click', () => {
+                modal.closest('.modal-overlay').style.display = 'none';
+            });
+
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            cancelBtn.addEventListener('click', () => {
+                modal.closest('.modal-overlay').style.display = 'none';
+            });
+        }
+
+        // Set up client search filtering
+        function setupClientSearch(modal) {
+            const searchInput = modal.querySelector('#client-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const clientItems = modal.querySelectorAll('.client-list-item');
+                    
+                    clientItems.forEach(item => {
+                        const clientName = item.textContent.toLowerCase();
+                        if (clientName.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        }
+
+        // Set up client list selection
+        function setupClientListSelection(modal) {
+            const clientListItems = modal.querySelectorAll('.client-list-item');
+            const clients = window.ConstructionApp.ClientManager.getAllClients();
+            
+            clientListItems.forEach(item => {
+                // Skip the "No clients found" message
+                if (item.getAttribute('data-client-index') === null) {
+                    return;
+                }
+                
+                item.addEventListener('click', () => {
+                    const clientIndex = parseInt(item.getAttribute('data-client-index'));
+                    
+                    if (!isNaN(clientIndex) && clients[clientIndex]) {
+                        // Set as current client using the shared client manager
+                        window.ConstructionApp.ClientManager.setCurrentClient(clients[clientIndex]);
+                        
+                        modal.closest('.modal-overlay').style.display = 'none';
+                        alert(`Client "${clients[clientIndex].name}" selected.`);
+                    }
+                });
+            });
+        }
+
+        // Update the dashboard
+        function updateDashboard(client) {
+            console.log("Updating dashboard for client:", client?.name);
+            
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (client) {
+                // Update client display and show logout button
+                document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
+                document.querySelector('.dashboard-description').textContent = `Client: ${client.name}, Address: ${client.address || 'Not specified'}`;
+                logoutBtn.style.display = 'block';
+                logoutBtn.onclick = () => window.ConstructionApp.ModuleUtils.logoutClient();
+                
+                // Update total cost
+                updateTotalProjectCost();
+                
+                // Render the dashboard content
+                renderDashboardContent(client);
+            } else {
+                // Clear client display and hide logout button
+                document.getElementById('client-name-display').textContent = '';
+                document.getElementById('total-project-cost').textContent = 'Total Project Cost: R0.00';
+                document.querySelector('.dashboard-description').textContent = 'Overview of project data.';
+                logoutBtn.style.display = 'none';
+                
+                // Show the welcome message when no client is selected
+                document.getElementById('module-content').innerHTML = `
+                    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                        <h3>Getting Started</h3>
+                        <p>To start using the Construction Estimator:</p>
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li>Create a new client or open an existing client</li>
+                            <li>Select a module from the sidebar to begin estimating</li>
+                            <li>Add new modules using the "Add New Module" button</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+
+        // Render dashboard content
+        function renderDashboardContent(client) {
+            const contentElement = document.getElementById('module-content');
+            contentElement.innerHTML = '';
+            
+            // Welcome message
+            let content = `
+                <div style="margin-bottom: 20px;">
+                    <h3>Welcome to ${client.name}'s Project</h3>
+                    <p>Use the modules in the sidebar to manage different aspects of this construction project.</p>
+                </div>
+            `;
+            
+            // Module summaries section
+            content += `
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h4>Module Summaries</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
+            `;
+            
+            // Modules with data
+            let hasModuleData = false;
+            if (client.moduleData) {
+                for (const moduleId in client.moduleData) {
+                    const module = appData.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        hasModuleData = true;
+                        
+                        // Get module data
+                        const moduleData = client.moduleData[moduleId];
+                        
+                        // For P&Gs, calculate total
+                        let moduleTotal = 0;
+                        if (moduleId === 'p-and-gs' && moduleData.items) {
+                            moduleTotal = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
+                        }
+                        
+                        // Add module card
+                        content += `
+                            <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <h5>${module.name}</h5>
+                                ${moduleTotal > 0 ? `<p>Total: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleTotal)}</p>` : ''}
+                                <button class="btn" style="margin-top: 10px;" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('${moduleId}')">Open Module</button>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            // If no module data, show message
+            if (!hasModuleData) {
+                content += `
+                    <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p>No module data available yet. Start by clicking on a module in the sidebar.</p>
+                    </div>
+                `;
+            }
+            
+            content += `
+                    </div>
+                </div>
+            `;
+            
+            contentElement.innerHTML = content;
+        }
+
+        // Update total project cost
+        function updateTotalProjectCost() {
+            let totalCost = 0;
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            if (client && client.moduleData) {
+                // Calculate from P&Gs
+                if (client.moduleData['p-and-gs'] && client.moduleData['p-and-gs'].items) {
+                    totalCost += window.ConstructionApp.ModuleUtils.calculateModuleTotal(client.moduleData['p-and-gs'].items);
+                }
+                
+                // Calculate from other modules
+                // Add other module calculations as needed
+            }
+            
+            // Format and display
+            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
+            document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
+        }
+
+        function updateModuleOrder() {
+            // This function could be implemented to update the underlying data structure
+            // based on the new order of modules in the DOM
+            const moduleItems = document.querySelectorAll('.module-item');
+            const newOrder = Array.from(moduleItems).map(item => item.querySelector('span').textContent.trim());
+
+            // For now, just log the new order
+            console.log('New module order:', newOrder);
+
+            // In a full implementation, you would rearrange your data array to match this order
+        }
+    </script>
+</body>
+</html>
