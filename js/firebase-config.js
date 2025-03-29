@@ -2,12 +2,12 @@
 
 // Firebase Configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "qh-dashboard-d67cf.firebaseapp.com",
-    projectId: "qh-dashboard-d67cf",
-    storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
-    messagingSenderId: "939838453148",
-    appId: "1:939838453148:web:2bf49c6ec240343b934459"
+  apiKey: "AIzaSyB489SUeC5XAbvzIM_Vh6TJpnbEaoz4KuQ",
+  authDomain: "qh-dashboard-d67cf.firebaseapp.com",
+  projectId: "qh-dashboard-d67cf",
+  storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
+  messagingSenderId: "939838453148",
+  appId: "1:939838453148:web:2bf49c6ec240343b934459"
 };
 
 // Initialize Firestore DB and export it
@@ -124,6 +124,40 @@ async function loadClientsFromFirestore() {
     }
 }
 
+// Save modules to Firestore
+async function saveModulesToFirestore(modules) {
+    try {
+        console.log("Saving modules to Firestore");
+        const modulesRef = db.collection('settings').doc('modules');
+        await modulesRef.set({ modules: modules });
+        console.log("Modules saved successfully");
+        return true;
+    } catch (error) {
+        console.error("Error saving modules:", error);
+        return false;
+    }
+}
+
+// Load modules from Firestore
+async function loadModulesFromFirestore() {
+    try {
+        console.log("Loading modules from Firestore");
+        const modulesDoc = await db.collection('settings').doc('modules').get();
+        
+        if (modulesDoc.exists) {
+            const data = modulesDoc.data();
+            console.log("Loaded modules:", data.modules);
+            return data.modules || [];
+        } else {
+            console.log("No modules found in Firestore");
+            return [];
+        }
+    } catch (error) {
+        console.error("Error loading modules:", error);
+        return [];
+    }
+}
+
 // Initialize Firebase on script load
 const firestore = initializeFirebase();
 
@@ -133,5 +167,7 @@ window.ConstructionApp.Firebase = {
     db: db,
     saveClient: saveClientToFirestore,
     saveModuleData: saveModuleDataToFirestore,
-    loadClients: loadClientsFromFirestore
+    loadClients: loadClientsFromFirestore,
+    saveModules: saveModulesToFirestore,
+    loadModules: loadModulesFromFirestore
 };
