@@ -18,6 +18,17 @@
         
         // Get current client
         getCurrentClient: function() {
+            // If _currentClient is null, try to get from localStorage
+            if (!_currentClient) {
+                const clientData = localStorage.getItem('currentClient');
+                if (clientData) {
+                    try {
+                        _currentClient = JSON.parse(clientData);
+                    } catch (error) {
+                        console.error("Error parsing stored client:", error);
+                    }
+                }
+            }
             return _currentClient;
         },
         
