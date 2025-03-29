@@ -148,6 +148,19 @@
             return _currentClient.moduleData[moduleId] || null;
         },
         
+        // Clear the current client
+        clearCurrentClient: function() {
+            _currentClient = null;
+            localStorage.removeItem('currentClient'); // Remove from localStorage
+            
+            // Notify any listeners
+            if (typeof this.onClientChanged === 'function') {
+                this.onClientChanged(null);
+            }
+            
+            return true;
+        },
+        
         // Event handler for client changes - to be implemented by consumers
         onClientChanged: null
     };
