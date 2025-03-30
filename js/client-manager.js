@@ -1,4 +1,4 @@
-// client-manager.js - Client data management with enhanced data persistence
+// client-manager.js - Enhanced Client data management with improved saving
 
 // Client manager for the Construction Estimator app
 (function() {
@@ -8,9 +8,8 @@
     // Private data
     let _clients = [];
     let _currentClient = null;
-    let _saveInProgress = false;
-    let _pendingSaves = {};
-    let _lastSaveTime = 0;
+    let _pendingSaves = {}; // Track pending save operations
+    let _autoSaveTimer = null; // Timer for auto-saving
     
     // Client Manager object
     const ClientManager = {
@@ -46,9 +45,15 @@
             if (client) {
                 sessionStorage.setItem('currentClient', JSON.stringify(client));
                 console.log("[ClientManager] Client saved to sessionStorage");
+                
+                // Start auto-save timer for this client
+                this.startAutoSave();
             } else {
                 sessionStorage.removeItem('currentClient');
                 console.log("[ClientManager] Client removed from sessionStorage");
+                
+                // Stop auto-save timer when no client is selected
+                this.stopAutoSave();
             }
             
             // Notify any listeners
@@ -81,14 +86,14 @@
                 window.ConstructionApp.Firebase.saveClient(client)
                     .then(() => {
                         console.log("[ClientManager] Client saved to Firebase successfully");
-                        if (callback) callback(true, null, client);
+                        if (callback) callback(true, client);
                     })
                     .catch(error => {
                         console.error("[ClientManager] Error saving client to Firebase:", error);
-                        if (callback) callback(false, error.message, client);
+                        if (callback) callback(false, error.message);
                     });
             } else {
-                if (callback) callback(true, "Firebase not available, saved locally only", client);
+                if (callback) callback(true, client);
             }
             
             return client;
@@ -98,7 +103,7 @@
         updateClient: function(client, callback) {
             console.log("[ClientManager] Updating client:", client.name);
             
-            // Update the last modified timestamp
+            // Update last modified timestamp
             client.lastModified = new Date().toISOString();
             
             // Find and update the client in the array
@@ -118,20 +123,20 @@
                     window.ConstructionApp.Firebase.saveClient(client)
                         .then(() => {
                             console.log("[ClientManager] Client updated in Firebase successfully");
-                            if (callback) callback(true, null, client);
+                            if (callback) callback(true, null);
                         })
                         .catch(error => {
                             console.error("[ClientManager] Error updating client in Firebase:", error);
-                            if (callback) callback(false, error.message, client);
+                            if (callback) callback(false, error.message);
                         });
                 } else {
-                    if (callback) callback(true, "Firebase not available, updated locally only", client);
+                    if (callback) callback(true, "Firebase not available, updated locally only");
                 }
                 
                 return true;
             }
             
-            if (callback) callback(false, "Client not found in local array", null);
+            if (callback) callback(false, "Client not found");
             return false;
         },
         
@@ -147,14 +152,14 @@
                     }
                     return _clients;
                 } catch (error) {
-                    console.error("[ClientManager] Error loading clients from Firebase:", error);
-                    return _clients; // Return whatever clients we have locally
+                    console.error("[ClientManager] Error loading clients:", error);
+                    return [];
                 }
             }
             return _clients;
         },
         
-        // Save module data for the current client with enhanced error handling and throttling
+        // Save module data for the current client with enhanced error handling
         saveModuleData: function(moduleId, data, callback) {
             if (!_currentClient) {
                 console.error("[ClientManager] No current client to save module data for");
@@ -162,7 +167,14 @@
                 return false;
             }
             
-            console.log("[ClientManager] Preparing to save module data for", moduleId, "to client", _currentClient.name);
+            console.log("[ClientManager] Saving module data for", moduleId, "to client", _currentClient.name);
+            
+            // Generate a save operation ID
+            const saveOpId = `${moduleId}-${Date.now()}`;
+            _pendingSaves[saveOpId] = true;
+            
+            // Update last modified timestamp
+            _currentClient.lastModified = new Date().toISOString();
             
             // Ensure moduleData exists
             if (!_currentClient.moduleData) {
@@ -172,113 +184,32 @@
             // Update the module data
             _currentClient.moduleData[moduleId] = data;
             
-            // Update the last modified timestamp
-            _currentClient.lastModified = new Date().toISOString();
-            
-            // Update sessionStorage for immediate local persistence
+            // Update sessionStorage
             sessionStorage.setItem('currentClient', JSON.stringify(_currentClient));
             console.log("[ClientManager] Updated client in sessionStorage with new module data");
             
-            // Save to Firestore with throttling and batching
-            this._throttledSaveToFirebase(moduleId, callback);
-            
-            return true;
-        },
-        
-        // Internal method for throttled saving to Firebase
-        _throttledSaveToFirebase: function(moduleId, callback) {
-            const now = Date.now();
-            const clientId = _currentClient.id;
-            
-            // Add to pending saves
-            _pendingSaves[moduleId] = {
-                timestamp: now,
-                callback: callback
-            };
-            
-            // If a save is already in progress or we haven't waited long enough since the last save,
-            // don't trigger another save immediately
-            if (_saveInProgress || (now - _lastSaveTime < 2000)) {
-                console.log("[ClientManager] Save already in progress or throttled, will batch with next save");
-                return;
-            }
-            
-            // Otherwise, schedule a save
-            setTimeout(() => this._executeSaveToFirebase(), 500);
-        },
-        
-        // Execute the actual save to Firebase
-        _executeSaveToFirebase: function() {
-            if (_saveInProgress || !_currentClient || Object.keys(_pendingSaves).length === 0) {
-                return;
-            }
-            
-            _saveInProgress = true;
-            _lastSaveTime = Date.now();
-            
-            const currentPendingSaves = {..._pendingSaves};
-            _pendingSaves = {}; // Clear pending saves
-            
-            const client = {..._currentClient}; // Clone to avoid reference issues
-            
-            console.log("[ClientManager] Executing save to Firebase for modules:", Object.keys(currentPendingSaves));
-            
             // Save to Firestore if available
             if (window.ConstructionApp.Firebase) {
-                window.ConstructionApp.Firebase.saveClient(client)
+                window.ConstructionApp.Firebase.saveModuleData(_currentClient.id, moduleId, data)
                     .then(() => {
-                        console.log("[ClientManager] Client data saved to Firebase successfully");
-                        
-                        // Call all callbacks with success
-                        Object.keys(currentPendingSaves).forEach(moduleId => {
-                            const saveInfo = currentPendingSaves[moduleId];
-                            if (saveInfo.callback) {
-                                saveInfo.callback(true, null);
-                            }
-                        });
-                        
-                        _saveInProgress = false;
-                        
-                        // Check if more saves have been requested while we were saving
-                        if (Object.keys(_pendingSaves).length > 0) {
-                            setTimeout(() => this._executeSaveToFirebase(), 100);
-                        }
+                        console.log("[ClientManager] Module data saved to Firebase successfully");
+                        delete _pendingSaves[saveOpId];
+                        if (callback) callback(true, null);
                     })
                     .catch(error => {
-                        console.error("[ClientManager] Error saving to Firebase:", error);
+                        console.error("[ClientManager] Error saving module data to Firebase:", error);
+                        delete _pendingSaves[saveOpId];
                         
-                        // Call all callbacks with the error
-                        Object.keys(currentPendingSaves).forEach(moduleId => {
-                            const saveInfo = currentPendingSaves[moduleId];
-                            if (saveInfo.callback) {
-                                saveInfo.callback(false, error.message);
-                            }
-                        });
+                        // Retry logic could be added here
                         
-                        _saveInProgress = false;
-                        
-                        // Retry failed saves after a delay
-                        setTimeout(() => {
-                            // Add back the failed saves to pending saves
-                            Object.keys(currentPendingSaves).forEach(moduleId => {
-                                _pendingSaves[moduleId] = currentPendingSaves[moduleId];
-                            });
-                            
-                            // Try again
-                            this._executeSaveToFirebase();
-                        }, 5000); // Retry after 5 seconds
+                        if (callback) callback(false, error.message);
                     });
             } else {
-                // Firebase not available, just call callbacks
-                Object.keys(currentPendingSaves).forEach(moduleId => {
-                    const saveInfo = currentPendingSaves[moduleId];
-                    if (saveInfo.callback) {
-                        saveInfo.callback(true, "Firebase not available, saved locally only");
-                    }
-                });
-                
-                _saveInProgress = false;
+                delete _pendingSaves[saveOpId];
+                if (callback) callback(true, "Firebase not available, saved locally only");
             }
+            
+            return true;
         },
         
         // Get module data for the current client
@@ -296,6 +227,9 @@
             _currentClient = null;
             sessionStorage.removeItem('currentClient'); // Remove from sessionStorage
             
+            // Stop auto-save timer
+            this.stopAutoSave();
+            
             // Notify any listeners
             if (typeof this.onClientChanged === 'function') {
                 this.onClientChanged(null);
@@ -312,6 +246,9 @@
                     _currentClient = JSON.parse(clientData);
                     console.log("[ClientManager] Refreshed current client from sessionStorage:", _currentClient.name);
                     
+                    // Restart auto-save timer
+                    this.startAutoSave();
+                    
                     // Notify any listeners
                     if (typeof this.onClientChanged === 'function') {
                         this.onClientChanged(_currentClient);
@@ -322,6 +259,9 @@
                     console.error("[ClientManager] Error refreshing client from sessionStorage:", error);
                     sessionStorage.removeItem('currentClient');
                     _currentClient = null;
+                    
+                    // Stop auto-save timer
+                    this.stopAutoSave();
                     
                     // Notify any listeners
                     if (typeof this.onClientChanged === 'function') {
@@ -341,37 +281,54 @@
             return null;
         },
         
-        // Force an immediate save of the current client
-        forceSave: function(callback) {
-            if (!_currentClient) {
-                if (callback) callback(false, "No client selected");
-                return false;
+        // Check if there are pending save operations
+        hasPendingSaves: function() {
+            return Object.keys(_pendingSaves).length > 0;
+        },
+        
+        // Start auto-save timer
+        startAutoSave: function(interval = 5 * 60 * 1000) { // Default: 5 minutes
+            // Clear any existing timer
+            this.stopAutoSave();
+            
+            // Only start if we have a current client
+            if (!_currentClient) return;
+            
+            console.log("[ClientManager] Starting auto-save timer for", _currentClient.name);
+            
+            // Create new timer
+            _autoSaveTimer = setInterval(() => {
+                // Only auto-save if we have a current client and no active user inputs
+                if (_currentClient && (!document.activeElement || !document.activeElement.matches('input, textarea, select'))) {
+                    // We'll just update the client to save all data
+                    this.updateClient(_currentClient);
+                }
+            }, interval);
+        },
+        
+        // Stop auto-save timer
+        stopAutoSave: function() {
+            if (_autoSaveTimer) {
+                console.log("[ClientManager] Stopping auto-save timer");
+                clearInterval(_autoSaveTimer);
+                _autoSaveTimer = null;
             }
-            
-            // Add a generic save request
-            _pendingSaves['_forceSave_'] = {
-                timestamp: Date.now(),
-                callback: callback
-            };
-            
-            // Execute save immediately
-            this._executeSaveToFirebase();
-            return true;
         },
         
         // Event handler for client changes - to be implemented by consumers
-        onClientChanged: null,
-        
-        // Get save status
-        getSaveStatus: function() {
-            return {
-                saveInProgress: _saveInProgress,
-                pendingSaves: Object.keys(_pendingSaves),
-                lastSaveTime: _lastSaveTime
-            };
-        }
+        onClientChanged: null
     };
     
     // Export the ClientManager
     window.ConstructionApp.ClientManager = ClientManager;
+    
+    // Add window beforeunload handler to warn about unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (ClientManager.hasPendingSaves()) {
+            // This will trigger the browser's "unsaved changes" warning
+            const message = 'You have unsaved changes. Are you sure you want to leave?';
+            e.returnValue = message;
+            return message;
+        }
+    });
 })();
