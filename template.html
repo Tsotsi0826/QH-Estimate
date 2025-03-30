@@ -330,6 +330,21 @@
             content: "▼";
             opacity: 1;
         }
+
+        /* Debug panel for troubleshooting */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -404,6 +419,9 @@
         </div>
     </div>
 
+    <!-- Debug panel for troubleshooting -->
+    <div class="debug-panel" id="debug-panel"></div>
+
     <script>
         // Module settings - CUSTOMIZE THIS FOR EACH MODULE
         const MODULE = {
@@ -427,9 +445,17 @@
         // Auto-save cancel function
         let cancelAutoSave = null;
         
+        // Debug flag - set to true to enable debug panel
+        const DEBUG = true;
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             console.log(`[${MODULE.id}] DOM loaded, initializing module`);
+            
+            // Set up debug panel if needed
+            if (DEBUG) {
+                setupDebugPanel();
+            }
             
             // Update module title everywhere
             updateModuleTitles();
@@ -469,6 +495,11 @@
             
             // Set up sorting
             setupTableSorting();
+            
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
         });
         
         // Update module titles across the UI
@@ -567,6 +598,11 @@
             
             // Update totals
             calculateTotals();
+            
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
         }
         
         // Add a row to the table
@@ -711,7 +747,7 @@
             return 0;
         }
         
-        // Calculate all totals
+        // Calculate all totals and update module data
         function calculateTotals() {
             let totalCost = 0;
             
@@ -731,6 +767,11 @@
             
             document.getElementById('total-module-cost').textContent = 
                 `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+                
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
         }
         
         // Add a new custom item
@@ -872,6 +913,30 @@
             // Show saving indicator
             window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
             
+            // First, update the client directly
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                // Ensure moduleData exists
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Apply module data directly to the client object
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Make sure the client's timestamp is updated
+                client.lastModified = new Date().toISOString();
+                
+                // Update sessionStorage immediately
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log(`[${MODULE.id}] Updated client in sessionStorage directly`);
+                
+                // Update debug panel if enabled
+                if (DEBUG) {
+                    updateDebugPanel();
+                }
+            }
+            
             // Save using the client manager with callback
             window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
                 if (success) {
@@ -881,6 +946,11 @@
                     // Show success message (only for manual saves)
                     if (!isAutoSave) {
                         window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
+                    }
+                    
+                    // Update debug panel if enabled
+                    if (DEBUG) {
+                        updateDebugPanel();
                     }
                 } else {
                     window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
@@ -898,54 +968,139 @@
                 // Ask user if they want to save before returning
                 const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
                 if (shouldSave) {
-                    // Save and then return
-                    window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
-                        if (!success) {
-                            alert(`Error saving data: ${error || 'Unknown error'}`);
-                        }
-                        
-                        // Cancel auto-save before navigating
-                        if (cancelAutoSave) cancelAutoSave();
-                        
-                        // Make sure the client is set in sessionStorage before returning
-                        const client = window.ConstructionApp.ClientManager.getCurrentClient();
-                        if (client) {
-                            console.log(`[${MODULE.id}] Saving client state before returning to dashboard:`, client.name);
-                            sessionStorage.setItem('currentClient', JSON.stringify(client));
-                        }
-                        
-                        // Set the navigation state to indicate we're returning from a module
-                        sessionStorage.setItem('navigationState', 'returningToDashboard');
-                        
-                        // Navigate back to the index page
-                        window.location.href = 'index.html';
-                    });
+                    // Save first - but don't rely on callback for navigation
+                    saveModuleData();
                     
-                    return; // Don't navigate yet, wait for save callback
+                    // We'll still return to dashboard after giving the save a moment to process
+                    setTimeout(() => navigateToDashboard(), 500);
+                    return;
                 }
             }
+            
+            // If no changes or user doesn't want to save, navigate immediately
+            navigateToDashboard();
+        }
+        
+        // Navigate to dashboard with proper state preservation
+        function navigateToDashboard() {
+            console.log(`[${MODULE.id}] Navigating to dashboard`);
             
             // Cancel auto-save before navigating
             if (cancelAutoSave) cancelAutoSave();
             
-            // Make sure the client is set in sessionStorage before returning
+            // Force refresh the client from sessionStorage (ensures we have the latest version)
+            window.ConstructionApp.ClientManager.refreshCurrentClient();
+            
+            // Get the current client again to ensure it's the latest
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            // Extra safety: ensure the client is set in sessionStorage before returning
             if (client) {
-                console.log(`[${MODULE.id}] Saving client state before returning to dashboard:`, client.name);
+                console.log(`[${MODULE.id}] Saving client state before returning:`, client.name);
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                
+                // Force update of last modified time
+                client.lastModified = new Date().toISOString();
                 sessionStorage.setItem('currentClient', JSON.stringify(client));
             }
             
             // Set the navigation state to indicate we're returning from a module
             sessionStorage.setItem('navigationState', 'returningToDashboard');
+            console.log(`[${MODULE.id}] Set navigation state: returningToDashboard`);
             
-            // Return to dashboard without saving
+            // Force any pending Firebase saves to complete
+            if (window.ConstructionApp.Firebase && typeof window.ConstructionApp.Firebase.commitBatch === 'function') {
+                try {
+                    window.ConstructionApp.Firebase.commitBatch();
+                } catch (e) {
+                    console.error("Error committing Firebase batch:", e);
+                }
+            }
+            
+            // Return to dashboard
             window.location.href = 'index.html';
         }
         
+        // Setup debug panel
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = 'Debug';
+            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
+            document.body.appendChild(toggleBtn);
+            
+            // Toggle debug panel on click
+            toggleBtn.addEventListener('click', function() {
+                const isVisible = debugPanel.style.display === 'block';
+                debugPanel.style.display = isVisible ? 'none' : 'block';
+                
+                if (!isVisible) {
+                    updateDebugPanel();
+                }
+            });
+        }
+        
+        // Update debug panel
+        function updateDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Get client data
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            const sessionClient = sessionStorage.getItem('currentClient');
+            let sessionClientData = null;
+            try {
+                if (sessionClient) {
+                    sessionClientData = JSON.parse(sessionClient);
+                }
+            } catch (e) {
+                console.error("Error parsing session client:", e);
+            }
+            
+            // Create debug info
+            let debugInfo = `
+                <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
+                <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
+                <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
+                <strong>Module Items:</strong> ${moduleData.items.length}<br>
+                <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
+                <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
+                <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
+            `;
+            
+            // Add sample of module data
+            debugInfo += '<strong>Module Data Sample:</strong><br>';
+            if (moduleData.items.length > 0) {
+                const sampleItem = moduleData.items[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
+            } else {
+                debugInfo += '- No items<br>';
+            }
+            
+            // Update panel
+            debugPanel.innerHTML = debugInfo;
+        }
+        
         // Clean up when leaving page
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('beforeunload', function(e) {
             // Cancel auto-save timer
             if (cancelAutoSave) cancelAutoSave();
+            
+            // If we have unsaved changes, warn user
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Store client data in sessionStorage to prevent loss
+                const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (client) {
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
+                }
+                
+                // This will trigger the browser's "unsaved changes" warning
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = message;
+                return message;
+            }
         });
     </script>
 </body>
