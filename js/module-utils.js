@@ -31,14 +31,14 @@
                 return false;
             }
             
-            // Ensure the client is properly saved to localStorage
+            // Ensure the client is properly saved to sessionStorage
             if (currentClient) {
                 console.log("[ModuleUtils] Saving current client before navigation:", currentClient.name);
-                localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                sessionStorage.setItem('currentClient', JSON.stringify(currentClient));
             }
             
             // Set a flag to indicate we're navigating to a module
-            localStorage.setItem('navigationState', 'fromDashboard');
+            sessionStorage.setItem('navigationState', 'fromDashboard');
             console.log("[ModuleUtils] Set navigation state: fromDashboard");
             
             // Navigate to the module page
@@ -54,11 +54,11 @@
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             if (currentClient) {
                 console.log("[ModuleUtils] Saving client before return:", currentClient.name);
-                localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                sessionStorage.setItem('currentClient', JSON.stringify(currentClient));
             }
             
             // Set the navigation state to indicate we're returning from a module
-            localStorage.setItem('navigationState', 'returningToDashboard');
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
             console.log("[ModuleUtils] Set navigation state: returningToDashboard");
             
             // Navigate back to the index page
@@ -73,7 +73,7 @@
             window.ConstructionApp.ClientManager.clearCurrentClient();
             
             // Set the navigation state to indicate manual logout
-            localStorage.setItem('navigationState', 'manualLogout');
+            sessionStorage.setItem('navigationState', 'manualLogout');
             console.log("[ModuleUtils] Set navigation state: manualLogout");
             
             // Refresh the page to update the UI
@@ -82,7 +82,7 @@
         
         // Check if the page was accessed correctly and handle if not
         checkModuleAccess: function() {
-            const navigationState = localStorage.getItem('navigationState');
+            const navigationState = sessionStorage.getItem('navigationState');
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             
             console.log("[ModuleUtils] Checking module access. Nav state:", navigationState, "Client:", currentClient?.name);
@@ -91,7 +91,7 @@
             if ((!currentClient || navigationState !== 'fromDashboard') && window.location.pathname !== '/index.html') {
                 console.log("[ModuleUtils] Invalid module access, redirecting to dashboard");
                 // Redirect to the dashboard
-                localStorage.setItem('navigationState', 'redirectedToDashboard');
+                sessionStorage.setItem('navigationState', 'invalidAccess');
                 window.location.href = 'index.html';
                 return false;
             }
