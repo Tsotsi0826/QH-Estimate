@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P & Gs | Construction Estimator</title>
+    <title>P&G's - Construction Estimator</title>
     
     <!-- Firebase Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
@@ -16,7 +16,6 @@
     <script src="js/data-models.js"></script>
     
     <style>
-        /* CSS styles remain the same - removed for brevity */
         * {
             margin: 0;
             padding: 0;
@@ -64,29 +63,7 @@
             font-weight: bold;
         }
 
-        .modules-list {
-            padding: 10px 0;
-        }
-
-        .module-item {
-            padding: 10px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            position: relative;
-            transition: background-color 0.2s;
-        }
-
-        .module-item:hover {
-            background-color: #2d364a;
-        }
-
-        .module-item.active {
-            background-color: #4eca8b;
-            color: white;
-        }
-
-        .dashboard-header {
+        .module-header {
             padding: 20px;
             display: flex;
             justify-content: space-between;
@@ -96,20 +73,27 @@
             color: #fff;
         }
 
-        .dashboard-title {
+        .module-title {
             font-size: 1.5em;
             font-weight: bold;
             display: flex;
             align-items: center;
         }
 
-        .dashboard-description {
+        .module-title i {
+            margin-right: 10px;
+        }
+
+        .module-description {
             padding: 10px 20px;
             color: #aaa;
             background-color: #1c2639;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
         }
 
-        .dashboard-content {
+        .module-content {
             padding: 20px;
             background-color: #fff;
             margin: 0;
@@ -119,15 +103,60 @@
             overflow-x: hidden;
         }
 
+        /* Custom scrollbar styling */
+        .module-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .module-content::-webkit-scrollbar-thumb {
+            background-color: #aaa;
+            border-radius: 4px;
+        }
+
+        .module-content::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .sidebar-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #2d364a;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-item:hover {
+            background-color: #3a4967;
+        }
+
+        .sidebar-link {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+        }
+
         .btn {
             background-color: #4eca8b;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 20px;
         }
 
         .btn:hover {
@@ -142,694 +171,982 @@
             background-color: #5a6268;
         }
 
-        .module-actions {
-            margin-bottom: 20px;
+        .header-actions {
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
         }
 
-        table {
+        /* Custom scrollbar styling for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Table styles */
+        .module-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-top: 20px;
+            table-layout: fixed; /* Added for fixed column widths */
         }
 
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-
-        th, td {
-            padding: 12px;
+        .module-table th, 
+        .module-table td {
+            padding: 10px;
             text-align: left;
+            border: 1px solid #ddd;
+            overflow: hidden; /* Prevent content from breaking layout */
         }
 
-        th {
+        /* Column width adjustments for P&G's */
+        .module-table th:nth-child(1),
+        .module-table td:nth-child(1) {
+            width: 40%; /* Description column */
+        }
+
+        .module-table th:nth-child(2),
+        .module-table td:nth-child(2) {
+            width: 5%; /* Checkbox column */
+            text-align: center;
+        }
+
+        .module-table th:nth-child(3),
+        .module-table td:nth-child(3) {
+            width: 10%; /* Qty column */
+            text-align: center;
+        }
+
+        .module-table th:nth-child(4),
+        .module-table td:nth-child(4) {
+            width: 15%; /* Rate column */
+            text-align: right;
+        }
+
+        .module-table th:nth-child(5),
+        .module-table td:nth-child(5) {
+            width: 10%; /* Unit column */
+            text-align: center;
+        }
+
+        .module-table th:nth-child(6),
+        .module-table td:nth-child(6) {
+            width: 15%; /* Total column */
+            text-align: right;
+        }
+
+        .module-table th {
             background-color: #f2f2f2;
             font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            position: relative;
         }
 
-        tr:nth-child(even) {
+        .module-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
 
-        tr:hover {
-            background-color: #f0f0f0;
+        .module-table tr:hover {
+            background-color: #f1f1f1;
         }
 
-        .total-row {
+        .module-table input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid transparent;
+            background-color: transparent;
+        }
+
+        .module-table input:focus {
+            border: 1px solid #4eca8b;
+            background-color: #fff;
+            outline: none;
+        }
+
+        .module-table input[type="number"] {
+            text-align: right;
+        }
+
+        .module-table .currency {
+            text-align: right;
+        }
+
+        .module-table .footer-row {
             font-weight: bold;
             background-color: #e9e9e9;
         }
 
-        input[type="number"] {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .module-table .qty-cell {
+            background-color: #f0faf3;
         }
 
-        input[type="text"] {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        /* Checkbox styles */
+        .checkbox-cell {
+            text-align: center;
         }
-
-        select {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-        }
-
-        input[type="checkbox"] {
+        
+        .item-checkbox {
             width: 18px;
             height: 18px;
             cursor: pointer;
         }
 
-        .success-alert {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            display: none;
+        /* Save status indicator */
+        #save-status {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.9em;
+            transition: opacity 0.3s;
         }
 
-        .checkbox-centered {
-            text-align: center;
+        /* Addition buttons */
+        .add-item-btn {
+            margin-top: 10px;
+            display: inline-block;
         }
 
-        .rate-cell {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .unit-cell {
-            text-align: center;
-        }
-
-        .currency {
-            text-align: right;
-        }
-
-        .scroll-container {
-            max-height: calc(100vh - 180px);
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        /* Custom scrollbar styling for sidebar */
-        .scroll-container::-webkit-scrollbar {
-            width: 6px;
-            background-color: transparent;
-        }
-
-        .scroll-container::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-
-        .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Custom scrollbar styling for content */
-        .dashboard-content::-webkit-scrollbar {
-            width: 8px;
-            background-color: #f5f5f5;
-        }
-
-        .dashboard-content::-webkit-scrollbar-thumb {
-            background-color: #aaa;
-            border-radius: 4px;
-        }
-
-        .dashboard-content::-webkit-scrollbar-thumb:hover {
-            background-color: #888;
-        }
-
-        .client-info {
-            background-color: #f0f8ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border-left: 4px solid #4eca8b;
-        }
-
-        .table-container {
-            max-height: calc(100vh - 300px);
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-
-        .remove-item {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
+        /* Headers with sort arrows */
+        .sort-header {
             cursor: pointer;
+        }
+
+        .sort-header::after {
+            content: "▼";
             font-size: 0.8em;
-        }
-
-        .remove-item:hover {
-            background-color: #bd2130;
-        }
-
-        .action-cell {
-            text-align: center;
-        }
-
-        .align-right {
-            text-align: right;
-        }
-        
-        .btn-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            padding: 0;
-            font-size: 20px;
-            line-height: 1;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .top-total {
-            background-color: #f0f8ff;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 1.1em;
-            border-left: 4px solid #4eca8b;
-        }
-        
-        .top-total span {
-            color: #1c2639;
             margin-left: 5px;
+            opacity: 0.3;
+        }
+
+        .sort-header.sorted-asc::after {
+            content: "▲";
+            opacity: 1;
+        }
+
+        .sort-header.sorted-desc::after {
+            content: "▼";
+            opacity: 1;
         }
         
-        .no-client-message {
-            text-align: center;
-            padding: 50px 20px;
-            background-color: #f8d7da;
-            color: #721c24;
+        /* Debug panel for troubleshooting */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
             border-radius: 5px;
-            margin-bottom: 20px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="sidebar-header">Construction Estimator</div>
-
-        <div class="section-title">Modules</div>
-        <div class="scroll-container">
-            <div class="modules-list" id="modules-container">
-                <div class="module-item" data-module-id="notes">
-                    <span>Notes</span>
+        <div class="sidebar-header">P&G's</div>
+        
+        <div class="sidebar-content">
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Navigation</div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
                 </div>
-                <div class="module-item active" data-module-id="p-and-gs">
-                    <span>P & Gs</span>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Actions</div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="add-custom-item">Add Custom Item</a>
                 </div>
-                <div class="module-item" data-module-id="demolish">
-                    <span>Demolish & Strip</span>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="save-module-data">Save Data</a>
                 </div>
-                <!-- Other modules remain the same -->
             </div>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="dashboard-header">
-            <div class="dashboard-title">
-                Preliminaries & General Items (P&Gs)
+        <div class="module-header">
+            <div class="module-title">
+                <i>P</i> <span id="module-title-text">P&G's</span>
             </div>
-            <div id="client-name-display"></div>
-            <div class="total-cost" id="header-total">
-                P&Gs Total: R0.00
+            <div id="client-name-display" style="margin-left: 20px;"></div>
+            <div class="header-actions">
+                <div id="total-module-cost">
+                    Total P&G's Cost: R0.00
+                </div>
             </div>
         </div>
 
-        <div class="dashboard-description">
-            Define and calculate your preliminaries and general items.
+        <div class="module-description">
+            <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                <div id="save-status"></div>
+                <button id="save-btn" class="btn">Save</button>
+                <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
+            </div>
         </div>
 
-        <div class="dashboard-content">
-            <div id="client-info" class="client-info">Loading client information...</div>
+        <div class="module-content">
+            <table class="module-table" id="items-table">
+                <thead>
+                    <tr>
+                        <th class="sort-header" data-sort="description">P&G's</th>
+                        <th>Pc</th>
+                        <th class="sort-header" data-sort="qty">Qty</th>
+                        <th class="sort-header" data-sort="rate">Rate</th>
+                        <th>Unit</th>
+                        <th class="sort-header" data-sort="total">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table-body">
+                    <!-- Items will be added here dynamically -->
+                </tbody>
+                <tfoot>
+                    <tr class="footer-row">
+                        <td colspan="5" style="text-align: right;">Total</td>
+                        <td class="currency" id="table-total">R0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
             
-            <div id="no-client-container" style="display: none;">
-                <div class="no-client-message">
-                    <h3>No Client Selected</h3>
-                    <p>Please return to the dashboard and select a client to work with this module.</p>
-                    <button id="return-to-dashboard" class="btn btn-secondary" style="margin-top: 15px;">Return to Dashboard</button>
-                </div>
-            </div>
-            
-            <div id="module-content" style="display: none;">
-                <div id="success-alert" class="success-alert">
-                    Estimate saved successfully!
-                </div>
-                
-                <div class="module-actions">
-                    <div>
-                        <button id="back-btn" class="btn btn-secondary">Back to Dashboard</button>
-                        <button id="save-btn" class="btn">Save Estimate</button>
-                        <button id="add-item-btn" class="btn btn-circle">+</button>
-                    </div>
-                    <div>
-                        <div class="top-total">Total: <span id="top-total">R0.00</span></div>
-                    </div>
-                </div>
-                
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 35%;">P&G's</th>
-                                <th style="width: 8%;">Allow</th>
-                                <th style="width: 8%;">Qty</th>
-                                <th style="width: 15%;">Rate</th>
-                                <th style="width: 12%;">Unit</th>
-                                <th style="width: 15%;">Total</th>
-                                <th style="width: 7%;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pgs-table-body">
-                            <!-- Table rows will be inserted here via JavaScript -->
-                        </tbody>
-                        <tfoot>
-                            <tr class="total-row">
-                                <td colspan="5" class="align-right">TOTAL PRELIMINARIES & GENERAL ITEMS</td>
-                                <td class="currency" id="pgs-total">R0.00</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+            <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
         </div>
     </div>
+    
+    <!-- Debug panel for troubleshooting -->
+    <div class="debug-panel" id="debug-panel"></div>
 
     <script>
-        // Module-specific data
-        let pgItems = []; // Will hold our working copy of items
+        // Module settings - CUSTOMIZED FOR P&G'S MODULE
+        const MODULE = {
+            id: 'p-and-gs', // Module ID matching filename
+            title: 'P&G\'s', // Module title
+            defaultItems: [  // P&G default items from screenshot
+                { id: 'contracts-manager', description: 'Contracts manager as required', rate: 6500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'site-agent', description: 'Site Agent', rate: 8500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'architect', description: 'Architect - Snag List', rate: 2500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'deliveries', description: 'Deliveries', rate: 0.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'phones', description: 'Phones / radios', rate: 500.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'vehicle', description: 'Vehicle & Petrol', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'site-office', description: 'Site Office', rate: 1250.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'site-container', description: 'Site Container', rate: 750.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'toilet-subbies', description: 'Temp. Chemical Toilet Subbies', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'toilet-manager', description: 'Temp. Chemical Toilet Manager', rate: 400.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'electrical-connection', description: 'Temp. Electrical connection', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'electrical-usage', description: 'Temporary Electrical usage', rate: 100.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'fencing', description: 'Temporary Fencing', rate: 300.00, unit: 'm', allow: false, qty: 0, isDefault: true },
+                { id: 'water-connection', description: 'Water Supply connection', rate: 5000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'water-usage', description: 'Water usage', rate: 150.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'head-office', description: 'Head Office Overheads', rate: 1000.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'insurances', description: 'Insurances', rate: 12500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'land-surveyor', description: 'Land Surveyor', rate: 12000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'health-safety-file', description: 'Health & safety file', rate: 7000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'health-safety-visits', description: 'Health & safety visits', rate: 2500.00, unit: 'Months', allow: false, qty: 0, isDefault: true },
+                { id: 'site-board', description: 'Site Board', rate: 5500.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'hoa-deposit', description: 'HOA/Builders Deposit', rate: 15000.00, unit: '1', allow: false, qty: 0, isDefault: true },
+                { id: 'rubble-removal', description: 'General Rubble Removal', rate: 1700.00, unit: 'Weeks', allow: false, qty: 0, isDefault: true },
+                { id: 'builders-clean', description: 'Builders Clean at End', rate: 7500.00, unit: '1', allow: false, qty: 0, isDefault: true }
+            ]
+        };
         
-        // Initialize the page
+        // Module data structure
+        let moduleData = {
+            items: [],
+            totalCost: 0,
+            lastModified: new Date().toISOString()
+        };
+        
+        // Auto-save cancel function
+        let cancelAutoSave = null;
+        
+        // Debug flag - set to true to enable debug panel
+        const DEBUG = true;
+        
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("[P&Gs] Page loading...");
+            console.log(`[${MODULE.id}] DOM loaded, initializing module`);
             
-            // First, verify this page was accessed correctly
-            if (!checkAccess()) {
-                return; // Access verification failed, redirect should be happening
+            // Set up debug panel if needed
+            if (DEBUG) {
+                setupDebugPanel();
             }
             
-            // Log debug information 
-            console.log("[P&Gs] Navigation state:", localStorage.getItem('navigationState'));
-            console.log("[P&Gs] Current client in localStorage:", localStorage.getItem('currentClient'));
+            // Update module title everywhere
+            updateModuleTitles();
             
-            // Get client from client manager
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            console.log("[P&Gs] Current client from ClientManager:", currentClient ? currentClient.name : "None");
-            
-            if (currentClient) {
-                // Show client data and module content
-                document.getElementById('no-client-container').style.display = 'none';
-                document.getElementById('module-content').style.display = 'block';
-                
-                updateClientDisplay(currentClient);
-                
-                // Load P&Gs items
-                const savedItems = currentClient.moduleData && 
-                                   currentClient.moduleData['p-and-gs'] ? 
-                                   currentClient.moduleData['p-and-gs'].items : null;
-                
-                console.log("[P&Gs] Loaded saved items:", savedItems ? savedItems.length : 0);
-                
-                // Use the shared data model to merge with defaults
-                pgItems = window.ConstructionApp.DataModels.getPAndGsItems(savedItems);
-                
-                // Populate the table
-                populateTable();
-            } else {
-                console.log("[P&Gs] No client available, showing no-client message");
-                // Show no client message and hide module content
-                document.getElementById('client-info').style.display = 'none';
-                document.getElementById('no-client-container').style.display = 'block';
-                document.getElementById('module-content').style.display = 'none';
+            // Check module access - ensure we came from dashboard
+            const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
+            if (!validAccess) {
+                console.log(`[${MODULE.id}] Invalid access detected, redirecting`);
+                return; // ModuleUtils will handle the redirect
             }
+            
+            // Get the current client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) {
+                console.error(`[${MODULE.id}] No client available, returning to dashboard`);
+                window.ConstructionApp.ModuleUtils.returnToDashboard();
+                return;
+            }
+            
+            // Update client name display
+            document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
+            
+            // Initialize save status indicator
+            window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
             
             // Set up event listeners
             setupEventListeners();
             
-            // Set up module navigation
-            setupModuleNavigation();
+            // Initialize module data
+            initModuleData();
+            
+            // Set up change tracking
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table');
+            
+            // Set up auto-save (2 minutes interval)
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 2 * 60 * 1000);
+            
+            // Set up sorting
+            setupTableSorting();
+            
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
         });
         
-        // Check if this page was accessed correctly
-        function checkAccess() {
-            const navigationState = localStorage.getItem('navigationState');
-            const currentClient = localStorage.getItem('currentClient');
-            
-            console.log("[P&Gs] Checking access. Navigation state:", navigationState);
-            
-            // If we don't have a valid navigation state or client
-            if ((navigationState !== 'fromDashboard' && navigationState !== 'fromModulePage') || !currentClient) {
-                console.log("[P&Gs] Invalid access detected - redirecting to dashboard");
-                
-                // Set flag to indicate reason for redirect
-                localStorage.setItem('navigationState', 'invalidAccess');
-                
-                // Redirect to dashboard
-                window.location.href = 'index.html';
-                return false;
-            }
-            
-            return true;
+        // Update module titles across the UI
+        function updateModuleTitles() {
+            document.title = `${MODULE.title} - Construction Estimator`;
+            document.querySelector('.sidebar-header').textContent = MODULE.title;
+            document.getElementById('module-title-text').textContent = MODULE.title;
+            document.getElementById('total-module-cost').textContent = `Total ${MODULE.title} Cost: R0.00`;
         }
-
-        // Update client display in the UI
-        function updateClientDisplay(client) {
-            if (!client) {
-                document.getElementById('client-info').style.display = 'none';
+        
+        // Initialize module data from client
+        function initModuleData() {
+            // Get client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            // Check if we have saved data for this module
+            const savedData = client.moduleData?.[MODULE.id] || null;
+            
+            if (savedData) {
+                // Restore saved data
+                console.log(`[${MODULE.id}] Restoring saved data`);
+                moduleData = savedData;
+                
+                // Ensure items array exists
+                if (!moduleData.items || !Array.isArray(moduleData.items)) {
+                    moduleData.items = [];
+                }
+                
+                // Merge with default items to ensure all required items exist
+                mergeWithDefaultItems();
+                
+                // Update UI with saved data
+                updateUI();
+            } else {
+                console.log(`[${MODULE.id}] No saved data found, using defaults`);
+                // Try to use data-models default P&Gs items if available
+                if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.getPAndGsItems) {
+                    moduleData.items = window.ConstructionApp.DataModels.getPAndGsItems();
+                    console.log(`[${MODULE.id}] Loaded items from DataModels:`, moduleData.items.length);
+                } else {
+                    // Initialize with default items from this module
+                    moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); // Deep copy
+                    console.log(`[${MODULE.id}] Loaded default items:`, moduleData.items.length);
+                }
+                updateUI();
+            }
+        }
+        
+        // Merge saved items with default items
+        function mergeWithDefaultItems() {
+            // Use DataModels utility if available
+            if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.mergeWithDefaults && window.ConstructionApp.DataModels.getPAndGsItems) {
+                moduleData.items = window.ConstructionApp.DataModels.getPAndGsItems(moduleData.items);
                 return;
             }
             
-            // Update client info in the UI
-            document.getElementById('client-info').style.display = 'block';
-            document.getElementById('client-info').innerHTML = `
-                <strong>Client:</strong> ${client.name}<br>
-                <strong>Address:</strong> ${client.address || 'Not specified'}
-            `;
-            document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
-        }
-
-        // Set up event listeners
-        function setupEventListeners() {
-            // Back to dashboard button
-            document.getElementById('back-btn').addEventListener('click', function() {
-                saveBeforeNavigation();
-                
-                // Set the navigation state and redirect
-                localStorage.setItem('navigationState', 'returningToDashboard');
-                console.log("[P&Gs] Returning to dashboard, navigation state set to returningToDashboard");
-                window.location.href = 'index.html';
+            // Fallback to manual merge
+            // Create a map of saved items by ID
+            const savedItemsMap = {};
+            moduleData.items.forEach(item => {
+                if (item.id) {
+                    savedItemsMap[item.id] = item;
+                }
             });
             
-            // Return to dashboard button (shown when no client)
-            document.getElementById('return-to-dashboard').addEventListener('click', function() {
-                localStorage.setItem('navigationState', 'returningToDashboard');
-                console.log("[P&Gs] Returning to dashboard from no-client state");
-                window.location.href = 'index.html';
+            // Create a new array with default items, but use saved values if they exist
+            const mergedItems = [];
+            
+            // First add all default items (with saved values if available)
+            MODULE.defaultItems.forEach(defaultItem => {
+                if (savedItemsMap[defaultItem.id]) {
+                    // Item exists in saved data, use it but ensure required properties exist
+                    const savedItem = savedItemsMap[defaultItem.id];
+                    mergedItems.push({
+                        ...defaultItem,
+                        ...savedItem,
+                        // These properties should always match the default
+                        description: defaultItem.description,
+                        unit: defaultItem.unit,
+                        rate: defaultItem.rate,
+                        isDefault: true
+                    });
+                    // Remove from map so we know it's been processed
+                    delete savedItemsMap[defaultItem.id];
+                } else {
+                    // Item doesn't exist in saved data, use default
+                    mergedItems.push({...defaultItem});
+                }
             });
             
-            document.getElementById('save-btn').addEventListener('click', saveData);
-            document.getElementById('add-item-btn').addEventListener('click', addNewItem);
+            // Then add any custom items that weren't in the defaults
+            for (const id in savedItemsMap) {
+                if (savedItemsMap[id].custom) {
+                    mergedItems.push(savedItemsMap[id]);
+                }
+            }
+            
+            // Update module data
+            moduleData.items = mergedItems;
         }
-
-        // Save data before navigation
-        function saveBeforeNavigation() {
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!currentClient) return;
+        
+        // Update UI with current module data
+        function updateUI() {
+            const tableBody = document.getElementById('items-table-body');
+            tableBody.innerHTML = ''; // Clear existing rows
             
-            console.log("[P&Gs] Saving data before navigation");
-            
-            // Prepare module data
-            const moduleData = {
-                items: pgItems.map(item => ({
-                    id: item.id,
-                    description: item.description,
-                    allow: item.allow,
-                    qty: item.qty,
-                    rate: item.rate,
-                    unit: item.unit,
-                    isDefault: item.isDefault
-                }))
-            };
-            
-            // Save module data
-            window.ConstructionApp.ClientManager.saveModuleData('p-and-gs', moduleData);
-            console.log("[P&Gs] Data saved before navigation");
-        }
-
-        // Set up module navigation
-        function setupModuleNavigation() {
-            document.querySelectorAll('.module-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const moduleId = this.getAttribute('data-module-id');
-                    if (moduleId !== 'p-and-gs') {
-                        // Save current data before navigating
-                        saveBeforeNavigation();
-                        
-                        // Set the navigation state
-                        localStorage.setItem('navigationState', 'fromModulePage');
-                        console.log("[P&Gs] Navigating to module:", moduleId);
-                        
-                        // Navigate to the module
-                        window.location.href = moduleId + '.html';
-                    }
-                });
+            // Add each item
+            moduleData.items.forEach(item => {
+                addTableRow(item);
             });
-        }
-
-        // Populate the table with P&Gs items
-        function populateTable() {
-            const tableBody = document.getElementById('pgs-table-body');
-            tableBody.innerHTML = '';
-            
-            pgItems.forEach((item, index) => {
-                const row = createItemRow(item, index);
-                tableBody.appendChild(row);
-            });
-            
-            // Add event listeners to inputs
-            setupInputListeners();
             
             // Update totals
-            updateTotals();
+            calculateTotals();
+            
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
         }
-
-        // Create a table row for an item
-        function createItemRow(item, index) {
-            // Calculate total
-            const total = window.ConstructionApp.ModuleUtils.calculateItemTotal(item);
-            
-            // Create table row
+        
+        // Add a row to the table
+        function addTableRow(item) {
+            const tableBody = document.getElementById('items-table-body');
             const row = document.createElement('tr');
+            row.setAttribute('data-item-id', item.id);
             
-            // Get unit options using the shared utility
-            const unitOptions = window.ConstructionApp.ModuleUtils.getUnitSelectHtml(item.unit);
+            // Format currency
+            const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
+            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(
+                (item.allow && item.qty > 0) ? (item.qty * item.rate) : 0
+            );
             
+            // Create row content
             row.innerHTML = `
                 <td>
-                    <input type="text" class="description-input" data-index="${index}" value="${item.description}">
+                    <input type="text" class="description-input" value="${item.description}" 
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
-                <td class="checkbox-centered">
-                    <input type="checkbox" class="allow-checkbox" data-index="${index}" ${item.allow ? 'checked' : ''}>
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="item-checkbox" ${item.allow ? 'checked' : ''}>
+                </td>
+                <td class="qty-cell">
+                    <input type="number" class="qty-input" value="${item.qty}" min="0" step="1">
                 </td>
                 <td>
-                    <input type="number" class="qty-input" data-index="${index}" value="${item.qty}" min="0" step="1" ${!item.allow ? 'disabled' : ''}>
+                    <input type="text" class="rate-input currency" value="${rateFormatted}" 
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
-                <td class="rate-cell">
-                    R<input type="number" class="rate-input" data-index="${index}" value="${item.rate.toFixed(2)}" min="0" step="0.01">
+                <td>
+                    ${item.unit}
                 </td>
-                <td class="unit-cell">
-                    <select class="unit-select" data-index="${index}">
-                        ${unitOptions}
-                    </select>
-                </td>
-                <td class="currency total-cell" data-index="${index}">${window.ConstructionApp.ModuleUtils.formatCurrency(total)}</td>
-                <td class="action-cell">
-                    <button class="remove-item" data-index="${index}" ${item.isDefault ? 'style="display:none;"' : ''}>Remove</button>
-                </td>
+                <td class="total-cell currency">${totalFormatted}</td>
             `;
             
-            return row;
+            tableBody.appendChild(row);
+            
+            // Add event listeners to inputs
+            setupRowInputHandlers(row);
         }
-
+        
+        // Set up input handlers for a row
+        function setupRowInputHandlers(row) {
+            // Description input
+            const descInput = row.querySelector('.description-input');
+            if (descInput) {
+                descInput.addEventListener('input', function() {
+                    updateItemFromRow(row);
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
+            }
+            
+            // Checkbox input - doesn't affect calculation, just for reporting
+            const checkbox = row.querySelector('.item-checkbox');
+            if (checkbox) {
+                checkbox.addEventListener('change', function() {
+                    updateItemFromRow(row);
+                    calculateRowTotal(row);
+                    calculateTotals();
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
+            }
+            
+            // Quantity input
+            const qtyInput = row.querySelector('.qty-input');
+            if (qtyInput) {
+                qtyInput.addEventListener('input', function() {
+                    updateItemFromRow(row);
+                    calculateRowTotal(row);
+                    calculateTotals();
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
+            }
+            
+            // Rate input
+            const rateInput = row.querySelector('.rate-input');
+            if (rateInput) {
+                rateInput.addEventListener('focus', function() {
+                    // When focusing, show raw number for editing
+                    this.value = getNumericValue(this.value);
+                });
+                
+                rateInput.addEventListener('blur', function() {
+                    // When losing focus, format as currency
+                    const numericValue = getNumericValue(this.value);
+                    this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
+                    updateItemFromRow(row);
+                    calculateRowTotal(row);
+                    calculateTotals();
+                });
+                
+                rateInput.addEventListener('input', function() {
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
+            }
+        }
+        
+        // Update item data from row inputs
+        function updateItemFromRow(row) {
+            const itemId = row.getAttribute('data-item-id');
+            const item = moduleData.items.find(i => i.id === itemId);
+            
+            if (item) {
+                // Get values from inputs
+                const descInput = row.querySelector('.description-input');
+                const checkbox = row.querySelector('.item-checkbox');
+                const qtyInput = row.querySelector('.qty-input');
+                const rateInput = row.querySelector('.rate-input');
+                
+                if (descInput && !item.isDefault) {
+                    item.description = descInput.value;
+                }
+                
+                if (checkbox) {
+                    item.allow = checkbox.checked;
+                }
+                
+                if (qtyInput) {
+                    item.qty = parseInt(qtyInput.value) || 0;
+                }
+                
+                if (rateInput && !item.isDefault) {
+                    item.rate = getNumericValue(rateInput.value);
+                }
+            }
+        }
+        
+        // Calculate total for a row
+        function calculateRowTotal(row) {
+            const itemId = row.getAttribute('data-item-id');
+            const item = moduleData.items.find(i => i.id === itemId);
+            
+            if (item) {
+                // Include in total only if checked (allowed) and quantity > 0
+                const total = (item.allow && item.qty > 0) ? (item.qty * item.rate) : 0;
+                const totalCell = row.querySelector('.total-cell');
+                
+                if (totalCell) {
+                    totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
+                }
+                
+                return total;
+            }
+            
+            return 0;
+        }
+        
+        // Calculate all totals and update module data
+        function calculateTotals() {
+            let totalCost = 0;
+            
+            // Sum all item totals (only items that are allowed and have qty > 0)
+            moduleData.items.forEach(item => {
+                if (item.allow && item.qty > 0) {
+                    totalCost += item.qty * item.rate;
+                }
+            });
+            
+            // Update module data
+            moduleData.totalCost = totalCost;
+            
+            // Update UI
+            document.getElementById('table-total').textContent = 
+                window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
+            
+            document.getElementById('total-module-cost').textContent = 
+                `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+                
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+        }
+        
         // Add a new custom item
-        function addNewItem() {
+        function addCustomItem() {
+            // Generate unique ID
+            const newId = 'custom-' + Date.now();
+            
+            // Create new item
             const newItem = {
-                id: 'custom-' + Date.now(), // Create a unique ID
-                description: 'New Item',
-                rate: 0.00,
+                id: newId,
+                description: 'New P&G Item',
+                rate: 0,
                 unit: 'Weeks',
                 allow: false,
                 qty: 0,
-                isDefault: false
+                isDefault: false,
+                custom: true
             };
             
-            pgItems.push(newItem);
+            // Add to module data
+            moduleData.items.push(newItem);
             
-            // Add the new row to the table
-            const tableBody = document.getElementById('pgs-table-body');
-            const row = createItemRow(newItem, pgItems.length - 1);
-            tableBody.appendChild(row);
+            // Add to UI
+            addTableRow(newItem);
             
-            // Set up event listeners for the new row
-            setupInputListeners();
+            // Mark as unsaved
+            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
             
-            // Focus the description field
-            const descriptionInput = row.querySelector('.description-input');
-            if (descriptionInput) {
-                descriptionInput.focus();
-                descriptionInput.select();
-            }
+            // Update totals
+            calculateTotals();
         }
-
-        // Setup event listeners for inputs
-        function setupInputListeners() {
-            // Allow checkboxes
-            document.querySelectorAll('.allow-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    const qtyInput = document.querySelector(`.qty-input[data-index="${index}"]`);
-                    
-                    // Enable/disable quantity input
-                    qtyInput.disabled = !this.checked;
-                    
-                    // Update the item data
-                    pgItems[index].allow = this.checked;
-                    
-                    // Update calculations
-                    calculateItemTotal(index);
-                    updateTotals();
-                });
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Save buttons
+            document.getElementById('save-btn').addEventListener('click', function() {
+                saveModuleData();
             });
             
-            // Quantity inputs
-            document.querySelectorAll('.qty-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    
-                    // Update the item data
-                    pgItems[index].qty = parseFloat(this.value) || 0;
-                    
-                    // Update calculations
-                    calculateItemTotal(index);
-                    updateTotals();
-                });
+            document.getElementById('save-module-data').addEventListener('click', function(e) {
+                e.preventDefault();
+                saveModuleData();
             });
             
-            // Rate inputs
-            document.querySelectorAll('.rate-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    
-                    // Update the item data
-                    pgItems[index].rate = parseFloat(this.value) || 0;
-                    
-                    // Update calculations
-                    calculateItemTotal(index);
-                    updateTotals();
-                });
+            // Return to dashboard
+            document.getElementById('return-btn').addEventListener('click', returnToDashboard);
+            document.getElementById('return-to-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToDashboard();
             });
             
-            // Description inputs
-            document.querySelectorAll('.description-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    
-                    // Update the item data
-                    pgItems[index].description = this.value;
+            // Add custom item buttons
+            document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
+            document.getElementById('add-custom-item').addEventListener('click', function(e) {
+                e.preventDefault();
+                addCustomItem();
+            });
+        }
+        
+        // Setup table sorting
+        function setupTableSorting() {
+            const sortHeaders = document.querySelectorAll('.sort-header');
+            sortHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const sortBy = this.getAttribute('data-sort');
+                    sortTable(sortBy, this);
                 });
             });
-            
-            // Unit selects
-            document.querySelectorAll('.unit-select').forEach(select => {
-                select.addEventListener('change', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    
-                    // Update the item data
-                    pgItems[index].unit = this.value;
+        }
+        
+        // Sort the table by column
+        function sortTable(sortBy, header) {
+            // Determine sort direction
+            let sortAsc = true;
+            if (header.classList.contains('sorted-asc')) {
+                sortAsc = false;
+                header.classList.remove('sorted-asc');
+                header.classList.add('sorted-desc');
+            } else {
+                // Remove sorted class from all headers
+                document.querySelectorAll('.sort-header').forEach(h => {
+                    h.classList.remove('sorted-asc');
+                    h.classList.remove('sorted-desc');
                 });
+                header.classList.add('sorted-asc');
+            }
+            
+            // Sort items
+            moduleData.items.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch (sortBy) {
+                    case 'description':
+                        aValue = a.description.toLowerCase();
+                        bValue = b.description.toLowerCase();
+                        break;
+                    case 'qty':
+                        aValue = a.qty;
+                        bValue = b.qty;
+                        break;
+                    case 'rate':
+                        aValue = a.rate;
+                        bValue = b.rate;
+                        break;
+                    case 'total':
+                        aValue = (a.allow && a.qty > 0) ? (a.qty * a.rate) : 0;
+                        bValue = (b.allow && b.qty > 0) ? (b.qty * b.rate) : 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (aValue < bValue) return sortAsc ? -1 : 1;
+                if (aValue > bValue) return sortAsc ? 1 : -1;
+                return 0;
             });
             
-            // Remove buttons
-            document.querySelectorAll('.remove-item').forEach(button => {
-                button.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
+            // Update UI
+            updateUI();
+        }
+        
+        // Get numeric value from formatted currency string
+        function getNumericValue(value) {
+            if (typeof value === 'number') return value;
+            
+            // Remove currency symbol and spaces
+            let numericString = value.toString().replace(/[R\s]/g, '');
+            
+            // Replace comma with period for decimal
+            numericString = numericString.replace(/,/g, '.');
+            
+            return parseFloat(numericString) || 0;
+        }
+        
+        // Save module data with enhanced error handling
+        function saveModuleData(isAutoSave = false) {
+            // Update module data timestamps
+            moduleData.lastModified = new Date().toISOString();
+            
+            // Show saving indicator
+            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
+            
+            // IMPORTANT: Get current client and directly update its moduleData
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                // Ensure moduleData exists
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Store updated module data directly in the client object
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update client's lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // CRITICAL: Update client in both the ClientManager and sessionStorage
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                
+                console.log(`[${MODULE.id}] Directly updated client object with module data, total cost: ${moduleData.totalCost}`);
+            }
+            
+            // Also save using the ClientManager's API for Firebase persistence
+            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
+                if (success) {
+                    const message = isAutoSave ? 'Auto-saved' : 'Saved';
+                    window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
                     
-                    if (confirm('Are you sure you want to remove this item?')) {
-                        // Remove the item from the data array
-                        pgItems.splice(index, 1);
-                        
-                        // Redraw the table
-                        populateTable();
+                    // Show success message (only for manual saves)
+                    if (!isAutoSave) {
+                        window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
                     }
-                });
+                } else {
+                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
+                    
+                    // Show error message
+                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving data: ${error || 'Unknown error'}`);
+                }
             });
         }
-
-        // Calculate total for a specific item
-        function calculateItemTotal(index) {
-            const item = pgItems[index];
-            const totalCell = document.querySelector(`.total-cell[data-index="${index}"]`);
-            
-            // Calculate total using the shared utility
-            const total = window.ConstructionApp.ModuleUtils.calculateItemTotal(item);
-            
-            // Format currency using the shared utility
-            totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
-        }
-
-        // Update total calculations
-        function updateTotals() {
-            // Calculate total using the shared utility
-            const totalAmount = window.ConstructionApp.ModuleUtils.calculateModuleTotal(pgItems);
-            
-            // Format currency
-            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalAmount);
-            
-            // Update totals in the UI
-            document.getElementById('pgs-total').textContent = formattedTotal;
-            document.getElementById('header-total').textContent = `P&Gs Total: ${formattedTotal}`;
-            document.getElementById('top-total').textContent = formattedTotal;
-        }
-
-        // Save data
-        function saveData() {
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!currentClient) {
-                alert('No client selected. Please return to dashboard and select a client.');
-                return;
+        
+        // Return to dashboard with improved client preservation
+        function returnToDashboard() {
+            // Check if there are unsaved changes
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Ask user if they want to save before returning
+                const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
+                if (shouldSave) {
+                    // Save first - but don't navigate in the callback to avoid timing issues
+                    saveModuleData();
+                    
+                    // We'll use a short delay to make sure saving completes
+                    setTimeout(() => navigateToDashboard(), 300);
+                    return;
+                }
             }
             
-            console.log("[P&Gs] Saving data for client:", currentClient.name);
-            
-            // Prepare module data
-            const moduleData = {
-                items: pgItems.map(item => ({
-                    id: item.id,
-                    description: item.description,
-                    allow: item.allow,
-                    qty: item.qty,
-                    rate: item.rate,
-                    unit: item.unit,
-                    isDefault: item.isDefault
-                }))
-            };
-            
-            // Save module data
-            const result = window.ConstructionApp.ClientManager.saveModuleData('p-and-gs', moduleData);
-            console.log("[P&Gs] Save result:", result);
-            
-            // Show success message
-            window.ConstructionApp.ModuleUtils.showSuccessMessage('P&Gs data saved successfully!');
-            
-            // Double-check client is saved to localStorage
-            const updatedClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            localStorage.setItem('currentClient', JSON.stringify(updatedClient));
-            console.log("[P&Gs] Client saved to localStorage after data update");
+            // If no changes or user doesn't want to save, navigate immediately
+            navigateToDashboard();
         }
+        
+        // Navigate to dashboard with proper state preservation
+        function navigateToDashboard() {
+            console.log(`[${MODULE.id}] Navigating to dashboard`);
+            
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // Get the current client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            if (client) {
+                // CRITICAL: Update client's module data even if we didn't save
+                // This ensures the data is available when returning to the dashboard
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Always update the moduleData with the latest values
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // Store client directly in sessionStorage (reliable backup approach)
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log(`[${MODULE.id}] Client data saved to sessionStorage before navigation`);
+                
+                // IMPORTANT: Force a client update through the client manager
+                // This ensures any listeners (like the dashboard) are notified
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+            }
+            
+            // IMPORTANT: Set navigation state to explicitly indicate returning from a module
+            // This tells the dashboard that it should restore the client
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+            console.log(`[${MODULE.id}] Navigation state set to: returningToDashboard`);
+            
+            // Navigate back to the dashboard
+            window.location.href = 'index.html';
+        }
+        
+        // Setup debug panel
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = 'Debug';
+            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
+            document.body.appendChild(toggleBtn);
+            
+            // Toggle debug panel on click
+            toggleBtn.addEventListener('click', function() {
+                const isVisible = debugPanel.style.display === 'block';
+                debugPanel.style.display = isVisible ? 'none' : 'block';
+                
+                if (!isVisible) {
+                    updateDebugPanel();
+                }
+            });
+        }
+        
+        // Update debug panel
+        function updateDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Get client data
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            const sessionClient = sessionStorage.getItem('currentClient');
+            let sessionClientData = null;
+            try {
+                if (sessionClient) {
+                    sessionClientData = JSON.parse(sessionClient);
+                }
+            } catch (e) {
+                console.error("Error parsing session client:", e);
+            }
+            
+            // Get navigation state
+            const navigationState = sessionStorage.getItem('navigationState');
+            
+            // Create debug info
+            let debugInfo = `
+                <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
+                <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
+                <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
+                <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
+                <strong>Module Items:</strong> ${moduleData.items.length}<br>
+                <strong>Active Items:</strong> ${moduleData.items.filter(item => item.allow).length}<br>
+                <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
+                <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
+                <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
+            `;
+            
+            // Add sample of module data
+            debugInfo += '<strong>Module Data Sample:</strong><br>';
+            const activeItems = moduleData.items.filter(item => item.allow);
+            if (activeItems.length > 0) {
+                const sampleItem = activeItems[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Allowed: Yes, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}, Total: ${sampleItem.qty * sampleItem.rate}<br>`;
+            } else if (moduleData.items.length > 0) {
+                const sampleItem = moduleData.items[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Allowed: No, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
+            } else {
+                debugInfo += '- No items<br>';
+            }
+            
+            // Update panel
+            debugPanel.innerHTML = debugInfo;
+        }
+        
+        // Clean up when leaving page
+        window.addEventListener('beforeunload', function(e) {
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // If we have unsaved changes, warn user
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Store client data in sessionStorage to prevent loss
+                const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (client) {
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
+                }
+                
+                // This will trigger the browser's "unsaved changes" warning
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = message;
+                return message;
+            }
+        });
     </script>
 </body>
 </html>
