@@ -710,9 +710,6 @@
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
             updateDebugPanel();
-            
-            // Note that module click events are now set up when the modules are created
-            // This is handled by setupModuleEventListeners() function
         }
         
         // Setup debug panel
@@ -884,8 +881,22 @@
             return moduleElement;
         }
 
+        // Global variable for dragged item reference
+        let globalDraggedItem = null;
+
         // Helper function to attach event listeners to a module element
         function setupModuleEventListeners(moduleElement) {
+            // Set up click handler
+            setupModuleClickHandler(moduleElement);
+            
+            // Setup dropdown
+            setupDropdownForModule(moduleElement);
+            
+            // Drag and drop is set up separately in setupDragAndDrop
+        }
+
+        // Setup click handler for module (separate from drag handlers)
+        function setupModuleClickHandler(moduleElement) {
             // Click event for navigating to the module
             const moduleText = moduleElement.querySelector('span');
             if (moduleText) {
@@ -915,10 +926,6 @@
                     }
                 });
             }
-            
-            // Setup dropdown and drag
-            setupDropdownForModule(moduleElement);
-            setupDragForModule(moduleElement);
         }
 
         // Restore module order from backup if Firebase load fails
@@ -985,7 +992,7 @@
             return false;
         }
 
-        // Add a new module
+        // Add a new module with proper drag functionality
         function addNewModule() {
             // Prompt for module name
             const moduleName = prompt("Enter new module name:");
@@ -1040,6 +1047,9 @@
             
             // Save modules to Firebase and ensure it's reloaded on refresh
             saveModulesToFirebase();
+            
+            // Make sure drag and drop is set up for all modules including the new one
+            setupDragAndDrop();
             
             // Notify user
             alert(`New module "${moduleName}" created with ID "${moduleId}". Create a file named "${moduleId}.html" to implement this module.`);
@@ -1115,13 +1125,59 @@
             });
         }
 
-        // Setup drag for a single module
-        function setupDragForModule(moduleElement) {
-            let draggedItem = null;
+        // Setup drag and drop functionality with shared dragged item reference
+        function setupDragAndDrop() {
+            const moduleItems = document.querySelectorAll('.module-item');
             
+            // Clear existing drag handlers to prevent duplicates
+            moduleItems.forEach(item => {
+                // Clone the node to remove all event listeners
+                const oldItem = item;
+                const newItem = oldItem.cloneNode(true);
+                if (oldItem.parentNode) {
+                    oldItem.parentNode.replaceChild(newItem, oldItem);
+                }
+                
+                // Set up new drag handlers
+                setupDragForModule(newItem);
+                
+                // Re-add dropdown and click handlers
+                setupDropdownForModule(newItem);
+                setupModuleClickHandler(newItem);
+            });
+            
+            // Add container-level listeners
+            const modulesContainer = document.getElementById('modules-container');
+            
+            // Listen for changes to module container that might not trigger normal events
+            if (!modulesContainer._observer) { // Only add observer once
+                const observer = new MutationObserver(function(mutations) {
+                    let orderChanged = false;
+                    
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'childList') {
+                            // If nodes were added or removed, update module order
+                            orderChanged = true;
+                        }
+                    });
+                    
+                    if (orderChanged) {
+                        // Save the new order
+                        updateModuleOrder();
+                    }
+                });
+                
+                // Start observing changes to the modules container
+                observer.observe(modulesContainer, { childList: true });
+                modulesContainer._observer = observer; // Store reference to avoid duplicates
+            }
+        }
+
+        // Setup drag for a single module with global dragged item reference
+        function setupDragForModule(moduleElement) {
             // Drag start event
             moduleElement.addEventListener('dragstart', function(e) {
-                draggedItem = this;
+                globalDraggedItem = this;
                 setTimeout(() => this.classList.add('dragging'), 0);
                 
                 // Store data about the dragged item
@@ -1134,14 +1190,17 @@
                 this.classList.remove('dragging');
                 document.querySelectorAll('.module-item').forEach(item => item.classList.remove('drag-over'));
                 
-                // Important: Save module order whenever dragging ends
+                // Reset global variable
+                globalDraggedItem = null;
+                
+                // Save module order
                 updateModuleOrder();
             });
             
             // Drag over event
             moduleElement.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                if (this !== draggedItem) {
+                if (this !== globalDraggedItem) {
                     this.classList.add('drag-over');
                 }
             });
@@ -1156,21 +1215,20 @@
                 e.preventDefault();
                 this.classList.remove('drag-over');
                 
-                if (this !== draggedItem) {
+                if (this !== globalDraggedItem && globalDraggedItem) {
                     const modulesContainer = document.getElementById('modules-container');
                     const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
-                    const draggedIndex = allItems.indexOf(draggedItem);
+                    const draggedIndex = allItems.indexOf(globalDraggedItem);
                     const targetIndex = allItems.indexOf(this);
                     
                     // If dropping after the target, insert after, otherwise insert before
                     if (draggedIndex < targetIndex) {
-                        this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                        this.parentNode.insertBefore(globalDraggedItem, this.nextSibling);
                     } else {
-                        this.parentNode.insertBefore(draggedItem, this);
+                        this.parentNode.insertBefore(globalDraggedItem, this);
                     }
                     
                     // Update the data array order and save to Firebase
-                    // This is called here and in dragend to ensure it's saved
                     updateModuleOrder();
                 }
             });
@@ -1181,113 +1239,6 @@
                 dragHandle.addEventListener('mousedown', function(e) {
                     // Prevent the dropdown from opening when drag starts
                     e.stopPropagation();
-                });
-            }
-        }
-
-        // Setup drag and drop functionality
-        function setupDragAndDrop() {
-            const moduleItems = document.querySelectorAll('.module-item');
-            let draggedItem = null;
-
-            moduleItems.forEach(item => {
-                setupDragForModule(item);
-            });
-            
-            // Add additional container-level listeners if needed
-            const modulesContainer = document.getElementById('modules-container');
-            
-            // Listen for changes to module container that might not trigger normal events
-            const observer = new MutationObserver(function(mutations) {
-                let orderChanged = false;
-                
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'childList') {
-                        // If nodes were added or removed, update module order
-                        orderChanged = true;
-                    }
-                });
-                
-                if (orderChanged) {
-                    // Save the new order
-                    updateModuleOrder();
-                }
-            });
-            
-            // Start observing changes to the modules container
-            observer.observe(modulesContainer, { childList: true });
-        }
-        
-        // Update module order and save to Firebase
-        function updateModuleOrder() {
-            const moduleItems = document.querySelectorAll('.module-item');
-            const newOrder = Array.from(moduleItems).map(item => {
-                const moduleId = item.getAttribute('data-module-id');
-                const requiresClient = item.getAttribute('data-requires-client') === 'true';
-                const moduleName = item.querySelector('span').textContent.trim();
-                
-                return {
-                    id: moduleId,
-                    name: moduleName,
-                    requiresClient: requiresClient === true || requiresClient === 'true'
-                };
-            });
-
-            // Log the new order
-            console.log('[Dashboard] Module order changed. New order:', newOrder.map(m => m.name).join(', '));
-            
-            // Update appData.modules to match the new order while preserving functionality
-            const updatedModules = [];
-            
-            newOrder.forEach(orderData => {
-                // Find the original module to preserve functions
-                const existingModule = appData.modules.find(m => m.id === orderData.id);
-                
-                if (existingModule) {
-                    // Update name and requiresClient if they changed
-                    if (existingModule.name !== orderData.name || 
-                        existingModule.requiresClient !== orderData.requiresClient) {
-                        existingModule.name = orderData.name;
-                        existingModule.requiresClient = orderData.requiresClient;
-                    }
-                    updatedModules.push(existingModule);
-                } else {
-                    // Create a new module object if not found (shouldn't happen often)
-                    updatedModules.push({
-                        id: orderData.id,
-                        name: orderData.name,
-                        requiresClient: orderData.requiresClient,
-                        renderTemplate: function(client) {
-                            return `
-                                <h3>${orderData.name}</h3>
-                                <p>This is a custom module.</p>
-                            `;
-                        },
-                        saveData: function() {
-                            return {};
-                        }
-                    });
-                }
-            });
-            
-            // Replace the modules array with the updated one
-            appData.modules = updatedModules;
-            
-            // Save updated module order to Firebase
-            saveModulesToFirebase();
-            
-            // Save order to sessionStorage as backup
-            sessionStorage.setItem('moduleOrder', JSON.stringify(newOrder));
-            
-            return true;
-        }
-
-        // Add module button setup
-        function setupAddModuleButton() {
-            const addModuleBtn = document.getElementById('add-module-btn');
-            if (addModuleBtn) {
-                addModuleBtn.addEventListener('click', function() {
-                    addNewModule();
                 });
             }
         }
@@ -1386,9 +1337,10 @@
                 moduleElement.querySelector('span').textContent = newName;
 
                 // Find and update the module in data if it exists
-                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
-                if (moduleIndex !== -1) {
-                    appData.modules[moduleIndex].name = newName;
+                const moduleId = moduleElement.getAttribute('data-module-id');
+                const module = appData.modules.find(mod => mod.id === moduleId);
+                if (module) {
+                    module.name = newName;
                     
                     // Save modules to Firebase
                     saveModulesToFirebase();
@@ -1426,6 +1378,80 @@
 
                 // Show success message
                 alert(`Module "${moduleName}" has been deleted`);
+            }
+        }
+
+        // Update module order and save to Firebase
+        function updateModuleOrder() {
+            const moduleItems = document.querySelectorAll('.module-item');
+            const newOrder = Array.from(moduleItems).map(item => {
+                const moduleId = item.getAttribute('data-module-id');
+                const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                const moduleName = item.querySelector('span').textContent.trim();
+                
+                return {
+                    id: moduleId,
+                    name: moduleName,
+                    requiresClient: requiresClient === true || requiresClient === 'true'
+                };
+            });
+
+            // Log the new order
+            console.log('[Dashboard] Module order changed. New order:', newOrder.map(m => m.name).join(', '));
+            
+            // Update appData.modules to match the new order while preserving functionality
+            const updatedModules = [];
+            
+            newOrder.forEach(orderData => {
+                // Find the original module to preserve functions
+                const existingModule = appData.modules.find(m => m.id === orderData.id);
+                
+                if (existingModule) {
+                    // Update name and requiresClient if they changed
+                    if (existingModule.name !== orderData.name || 
+                        existingModule.requiresClient !== orderData.requiresClient) {
+                        existingModule.name = orderData.name;
+                        existingModule.requiresClient = orderData.requiresClient;
+                    }
+                    updatedModules.push(existingModule);
+                } else {
+                    // Create a new module object if not found (shouldn't happen often)
+                    updatedModules.push({
+                        id: orderData.id,
+                        name: orderData.name,
+                        requiresClient: orderData.requiresClient,
+                        renderTemplate: function(client) {
+                            return `
+                                <h3>${orderData.name}</h3>
+                                <p>This is a custom module.</p>
+                            `;
+                        },
+                        saveData: function() {
+                            return {};
+                        }
+                    });
+                }
+            });
+            
+            // Replace the modules array with the updated one
+            appData.modules = updatedModules;
+            
+            // Save updated module order to Firebase
+            saveModulesToFirebase();
+            
+            // Save order to sessionStorage as backup
+            sessionStorage.setItem('moduleOrder', JSON.stringify(newOrder));
+            
+            return true;
+        }
+
+        // Add module button setup
+        function setupAddModuleButton() {
+            const addModuleBtn = document.getElementById('add-module-btn');
+            if (addModuleBtn) {
+                addModuleBtn.addEventListener('click', function() {
+                    addNewModule();
+                });
             }
         }
 
