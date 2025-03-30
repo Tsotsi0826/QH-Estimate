@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Electrical - Construction Estimator</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
 
-    <script src="js/firebase-config.js"></script>
+    
+
+<script src="js/firebase-config.js"></script>
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
@@ -289,9 +293,11 @@
             font-size: inherit; /* Match cell font size */
             font-family: inherit;
         }
-        .module-table input:read-only { /* Style for non-editable inputs */
+        /* Style for read-only inputs (though none should be readonly now for rate/desc) */
+        .module-table input:read-only {
              color: #555; /* Slightly dimmer text */
              cursor: default;
+             /* background-color: #eee; */ /* Optional: subtle background */
         }
 
 
@@ -407,10 +413,13 @@
     </style>
 </head>
 <body>
+    
     <div class="sidebar">
+        
         <div class="sidebar-header">Electrical</div>
 
         <div class="sidebar-content">
+            
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Navigation</div>
                 <div class="sidebar-item">
@@ -418,6 +427,7 @@
                 </div>
             </div>
 
+            
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Actions</div>
                 <div class="sidebar-item">
@@ -430,40 +440,55 @@
         </div>
     </div>
 
+    
     <div class="main-content">
+        
         <div class="module-header">
             <div class="module-title">
+                
                 <i>E</i> <span id="module-title-text">Electrical</span>
             </div>
+            
             <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
             <div class="header-actions">
+                
                 <div id="total-module-cost">
                     Total Electrical Cost: R0.00
                 </div>
             </div>
         </div>
 
+        
         <div class="module-description">
             <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                
                 <div id="save-status"></div>
+                
                 <button id="save-btn" class="btn">Save</button>
+                
                 <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
             </div>
         </div>
 
+        
         <div class="module-content">
             <table class="module-table" id="items-table">
                 <thead>
                     <tr>
+                        
                         <th class="sort-header" data-sort="description">Description</th>
-                        <th>Pc</th> <th class="sort-header" data-sort="qty">Qty</th>
+                        <th>Pc</th> 
+                        <th class="sort-header" data-sort="qty">Qty</th>
                         <th class="sort-header" data-sort="rate">Rate</th>
-                        <th></th> <th class="sort-header" data-sort="total">Total</th>
+                        <th></th> 
+                        <th class="sort-header" data-sort="total">Total</th>
                     </tr>
                 </thead>
                 <tbody id="items-table-body">
-                    </tbody>
+                    
+                </tbody>
                 <tfoot>
+                    
                     <tr class="footer-row">
                         <td colspan="5" style="text-align: right;">Total</td>
                         <td class="currency" id="table-total">R0.00</td>
@@ -471,12 +496,15 @@
                 </tfoot>
             </table>
 
+            
             <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
         </div>
     </div>
 
+    
     <div class="debug-panel" id="debug-panel"></div>
-     <button id="debug-toggle-btn" style="display: none;">Debug</button>
+     
+    <button id="debug-toggle-btn" style="display: none;">Debug</button>
 
 
     <script>
@@ -487,21 +515,21 @@
             id: 'electrical', // Unique ID for this module (matches filename)
             title: 'Electrical', // User-facing title
             defaultItems: [ // Items specific to the Electrical module based on screenshot
-                // Note: 'editable: false' means description and rate cannot be changed by user for default items
-                { id: 'elec-proj-quoted', description: 'Project Quoted', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-light-fittings', description: 'Light Fittings', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-aircons', description: 'Aircons', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-underfloor', description: 'Under Floor Heating', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-heated-towel', description: 'Heated Towel Rails', qty: 0, rate: 0, checked: false, editable: false }, // Corrected typo "Towl"
-                { id: 'elec-alarm-sec', description: 'Alarm and Security', qty: 0, rate: 0, checked: false, editable: false }, // Corrected typo "Alsm"
-                { id: 'elec-dstv', description: 'Dstv', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-batt-backup', description: 'Battery Backup', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-gen-backup', description: 'Generator Backup', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-disconnects', description: 'Disconnections', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-callouts', description: 'Call outs', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-points', description: 'Points', qty: 0, rate: 0, checked: false, editable: false },
-                { id: 'elec-other-1', description: 'Electrical Other', qty: 0, rate: 0, checked: false, editable: false }, // First instance
-                { id: 'elec-other-2', description: 'Electrical Other', qty: 0, rate: 0, checked: false, editable: false }  // Second instance
+                // *** UPDATED: All items now have editable: true ***
+                { id: 'elec-proj-quoted', description: 'Project Quoted', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-light-fittings', description: 'Light Fittings', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-aircons', description: 'Aircons', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-underfloor', description: 'Under Floor Heating', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-heated-towel', description: 'Heated Towel Rails', qty: 0, rate: 0, checked: false, editable: true }, // Corrected typo "Towl"
+                { id: 'elec-alarm-sec', description: 'Alarm and Security', qty: 0, rate: 0, checked: false, editable: true }, // Corrected typo "Alsm"
+                { id: 'elec-dstv', description: 'Dstv', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-batt-backup', description: 'Battery Backup', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-gen-backup', description: 'Generator Backup', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-disconnects', description: 'Disconnections', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-callouts', description: 'Call outs', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-points', description: 'Points', qty: 0, rate: 0, checked: false, editable: true },
+                { id: 'elec-other-1', description: 'Electrical Other', qty: 0, rate: 0, checked: false, editable: true }, // First instance
+                { id: 'elec-other-2', description: 'Electrical Other', qty: 0, rate: 0, checked: false, editable: true }  // Second instance
             ]
         };
 
@@ -667,6 +695,7 @@
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(total);
 
             // Determine if inputs should be read-only based on item.editable
+            // *** Since all items are now editable=true, readonlyAttribute will be '' ***
             const readonlyAttribute = item.editable ? '' : 'readonly';
 
              // Set the inner HTML of the row with table cells (<td>)
@@ -746,6 +775,7 @@
                 const savedItem = savedItemsMap.get(defaultItem.id);
                 if (savedItem) {
                     // Use saved item, but ensure critical default properties (like description, editable status) are preserved
+                    // *** Since editable is now true in defaults, this will preserve editable: true ***
                     mergedItems.push({
                         ...savedItem, // Take most properties from saved
                         description: defaultItem.description, // Ensure description matches default
@@ -832,7 +862,8 @@
         function setupRowInputHandlers(row, item) {
             // --- Description Input (only if editable) ---
             const descInput = row.querySelector('.description-input');
-            if (descInput && item.editable) { // Only add listener if editable
+            // *** Now item.editable should be true for all items ***
+            if (descInput && item.editable) {
                 descInput.addEventListener('input', () => {
                     updateItemFromRow(row, item); // Update data model
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
@@ -862,7 +893,8 @@
 
             // --- Rate Input (only if editable) ---
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && item.editable) { // Only add listeners if editable
+             // *** Now item.editable should be true for all items, so listeners will be added ***
+            if (rateInput && item.editable) {
                 // On focus: Show raw number for easier editing
                 rateInput.addEventListener('focus', function() {
                     this.value = getNumericValue(this.value); // Convert "R1,234.56" to "1234.56"
@@ -899,6 +931,7 @@
             const rateInput = row.querySelector('.rate-input');
 
             // Update item properties from input values, respecting editability
+            // *** Now item.editable should be true for all items ***
             if (descInput && item.editable) {
                 item.description = descInput.value;
             }
@@ -911,6 +944,7 @@
                  // Optional: Update the input value itself if parsing changed it (e.g., removed non-digits)
                  // qtyInput.value = item.qty;
             }
+            // *** Now item.editable should be true for all items ***
             if (rateInput && item.editable) {
                 // Get numeric value, handling potential formatting during input/focus
                 item.rate = getNumericValue(rateInput.value);
