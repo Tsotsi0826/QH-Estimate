@@ -197,6 +197,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            table-layout: fixed; /* Added for fixed column widths */
         }
 
         .module-table th, 
@@ -204,6 +205,39 @@
             padding: 10px;
             text-align: left;
             border: 1px solid #ddd;
+            overflow: hidden; /* Prevent content from breaking layout */
+        }
+
+        /* Column width adjustments */
+        .module-table th:nth-child(1),
+        .module-table td:nth-child(1) {
+            width: 40%; /* Description column - increased width */
+        }
+
+        .module-table th:nth-child(2),
+        .module-table td:nth-child(2) {
+            width: 8%; /* Pc column */
+            text-align: center;
+        }
+
+        .module-table th:nth-child(3),
+        .module-table td:nth-child(3) {
+            width: 8%; /* Qty column - reduced width */
+        }
+
+        .module-table th:nth-child(4),
+        .module-table td:nth-child(4) {
+            width: 15%; /* Rate column */
+        }
+
+        .module-table th:nth-child(5),
+        .module-table td:nth-child(5) {
+            width: 4%; /* Empty column */
+        }
+
+        .module-table th:nth-child(6),
+        .module-table td:nth-child(6) {
+            width: 15%; /* Total column */
         }
 
         .module-table th {
@@ -544,7 +578,7 @@
             // Format currency
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(
-                item.checked ? (item.qty * item.rate) : 0
+                item.qty > 0 ? (item.qty * item.rate) : 0
             );
             
             // Create row content
@@ -584,13 +618,11 @@
                 });
             }
             
-            // Checkbox input
+            // Checkbox input - doesn't affect calculation, just for reporting
             const checkbox = row.querySelector('.item-checkbox');
             if (checkbox) {
                 checkbox.addEventListener('change', function() {
                     updateItemFromRow(row);
-                    calculateRowTotal(row);
-                    calculateTotals();
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
             }
@@ -665,8 +697,8 @@
             const item = moduleData.items.find(i => i.id === itemId);
             
             if (item) {
-                // Only include in total if checked
-                const total = item.checked ? (item.qty * item.rate) : 0;
+                // Include in total if quantity > 0 (checkbox doesn't affect this)
+                const total = item.qty > 0 ? (item.qty * item.rate) : 0;
                 const totalCell = row.querySelector('.total-cell');
                 
                 if (totalCell) {
@@ -683,9 +715,9 @@
         function calculateTotals() {
             let totalCost = 0;
             
-            // Sum all item totals (only checked items)
+            // Sum all item totals (only items with qty > 0)
             moduleData.items.forEach(item => {
-                if (item.checked) {
+                if (item.qty > 0) {
                     totalCost += item.qty * item.rate;
                 }
             });
@@ -737,17 +769,24 @@
                 saveModuleData();
             });
             
-            document.getElementById('save-module-data').addEventListener('click', function() {
+            document.getElementById('save-module-data').addEventListener('click', function(e) {
+                e.preventDefault();
                 saveModuleData();
             });
             
             // Return to dashboard
             document.getElementById('return-btn').addEventListener('click', returnToDashboard);
-            document.getElementById('return-to-dashboard').addEventListener('click', returnToDashboard);
+            document.getElementById('return-to-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToDashboard();
+            });
             
             // Add custom item buttons
             document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
-            document.getElementById('add-custom-item').addEventListener('click', addCustomItem);
+            document.getElementById('add-custom-item').addEventListener('click', function(e) {
+                e.preventDefault();
+                addCustomItem();
+            });
         }
         
         // Setup table sorting
@@ -796,8 +835,8 @@
                         bValue = b.rate;
                         break;
                     case 'total':
-                        aValue = a.checked ? (a.qty * a.rate) : 0;
-                        bValue = b.checked ? (b.qty * b.rate) : 0;
+                        aValue = a.qty > 0 ? (a.qty * a.rate) : 0;
+                        bValue = b.qty > 0 ? (b.qty * b.rate) : 0;
                         break;
                     default:
                         return 0;
