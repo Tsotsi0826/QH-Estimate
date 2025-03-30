@@ -482,6 +482,37 @@
             z-index: 9999;
             display: none;
         }
+        
+        /* No client selected notification */
+        .no-client-notification {
+            padding: 30px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 2px dashed #ddd;
+        }
+        
+        .no-client-notification h2 {
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        
+        .no-client-notification p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .no-client-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .no-client-button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -624,22 +655,22 @@
             console.log("[Dashboard] Initializing app");
             
             // Get navigation state and clear it for future navigations
-            const navigationState = localStorage.getItem('navigationState');
+            const navigationState = sessionStorage.getItem('navigationState');
             console.log("[Dashboard] Navigation state:", navigationState);
             
             // Clear the navigation state for future navigations
-            localStorage.removeItem('navigationState');
+            sessionStorage.removeItem('navigationState');
             
             // Log client state for debugging
-            const storedClientStr = localStorage.getItem('currentClient');
-            console.log("[Dashboard] Client in localStorage:", storedClientStr ? "Present" : "None");
+            const storedClientStr = sessionStorage.getItem('currentClient');
+            console.log("[Dashboard] Client in sessionStorage:", storedClientStr ? "Present" : "None");
             
-            // Always refresh client from localStorage on dashboard
+            // Handle different navigation states
             if (navigationState === 'returningToDashboard' && storedClientStr) {
                 try {
                     // Parse and set the client
                     const clientData = JSON.parse(storedClientStr);
-                    console.log("[Dashboard] Restoring client from localStorage:", clientData.name);
+                    console.log("[Dashboard] Restoring client from sessionStorage:", clientData.name);
                     window.ConstructionApp.ClientManager.setCurrentClient(clientData);
                 } catch (error) {
                     console.error("[Dashboard] Error parsing stored client:", error);
@@ -654,10 +685,10 @@
                 console.log("[Dashboard] Invalid module access detected, clearing client");
                 window.ConstructionApp.ClientManager.clearCurrentClient();
             } else if (!navigationState) {
-                // Fresh load - check if there's a client in localStorage
+                // Fresh load - check if there's a client in sessionStorage
                 if (storedClientStr) {
                     try {
-                        // Keep the client in localStorage on first load
+                        // Keep the client in sessionStorage on first load
                         const clientData = JSON.parse(storedClientStr);
                         console.log("[Dashboard] Fresh load with stored client:", clientData.name);
                         window.ConstructionApp.ClientManager.setCurrentClient(clientData);
@@ -666,7 +697,7 @@
                         window.ConstructionApp.ClientManager.clearCurrentClient();
                     }
                 } else {
-                    // No client in localStorage
+                    // No client in sessionStorage
                     console.log("[Dashboard] Fresh load with no client");
                     window.ConstructionApp.ClientManager.clearCurrentClient();
                 }
@@ -697,12 +728,12 @@
                             }
                             
                             // Set navigation state before navigating
-                            localStorage.setItem('navigationState', 'fromDashboard');
+                            sessionStorage.setItem('navigationState', 'fromDashboard');
                             console.log("[Dashboard] Navigating to module:", moduleId);
                             
-                            // Save current client to localStorage
+                            // Save current client to sessionStorage
                             console.log("[Dashboard] Saving client before navigation:", client.name);
-                            localStorage.setItem('currentClient', JSON.stringify(client));
+                            sessionStorage.setItem('currentClient', JSON.stringify(client));
                             
                             // Navigate to the module
                             window.location.href = moduleId + '.html';
@@ -744,15 +775,15 @@
             const debugPanel = document.getElementById('debug-panel');
             
             // Get state information
-            const navigationState = localStorage.getItem('navigationState');
+            const navigationState = sessionStorage.getItem('navigationState');
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            const storedClientStr = localStorage.getItem('currentClient');
+            const storedClientStr = sessionStorage.getItem('currentClient');
             
             // Create debug info
             let debugInfo = `
                 <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
                 <strong>Current Client:</strong> ${currentClient ? currentClient.name : 'None'}<br>
-                <strong>Client in localStorage:</strong> ${storedClientStr ? 'Present' : 'None'}<br>
+                <strong>Client in sessionStorage:</strong> ${storedClientStr ? 'Present' : 'None'}<br>
             `;
             
             // Add module data if client exists
@@ -853,10 +884,10 @@
                                     }
                                     
                                     // Set navigation state before navigating
-                                    localStorage.setItem('navigationState', 'fromDashboard');
+                                    sessionStorage.setItem('navigationState', 'fromDashboard');
                                     
-                                    // Save current client to localStorage
-                                    localStorage.setItem('currentClient', JSON.stringify(client));
+                                    // Save current client to sessionStorage
+                                    sessionStorage.setItem('currentClient', JSON.stringify(client));
                                     
                                     // Navigate to the module
                                     window.location.href = moduleId + '.html';
@@ -964,10 +995,10 @@
                     }
                     
                     // Set navigation state
-                    localStorage.setItem('navigationState', 'fromDashboard');
+                    sessionStorage.setItem('navigationState', 'fromDashboard');
                     
-                    // Save current client to localStorage
-                    localStorage.setItem('currentClient', JSON.stringify(client));
+                    // Save current client to sessionStorage
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
                     
                     // Navigate to module
                     window.location.href = moduleId + '.html';
@@ -1091,7 +1122,7 @@
                         this.parentNode.insertBefore(draggedItem, this);
                     }
                     
-                    // Update the data array order if needed
+                    // Update the data array order
                     updateModuleOrder();
                 }
             });
@@ -1516,6 +1547,7 @@
             console.log("[Dashboard] Updating dashboard for client:", client?.name);
             
             const logoutBtn = document.getElementById('logout-btn');
+            const dashboardContent = document.getElementById('module-content');
             
             if (client) {
                 // Update client display and show logout button
@@ -1539,9 +1571,17 @@
                 document.querySelector('.dashboard-description').textContent = 'Overview of project data.';
                 logoutBtn.style.display = 'none';
                 
-                // Show the welcome message when no client is selected
-                document.getElementById('module-content').innerHTML = `
-                    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                // Show a more prominent message when no client is selected
+                dashboardContent.innerHTML = `
+                    <div class="no-client-notification">
+                        <h2>No Client Selected</h2>
+                        <p>Please select an existing client or create a new client to start working.</p>
+                        <div class="no-client-buttons">
+                            <button id="prompt-new-client" class="btn no-client-button">Create New Client</button>
+                            <button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button>
+                        </div>
+                    </div>
+                    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
                         <h3>Getting Started</h3>
                         <p>To start using the Construction Estimator:</p>
                         <ol style="margin-left: 20px; margin-top: 10px;">
@@ -1551,6 +1591,24 @@
                         </ol>
                     </div>
                 `;
+                
+                // Add event listeners to the prompt buttons
+                setTimeout(() => {
+                    const newClientBtn = document.getElementById('prompt-new-client');
+                    const openClientBtn = document.getElementById('prompt-open-client');
+                    
+                    if (newClientBtn) {
+                        newClientBtn.addEventListener('click', () => {
+                            document.getElementById('new-client-btn').click();
+                        });
+                    }
+                    
+                    if (openClientBtn) {
+                        openClientBtn.addEventListener('click', () => {
+                            document.getElementById('open-client-btn').click();
+                        });
+                    }
+                }, 0);
                 
                 // Update debug panel
                 updateDebugPanel();
@@ -1624,12 +1682,12 @@
                     const moduleId = this.getAttribute('data-module-id');
                     
                     // Save navigation state
-                    localStorage.setItem('navigationState', 'fromDashboard');
+                    sessionStorage.setItem('navigationState', 'fromDashboard');
                     
-                    // Save current client to localStorage
+                    // Save current client to sessionStorage
                     const client = window.ConstructionApp.ClientManager.getCurrentClient();
                     if (client) {
-                        localStorage.setItem('currentClient', JSON.stringify(client));
+                        sessionStorage.setItem('currentClient', JSON.stringify(client));
                     }
                     
                     // Navigate to the module
