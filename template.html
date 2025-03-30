@@ -891,7 +891,7 @@
             });
         }
         
-        // Return to dashboard
+        // Return to dashboard with improved client preservation
         function returnToDashboard() {
             // Check if there are unsaved changes
             if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
@@ -899,8 +899,6 @@
                 const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
                 if (shouldSave) {
                     // Save and then return
-                    // Get module ID
-                    // Save using the client manager with callback
                     window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
                         if (!success) {
                             alert(`Error saving data: ${error || 'Unknown error'}`);
@@ -909,8 +907,18 @@
                         // Cancel auto-save before navigating
                         if (cancelAutoSave) cancelAutoSave();
                         
-                        // Return to dashboard
-                        window.ConstructionApp.ModuleUtils.returnToDashboard();
+                        // Make sure the client is set in sessionStorage before returning
+                        const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                        if (client) {
+                            console.log(`[${MODULE.id}] Saving client state before returning to dashboard:`, client.name);
+                            sessionStorage.setItem('currentClient', JSON.stringify(client));
+                        }
+                        
+                        // Set the navigation state to indicate we're returning from a module
+                        sessionStorage.setItem('navigationState', 'returningToDashboard');
+                        
+                        // Navigate back to the index page
+                        window.location.href = 'index.html';
                     });
                     
                     return; // Don't navigate yet, wait for save callback
@@ -920,8 +928,18 @@
             // Cancel auto-save before navigating
             if (cancelAutoSave) cancelAutoSave();
             
+            // Make sure the client is set in sessionStorage before returning
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                console.log(`[${MODULE.id}] Saving client state before returning to dashboard:`, client.name);
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+            }
+            
+            // Set the navigation state to indicate we're returning from a module
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+            
             // Return to dashboard without saving
-            window.ConstructionApp.ModuleUtils.returnToDashboard();
+            window.location.href = 'index.html';
         }
         
         // Clean up when leaving page
