@@ -467,6 +467,21 @@
             display: flex;
             align-items: center;
         }
+        
+        /* Debug panel */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -505,18 +520,7 @@
                     </div>
                     <span>Notes</span>
                 </div>
-                <div class="module-item" draggable="true" data-module-id="p-and-gs" data-requires-client="true">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>P & Gs</span>
-                </div>
-                <!-- Other module items here - add data-requires-client="true" to each -->
+                <!-- P&Gs module removed as requested -->
             </div>
         </div>
     </div>
@@ -559,6 +563,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- Debug panel -->
+    <div class="debug-panel" id="debug-panel"></div>
 
     <script>
         // Application data structure 
@@ -581,86 +588,94 @@
                         return { notes: notes };
                     }
                 },
-                {
-                    id: 'p-and-gs',
-                    name: 'P & Gs',
-                    requiresClient: true,
-                    renderTemplate: function(client) {
-                        // We would render a preview here, but now we navigate to separate page
-                        return `
-                            <h3>Preliminaries and General Conditions</h3>
-                            <p>Click the P & Gs module in the sidebar to access the full estimator.</p>
-                            <button class="btn" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('p-and-gs')">Open P & Gs Module</button>
-                        `;
-                    }
-                },
-                // Other modules here
+                // P&Gs module removed as requested
             ],
         };
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM loaded, initializing app");
+            console.log("[Dashboard] DOM loaded, initializing app");
+            
+            // Enable debug panel during development
+            setupDebugPanel();
             
             // Load modules from Firebase
-            loadModulesFromFirebase();
-            
-            // Initialize app
-            initApp();
-            
-            // Setup dropdowns, client management, and module button
-            setupDropdownMenus();
-            setupClientManagement();
-            setupAddModuleButton();
-            
-            // Load clients using the shared client manager
-            window.ConstructionApp.ClientManager.loadClients().then(() => {
-                console.log("Clients loaded");
+            loadModulesFromFirebase().then(() => {
+                // Initialize app
+                initApp();
+                
+                // Setup dropdowns, client management, and module button
+                setupDropdownMenus();
+                setupClientManagement();
+                setupAddModuleButton();
+                
+                // Load clients using the shared client manager
+                window.ConstructionApp.ClientManager.loadClients().then(() => {
+                    console.log("[Dashboard] Clients loaded");
+                });
+                
+                // Set up client change handler
+                window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
             });
-            
-            // Set up client change handler
-            window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
         });
 
         // Initialize app function 
         function initApp() {
-            console.log("Initializing app");
+            console.log("[Dashboard] Initializing app");
             
-            // Check the navigation state
+            // Get navigation state and clear it for future navigations
             const navigationState = localStorage.getItem('navigationState');
-            console.log("Navigation state:", navigationState);
-            
-            // Handle app initialization based on navigation state
-            if (navigationState === 'returningToDashboard') {
-                // We're returning from a module, retain the client
-                const storedClient = localStorage.getItem('currentClient');
-                if (storedClient) {
-                    try {
-                        const clientData = JSON.parse(storedClient);
-                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
-                        console.log("Returning from module, client retained:", clientData.name);
-                    } catch (error) {
-                        console.error("Error parsing stored client:", error);
-                        window.ConstructionApp.ClientManager.clearCurrentClient();
-                    }
-                }
-            } else if (navigationState === 'manualLogout') {
-                // User manually logged out, client already cleared
-                console.log("User manually logged out");
-                // Make sure client is fully cleared
-                window.ConstructionApp.ClientManager.clearCurrentClient();
-            } else {
-                // First load or refresh - clear the client
-                window.ConstructionApp.ClientManager.clearCurrentClient();
-                console.log("Fresh load or refresh, client cleared");
-            }
+            console.log("[Dashboard] Navigation state:", navigationState);
             
             // Clear the navigation state for future navigations
             localStorage.removeItem('navigationState');
             
-            // Debug: Log current client after initialization
+            // Log client state for debugging
+            const storedClientStr = localStorage.getItem('currentClient');
+            console.log("[Dashboard] Client in localStorage:", storedClientStr ? "Present" : "None");
+            
+            // Always refresh client from localStorage on dashboard
+            if (navigationState === 'returningToDashboard' && storedClientStr) {
+                try {
+                    // Parse and set the client
+                    const clientData = JSON.parse(storedClientStr);
+                    console.log("[Dashboard] Restoring client from localStorage:", clientData.name);
+                    window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                } catch (error) {
+                    console.error("[Dashboard] Error parsing stored client:", error);
+                    window.ConstructionApp.ClientManager.clearCurrentClient();
+                }
+            } else if (navigationState === 'manualLogout') {
+                // User manually logged out, ensure client is fully cleared
+                console.log("[Dashboard] Manual logout detected, clearing client");
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+            } else if (navigationState === 'invalidAccess') {
+                // Redirected due to invalid module access
+                console.log("[Dashboard] Invalid module access detected, clearing client");
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+            } else if (!navigationState) {
+                // Fresh load - check if there's a client in localStorage
+                if (storedClientStr) {
+                    try {
+                        // Keep the client in localStorage on first load
+                        const clientData = JSON.parse(storedClientStr);
+                        console.log("[Dashboard] Fresh load with stored client:", clientData.name);
+                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                    } catch (error) {
+                        console.error("[Dashboard] Error parsing stored client on fresh load:", error);
+                        window.ConstructionApp.ClientManager.clearCurrentClient();
+                    }
+                } else {
+                    // No client in localStorage
+                    console.log("[Dashboard] Fresh load with no client");
+                    window.ConstructionApp.ClientManager.clearCurrentClient();
+                }
+            }
+            
+            // Log client state after initialization
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            console.log("Current client after initialization:", currentClient ? currentClient.name : "None");
+            console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
+            updateDebugPanel();
             
             // Attach click event listeners to module items
             document.querySelectorAll('.module-item').forEach(item => {
@@ -674,10 +689,25 @@
                         const requiresClient = item.getAttribute('data-requires-client') === 'true';
                         
                         if (requiresClient) {
-                            // These modules require a client
-                            window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                            // Verify client is selected
+                            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                            if (!client) {
+                                alert("Please select or create a client first to access this module.");
+                                return;
+                            }
+                            
+                            // Set navigation state before navigating
+                            localStorage.setItem('navigationState', 'fromDashboard');
+                            console.log("[Dashboard] Navigating to module:", moduleId);
+                            
+                            // Save current client to localStorage
+                            console.log("[Dashboard] Saving client before navigation:", client.name);
+                            localStorage.setItem('currentClient', JSON.stringify(client));
+                            
+                            // Navigate to the module
+                            window.location.href = moduleId + '.html';
                         } else {
-                            // These modules don't require a client (like setup modules)
+                            // For non-client modules, just navigate directly
                             window.location.href = moduleId + '.html';
                         }
                     });
@@ -688,20 +718,73 @@
             setupDragAndDrop();
         }
         
+        // Setup debug panel
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = 'Debug';
+            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
+            document.body.appendChild(toggleBtn);
+            
+            // Toggle debug panel on click
+            toggleBtn.addEventListener('click', function() {
+                const isVisible = debugPanel.style.display === 'block';
+                debugPanel.style.display = isVisible ? 'none' : 'block';
+                
+                if (!isVisible) {
+                    updateDebugPanel();
+                }
+            });
+        }
+        
+        // Update debug panel with current state
+        function updateDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Get state information
+            const navigationState = localStorage.getItem('navigationState');
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            const storedClientStr = localStorage.getItem('currentClient');
+            
+            // Create debug info
+            let debugInfo = `
+                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
+                <strong>Current Client:</strong> ${currentClient ? currentClient.name : 'None'}<br>
+                <strong>Client in localStorage:</strong> ${storedClientStr ? 'Present' : 'None'}<br>
+            `;
+            
+            // Add module data if client exists
+            if (currentClient && currentClient.moduleData) {
+                debugInfo += '<strong>Module Data:</strong><br>';
+                
+                for (const moduleId in currentClient.moduleData) {
+                    const moduleData = currentClient.moduleData[moduleId];
+                    debugInfo += `- ${moduleId}: ${JSON.stringify(moduleData).substring(0, 50)}...<br>`;
+                }
+            }
+            
+            // Update panel
+            debugPanel.innerHTML = debugInfo;
+        }
+        
         // Load modules from Firebase
         async function loadModulesFromFirebase() {
+            console.log("[Dashboard] Loading modules from Firebase");
+            
             if (window.ConstructionApp.Firebase) {
                 try {
                     // Load saved modules
                     const savedModules = await window.ConstructionApp.Firebase.loadModules();
                     
                     if (savedModules && savedModules.length > 0) {
-                        console.log("Loaded modules from Firebase:", savedModules);
+                        console.log("[Dashboard] Loaded modules from Firebase:", savedModules.length);
                         
                         // Clear existing modules in the DOM
                         const modulesContainer = document.getElementById('modules-container');
-                        // Keep default modules (Notes and P&Gs)
-                        const defaultModules = modulesContainer.querySelectorAll('.module-item[data-module-id="notes"], .module-item[data-module-id="p-and-gs"]');
+                        // Keep default module (Notes)
+                        const defaultModules = modulesContainer.querySelectorAll('.module-item[data-module-id="notes"]');
                         modulesContainer.innerHTML = '';
                         defaultModules.forEach(module => {
                             modulesContainer.appendChild(module);
@@ -709,7 +792,7 @@
                         
                         // Add loaded modules to appData and to the DOM
                         savedModules.forEach(moduleData => {
-                            // Skip Notes and P&Gs which are already in the DOM
+                            // Skip modules we want to exclude (Notes and P&Gs)
                             if (moduleData.id === 'notes' || moduleData.id === 'p-and-gs') {
                                 return;
                             }
@@ -762,7 +845,21 @@
                                 const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
                                 
                                 if (requiresClient) {
-                                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                                    // Verify client is selected
+                                    const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                                    if (!client) {
+                                        alert("Please select or create a client first to access this module.");
+                                        return;
+                                    }
+                                    
+                                    // Set navigation state before navigating
+                                    localStorage.setItem('navigationState', 'fromDashboard');
+                                    
+                                    // Save current client to localStorage
+                                    localStorage.setItem('currentClient', JSON.stringify(client));
+                                    
+                                    // Navigate to the module
+                                    window.location.href = moduleId + '.html';
                                 } else {
                                     // For non-client modules, just navigate directly
                                     window.location.href = moduleId + '.html';
@@ -775,7 +872,7 @@
                         });
                     }
                 } catch (error) {
-                    console.error("Error loading modules from Firebase:", error);
+                    console.error("[Dashboard] Error loading modules from Firebase:", error);
                 }
             }
         }
@@ -788,6 +885,8 @@
                 name: module.name,
                 requiresClient: module.requiresClient
             }));
+            
+            console.log("[Dashboard] Saving modules to Firebase:", modulesToSave.length);
             
             // Save to Firebase
             if (window.ConstructionApp.Firebase) {
@@ -857,7 +956,21 @@
                 const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
                 
                 if (requiresClient) {
-                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                    // Verify client is selected
+                    const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                    if (!client) {
+                        alert("Please select or create a client first to access this module.");
+                        return;
+                    }
+                    
+                    // Set navigation state
+                    localStorage.setItem('navigationState', 'fromDashboard');
+                    
+                    // Save current client to localStorage
+                    localStorage.setItem('currentClient', JSON.stringify(client));
+                    
+                    // Navigate to module
+                    window.location.href = moduleId + '.html';
                 } else {
                     // For non-client modules, just navigate directly
                     window.location.href = moduleId + '.html';
@@ -1013,6 +1126,8 @@
             if (module && module.saveData) {
                 const data = module.saveData();
                 
+                console.log("[Dashboard] Saving module data for", moduleId);
+                
                 // Use the shared client manager to save module data
                 window.ConstructionApp.ClientManager.saveModuleData(moduleId, data);
                 
@@ -1021,6 +1136,9 @@
                 
                 // Recalculate total project cost
                 updateTotalProjectCost();
+                
+                // Update debug panel
+                updateDebugPanel();
             }
         }
 
@@ -1178,7 +1296,7 @@
 
         // Set up client management
         function setupClientManagement() {
-            console.log("Setting up client management");
+            console.log("[Dashboard] Setting up client management");
             const newClientBtn = document.getElementById('new-client-btn');
             const openClientBtn = document.getElementById('open-client-btn');
             
@@ -1268,9 +1386,14 @@
                             moduleData: {}
                         };
 
+                        console.log("[Dashboard] Creating new client:", name);
+                        
                         // Add client using the shared client manager
                         const client = window.ConstructionApp.ClientManager.addClient(newClient);
                         window.ConstructionApp.ClientManager.setCurrentClient(client);
+                        
+                        // Update debug panel
+                        updateDebugPanel();
 
                         alert(`Client "${name}" created and selected.`);
                         modal.closest('.modal-overlay').style.display = 'none';
@@ -1375,7 +1498,11 @@
                     
                     if (!isNaN(clientIndex) && clients[clientIndex]) {
                         // Set as current client using the shared client manager
+                        console.log("[Dashboard] Selecting client:", clients[clientIndex].name);
                         window.ConstructionApp.ClientManager.setCurrentClient(clients[clientIndex]);
+                        
+                        // Update debug panel
+                        updateDebugPanel();
                         
                         modal.closest('.modal-overlay').style.display = 'none';
                         alert(`Client "${clients[clientIndex].name}" selected.`);
@@ -1386,7 +1513,7 @@
 
         // Update the dashboard
         function updateDashboard(client) {
-            console.log("Updating dashboard for client:", client?.name);
+            console.log("[Dashboard] Updating dashboard for client:", client?.name);
             
             const logoutBtn = document.getElementById('logout-btn');
             
@@ -1402,6 +1529,9 @@
                 
                 // Render the dashboard content
                 renderDashboardContent(client);
+                
+                // Update debug panel
+                updateDebugPanel();
             } else {
                 // Clear client display and hide logout button
                 document.getElementById('client-name-display').textContent = '';
@@ -1421,6 +1551,9 @@
                         </ol>
                     </div>
                 `;
+                
+                // Update debug panel
+                updateDebugPanel();
             }
         }
 
@@ -1448,6 +1581,9 @@
             let hasModuleData = false;
             if (client.moduleData) {
                 for (const moduleId in client.moduleData) {
+                    // Skip P&Gs module as requested
+                    if (moduleId === 'p-and-gs') continue;
+                    
                     const module = appData.modules.find(m => m.id === moduleId);
                     if (module) {
                         hasModuleData = true;
@@ -1455,18 +1591,11 @@
                         // Get module data
                         const moduleData = client.moduleData[moduleId];
                         
-                        // For P&Gs, calculate total
-                        let moduleTotal = 0;
-                        if (moduleId === 'p-and-gs' && moduleData.items) {
-                            moduleTotal = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
-                        }
-                        
                         // Add module card
                         content += `
                             <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 <h5>${module.name}</h5>
-                                ${moduleTotal > 0 ? `<p>Total: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleTotal)}</p>` : ''}
-                                <button class="btn" style="margin-top: 10px;" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('${moduleId}')">Open Module</button>
+                                <button class="btn module-open-btn" style="margin-top: 10px;" data-module-id="${moduleId}">Open Module</button>
                             </div>
                         `;
                     }
@@ -1488,6 +1617,25 @@
             `;
             
             contentElement.innerHTML = content;
+            
+            // Add event listeners to the module open buttons
+            document.querySelectorAll('.module-open-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const moduleId = this.getAttribute('data-module-id');
+                    
+                    // Save navigation state
+                    localStorage.setItem('navigationState', 'fromDashboard');
+                    
+                    // Save current client to localStorage
+                    const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                    if (client) {
+                        localStorage.setItem('currentClient', JSON.stringify(client));
+                    }
+                    
+                    // Navigate to the module
+                    window.location.href = moduleId + '.html';
+                });
+            });
         }
 
         // Update total project cost
@@ -1496,13 +1644,8 @@
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             
             if (client && client.moduleData) {
-                // Calculate from P&Gs
-                if (client.moduleData['p-and-gs'] && client.moduleData['p-and-gs'].items) {
-                    totalCost += window.ConstructionApp.ModuleUtils.calculateModuleTotal(client.moduleData['p-and-gs'].items);
-                }
-                
-                // Calculate from other modules
-                // Add other module calculations as needed
+                // Calculate from each module
+                // (Note: P&Gs calculation removed as requested)
             }
             
             // Format and display
@@ -1526,7 +1669,7 @@
             });
 
             // Log the new order
-            console.log('New module order:', newOrder);
+            console.log('[Dashboard] New module order:', newOrder.length, 'modules');
             
             // Update appData.modules to match the new order
             appData.modules = newOrder.map(orderData => {
