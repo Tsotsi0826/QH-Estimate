@@ -524,8 +524,13 @@
             // Check navigation state
             checkNavigationState();
             
+            // Log current state for debugging
+            console.log("Current navigation state:", localStorage.getItem('navigationState'));
+            console.log("Current client in localStorage:", localStorage.getItem('currentClient'));
+            
             // Load client using the shared client manager - use getCurrentClient instead of direct localStorage access
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            console.log("Current client from ClientManager:", currentClient ? currentClient.name : "None");
             
             if (currentClient) {
                 // Show client data and module content
@@ -538,6 +543,8 @@
                 const savedItems = currentClient.moduleData && 
                                    currentClient.moduleData['p-and-gs'] ? 
                                    currentClient.moduleData['p-and-gs'].items : null;
+                
+                console.log("Loaded saved items:", savedItems ? savedItems.length : 0);
                 
                 // Use the shared data model to merge with defaults
                 pgItems = window.ConstructionApp.DataModels.getPAndGsItems(savedItems);
@@ -566,7 +573,11 @@
             // If this isn't a valid navigation, redirect to dashboard
             if (navigationState !== 'fromModulePage' && navigationState !== 'returningToDashboard') {
                 console.log("Invalid navigation state, returning to dashboard");
-                window.ConstructionApp.ModuleUtils.returnToDashboard();
+                // Set the navigation state before returning
+                localStorage.setItem('navigationState', 'returningToDashboard');
+                
+                // Navigate directly to dashboard
+                window.location.href = 'index.html';
             }
         }
 
@@ -590,12 +601,28 @@
         function setupEventListeners() {
             // Button event listeners
             document.getElementById('back-btn').addEventListener('click', function() {
-                // Use the shared utility
-                window.ConstructionApp.ModuleUtils.returnToDashboard();
+                // Before returning to dashboard, ensure client is saved
+                const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (currentClient) {
+                    console.log("Saving client before returning to dashboard:", currentClient.name);
+                    localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                    
+                    // Set navigation state before returning
+                    localStorage.setItem('navigationState', 'returningToDashboard');
+                    console.log("Navigation state set to returningToDashboard");
+                }
+                
+                // Navigate directly to dashboard
+                window.location.href = 'index.html';
             });
             
             document.getElementById('return-to-dashboard').addEventListener('click', function() {
-                window.ConstructionApp.ModuleUtils.returnToDashboard();
+                // Set navigation state before returning
+                localStorage.setItem('navigationState', 'returningToDashboard');
+                console.log("Navigation state set to returningToDashboard");
+                
+                // Navigate directly to dashboard
+                window.location.href = 'index.html';
             });
             
             document.getElementById('save-btn').addEventListener('click', saveEstimate);
@@ -608,8 +635,16 @@
                 item.addEventListener('click', function() {
                     const moduleId = this.getAttribute('data-module-id');
                     if (moduleId !== 'p-and-gs') {
-                        // Use the shared utility
-                        window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                        // Before navigating to another module, ensure the client is saved
+                        const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+                        if (currentClient) {
+                            console.log("Saving client before module navigation:", currentClient.name);
+                            localStorage.setItem('currentClient', JSON.stringify(currentClient));
+                        }
+                        
+                        // Use the shared utility, but make sure navigation state is properly set
+                        localStorage.setItem('navigationState', 'fromModulePage');
+                        window.location.href = moduleId + '.html';
                     }
                 });
             });
@@ -818,6 +853,8 @@
                 return;
             }
             
+            console.log("Saving P&Gs data for client:", currentClient.name);
+            
             // Prepare module data
             const moduleData = {
                 items: pgItems.map(item => ({
@@ -831,8 +868,18 @@
                 }))
             };
             
-            // Use the shared client manager to save
-            window.ConstructionApp.ClientManager.saveModuleData('p-and-gs', moduleData);
+            // Use the shared client manager to save module data
+            const saveResult = window.ConstructionApp.ClientManager.saveModuleData('p-and-gs', moduleData);
+            console.log("Module data save result:", saveResult);
+            
+            // After saving, get the updated client to verify
+            const updatedClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            console.log("Client after save:", updatedClient);
+            console.log("P&Gs data in client:", updatedClient.moduleData?.['p-and-gs']);
+            
+            // Manually update localStorage again to be sure
+            localStorage.setItem('currentClient', JSON.stringify(updatedClient));
+            console.log("Client saved to localStorage after module data update");
             
             // Show success message using the shared utility
             window.ConstructionApp.ModuleUtils.showSuccessMessage('P&Gs data saved successfully!');
