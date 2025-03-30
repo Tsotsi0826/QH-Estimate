@@ -18,16 +18,16 @@
         
         // Get current client
         getCurrentClient: function() {
-            // If _currentClient is null, try to get from localStorage
+            // If _currentClient is null, try to get from sessionStorage
             if (!_currentClient) {
-                const clientData = localStorage.getItem('currentClient');
+                const clientData = sessionStorage.getItem('currentClient');
                 if (clientData) {
                     try {
                         _currentClient = JSON.parse(clientData);
-                        console.log("[ClientManager] Restored client from localStorage:", _currentClient.name);
+                        console.log("[ClientManager] Restored client from sessionStorage:", _currentClient.name);
                     } catch (error) {
                         console.error("[ClientManager] Error parsing stored client:", error);
-                        localStorage.removeItem('currentClient');
+                        sessionStorage.removeItem('currentClient');
                     }
                 }
             }
@@ -39,13 +39,13 @@
             console.log("[ClientManager] Setting current client:", client ? client.name : "None");
             _currentClient = client;
             
-            // Save to localStorage for persistence between pages
+            // Save to sessionStorage for persistence between pages
             if (client) {
-                localStorage.setItem('currentClient', JSON.stringify(client));
-                console.log("[ClientManager] Client saved to localStorage");
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log("[ClientManager] Client saved to sessionStorage");
             } else {
-                localStorage.removeItem('currentClient');
-                console.log("[ClientManager] Client removed from localStorage");
+                sessionStorage.removeItem('currentClient');
+                console.log("[ClientManager] Client removed from sessionStorage");
             }
             
             // Notify any listeners
@@ -91,8 +91,8 @@
                 // If this is the current client, update it
                 if (_currentClient && _currentClient.id === client.id) {
                     _currentClient = client;
-                    localStorage.setItem('currentClient', JSON.stringify(client));
-                    console.log("[ClientManager] Updated current client in localStorage");
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
+                    console.log("[ClientManager] Updated current client in sessionStorage");
                 }
                 
                 // Save to Firestore if available
@@ -135,9 +135,9 @@
             // Update the module data
             _currentClient.moduleData[moduleId] = data;
             
-            // Update localStorage
-            localStorage.setItem('currentClient', JSON.stringify(_currentClient));
-            console.log("[ClientManager] Updated client in localStorage with new module data");
+            // Update sessionStorage
+            sessionStorage.setItem('currentClient', JSON.stringify(_currentClient));
+            console.log("[ClientManager] Updated client in sessionStorage with new module data");
             
             // Save to Firestore if available
             if (window.ConstructionApp.Firebase) {
@@ -160,7 +160,7 @@
         clearCurrentClient: function() {
             console.log("[ClientManager] Clearing current client");
             _currentClient = null;
-            localStorage.removeItem('currentClient'); // Remove from localStorage
+            sessionStorage.removeItem('currentClient'); // Remove from sessionStorage
             
             // Notify any listeners
             if (typeof this.onClientChanged === 'function') {
@@ -170,13 +170,13 @@
             return true;
         },
         
-        // Force a refresh of the current client from localStorage
+        // Force a refresh of the current client from sessionStorage
         refreshCurrentClient: function() {
-            const clientData = localStorage.getItem('currentClient');
+            const clientData = sessionStorage.getItem('currentClient');
             if (clientData) {
                 try {
                     _currentClient = JSON.parse(clientData);
-                    console.log("[ClientManager] Refreshed current client from localStorage:", _currentClient.name);
+                    console.log("[ClientManager] Refreshed current client from sessionStorage:", _currentClient.name);
                     
                     // Notify any listeners
                     if (typeof this.onClientChanged === 'function') {
@@ -185,8 +185,8 @@
                     
                     return _currentClient;
                 } catch (error) {
-                    console.error("[ClientManager] Error refreshing client from localStorage:", error);
-                    localStorage.removeItem('currentClient');
+                    console.error("[ClientManager] Error refreshing client from sessionStorage:", error);
+                    sessionStorage.removeItem('currentClient');
                     _currentClient = null;
                     
                     // Notify any listeners
@@ -195,7 +195,7 @@
                     }
                 }
             } else {
-                console.log("[ClientManager] No client found in localStorage during refresh");
+                console.log("[ClientManager] No client found in sessionStorage during refresh");
                 _currentClient = null;
                 
                 // Notify any listeners
