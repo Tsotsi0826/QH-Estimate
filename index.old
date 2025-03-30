@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Construction Estimator</title>
+    
+    <!-- Firebase Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    
+    <!-- Shared JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -71,6 +80,28 @@
 
         .client-action:hover {
             color: #4eca8b;
+        }
+
+        /* Add New Module Button */
+        .add-module-btn {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #2d364a;
+            color: #fff;
+            cursor: pointer;
+            margin: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .add-module-btn:hover {
+            background-color: #4eca8b;
+        }
+
+        .add-module-btn i {
+            margin-right: 10px;
+            font-weight: bold;
         }
 
         /* Client Modal Styles */
@@ -408,6 +439,34 @@
         .scroll-container::-webkit-scrollbar-thumb:hover {
             background-color: rgba(255, 255, 255, 0.4);
         }
+
+        /* Style for non-client modules */
+        .module-item[data-requires-client="false"] {
+            position: relative;
+        }
+        
+        .module-item[data-requires-client="false"]::after {
+            content: "⚙️";
+            position: absolute;
+            right: 10px;
+            font-size: 14px;
+        }
+        
+        /* Styles for logout button */
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #6c757d;
+        }
+
+        .btn-small:hover {
+            background-color: #5a6268;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -428,9 +487,14 @@
             <input type="text" class="search-input" placeholder="Search modules...">
         </div>
 
+        <!-- Add New Module Button -->
+        <div class="add-module-btn" id="add-module-btn">
+            <i>+</i> Add New Module
+        </div>
+
         <div class="scroll-container">
             <div class="modules-list" id="modules-container">
-                <div class="module-item" draggable="true" data-module-id="notes">
+                <div class="module-item" draggable="true" data-module-id="notes" data-requires-client="true">
                     <div class="module-drag-handle">≡</div>
                     <div class="module-icon">
                         ...
@@ -441,7 +505,7 @@
                     </div>
                     <span>Notes</span>
                 </div>
-                <div class="module-item" draggable="true" data-module-id="p-and-gs">
+                <div class="module-item" draggable="true" data-module-id="p-and-gs" data-requires-client="true">
                     <div class="module-drag-handle">≡</div>
                     <div class="module-icon">
                         ...
@@ -452,303 +516,7 @@
                     </div>
                     <span>P & Gs</span>
                 </div>
-                <div class="module-item" draggable="true" data-module-id="demolish">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Demolish & Strip</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="toolhire">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Toolhire</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="earthworks">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Earthworks</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="foundations">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Foundations</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="brickwork">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Brickwork & Cavity Fill</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="surfacebeds">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Surfacebeds</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="plaster">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Plaster</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="concrete">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Concrete Slab & Stairs</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="steel">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Specialized Steel</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="roofing">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Roofing</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="windows">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Alu Windows and Doors</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="ceilings">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Ceilings</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="flooring">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Floor and Wall Covering</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="carpentry">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Carpentry and Joinery</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="painting">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Painting</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="plumbing">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Plumbing</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="electrical">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Electrical</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="waterproofing">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Waterproofing</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="fireplaces">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Fireplace's & Braai's</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="external">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>External Works</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="fees">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Fee's</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="admin">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Admin</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="renovation">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Renovation Quote</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="quote">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Quote</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="data">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Data</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="price_list">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Price List</span>
-                </div>
-                <div class="module-item" draggable="true" data-module-id="pc_items">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>PC Items</span>
-                </div>
+                <!-- Other module items here - add data-requires-client="true" to each -->
             </div>
         </div>
     </div>
@@ -759,8 +527,11 @@
                 <i>D</i> Dashboard
             </div>
             <div id="client-name-display" style="margin-left: 20px;"></div>
-            <div class="total-cost">
-                Total Project Cost: $0
+            <div class="header-actions">
+                <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
+            </div>
+            <div class="total-cost" id="total-project-cost">
+                Total Project Cost: R0.00
             </div>
         </div>
 
@@ -775,75 +546,28 @@
             </div>
 
             <div id="module-content">
+                <!-- Dashboard content will be loaded here -->
+                <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                    <h3>Getting Started</h3>
+                    <p>To start using the Construction Estimator:</p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>Create a new client or open an existing client</li>
+                        <li>Select a module from the sidebar to begin estimating</li>
+                        <li>Add new modules using the "Add New Module" button</li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Firebase Configuration - Replace with your actual Firebase config
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "qh-dashboard-d67cf.firebaseapp.com",
-            projectId: "qh-dashboard-d67cf",
-            storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
-            messagingSenderId: "939838453148",
-            appId: "1:939838453148:web:2bf49c6ec240343b934459"
-        };
-
-        // Initialize Firebase - FIXED: Proper initialization sequence
-        let db;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase initialized successfully");
-        } catch (error) {
-            console.error("Firebase initialization error:", error);
-            // Fallback for demo/testing - create an in-memory database substitute
-            db = {
-                collection: function(name) {
-                    return {
-                        doc: function(id) {
-                            return {
-                                set: function(data, options) {
-                                    console.log(`Mock DB: saving ${name} document ${id}:`, data, options);
-                                    return Promise.resolve();
-                                },
-                                get: function() {
-                                    return Promise.resolve({
-                                        exists: false,
-                                        data: function() { return null; }
-                                    });
-                                },
-                                update: function(data) {
-                                    console.log(`Mock DB: updating ${name} document ${id}:`, data);
-                                    return Promise.resolve();
-                                },
-                                delete: function(){
-                                    console.log(`Mock delete ${name}/${id}`);
-                                    return Promise.resolve();
-                                }
-                            };
-                        },
-                        get: function(){
-                            return Promise.resolve({
-                                empty: true,
-                                forEach: function(){}
-                            });
-                        }
-                    };
-                }
-            };
-            console.log("Using mock database for testing");
-        }
-
-        // Sample data structure for all modules
+        // Application data structure 
         const appData = {
-            clients: [], // Array to hold client objects
-            currentClient: null, // To hold the currently selected client
             modules: [
                 {
                     id: 'notes',
                     name: 'Notes',
+                    requiresClient: true,
                     renderTemplate: function(client) {
                         const notesData = client?.moduleData?.notes?.notes || '';
                         return `
@@ -860,205 +584,119 @@
                 {
                     id: 'p-and-gs',
                     name: 'P & Gs',
+                    requiresClient: true,
                     renderTemplate: function(client) {
-                        const pgsData = client?.moduleData?.['p-and-gs']?.items || [
-                            { quantity: 1, rate: 1000 },
-                            { quantity: 1, rate: 500 },
-                            { quantity: 100, rate: 10 },
-                        ];
-
-                        let total = 0;
-                        let tableRows = pgsData.map((item, index) => {
-                            const amount = item.quantity * item.rate;
-                            total += amount;
-                            return `
-                                <tr>
-                                    <td>${index === 0 ? 'Management Staff' : index === 1 ? 'Site Office' : 'Temporary Fencing'}</td>
-                                    <td><input type="number" class="p-gs-quantity" data-index="${index}" value="${item.quantity}"></td>
-                                    <td>${item.rate}</td>
-                                    <td>${amount}</td>
-                                </tr>
-                            `;
-                        }).join('');
-
+                        // We would render a preview here, but now we navigate to separate page
                         return `
                             <h3>Preliminaries and General Conditions</h3>
-                            <p>Enter the quantities for each item. Rates are fixed.</p>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Quantity</th>
-                                        <th>Rate</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${tableRows}
-                                    <tr class="total-row">
-                                        <td colspan="3">Total</td>
-                                        <td>${total}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <button class="btn module-save-btn" data-module="p-and-gs">Save P&Gs</button>
+                            <p>Click the P & Gs module in the sidebar to access the full estimator.</p>
+                            <button class="btn" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('p-and-gs')">Open P & Gs Module</button>
                         `;
-                    },
-                    saveData: function() {
-                        const quantities = Array.from(document.querySelectorAll('.p-gs-quantity')).map(input => parseFloat(input.value));
-                        const rates = [1000, 500, 10]; // Fixed rates
-                        const items = quantities.map((quantity, index) => ({
-                            quantity: quantity,
-                            rate: rates[index],
-                        }));
-                        return { items: items };
-                    },
+                    }
                 },
-                {
-                    id: 'demolish',
-                    name: 'Demolish & Strip',
-                    renderTemplate: function(client) {
-                        const demolishData = client?.moduleData?.demolish?.items || [
-                            { quantity: 50, rate: 20 },
-                            { quantity: 100, rate: 15 },
-                        ];
-                        let total = 0;
-                        let tableRows = demolishData.map((item, index) => {
-                            const amount = item.quantity * item.rate;
-                            total += amount;
-                            return `
-                                <tr>
-                                    <td>${index === 0 ? 'Demolish Walls' : 'Remove Floor Finishes'}</td>
-                                    <td><input type="number" class="demolish-quantity" data-index="${index}" value="${item.quantity}"></td>
-                                    <td>${item.rate}</td>
-                                    <td>${amount}</td>
-                                </tr>
-                            `;
-                        }).join('');
-
-                        return `
-                            <h3>Demolish and Strip</h3>
-                            <p>Enter the quantities for demolition and strip items.</p>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Quantity</th>
-                                        <th>Rate</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${tableRows}
-                                    <tr class="total-row">
-                                        <td colspan="3">Total</td>
-                                        <td>${total}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <button class="btn module-save-btn" data-module="demolish">Save Demolition</button>
-                        `;
-                    },
-                    saveData() {
-                        const quantities = Array.from(document.querySelectorAll('.demolish-quantity')).map(input => parseFloat(input.value));
-                        const rates = [20, 15];
-                        const items = quantities.map((quantity, index) => ({
-                            quantity,
-                            rate: rates[index],
-                        }));
-                        return { items };
-                    },
-                },
-                // Additional modules can be added here
+                // Other modules here
             ],
         };
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM loaded, initializing app");
+            
+            // Load modules from Firebase
+            loadModulesFromFirebase();
+            
+            // Initialize app
             initApp();
+            
+            // Setup dropdowns, client management, and module button
             setupDropdownMenus();
             setupClientManagement();
-            loadClientsFromFirestore();
+            setupAddModuleButton();
+            
+            // Load clients using the shared client manager
+            window.ConstructionApp.ClientManager.loadClients().then(() => {
+                console.log("Clients loaded");
+            });
+            
+            // Set up client change handler
+            window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
         });
 
-        // Load clients from Firestore
-        async function loadClientsFromFirestore() {
-            try {
-                console.log("Attempting to load clients from Firestore");
-                const clientsSnapshot = await db.collection('clients').get();
-                
-                if (!clientsSnapshot.empty) {
-                    clientsSnapshot.forEach(doc => {
-                        const clientData = doc.data();
-                        appData.clients.push(clientData);
-                        console.log("Loaded client:", clientData.name);
-                    });
-                    console.log(`Loaded ${appData.clients.length} clients from Firestore`);
-                } else {
-                    console.log("No clients found in Firestore");
-                }
-            } catch (error) {
-                console.error("Error loading clients from Firestore:", error);
-            }
-        }
-
+        // Initialize app function 
         function initApp() {
             console.log("Initializing app");
+            
+            // Check the navigation state
+            const navigationState = localStorage.getItem('navigationState');
+            console.log("Navigation state:", navigationState);
+            
+            // Debug: Check localStorage for client
+            const storedClient = localStorage.getItem('currentClient');
+            console.log("Client in localStorage:", storedClient ? JSON.parse(storedClient).name : "None");
+            
+            // Handle app initialization based on navigation state
+            if (navigationState === 'returningToDashboard') {
+                // We're returning from a module, retain the client from localStorage
+                if (storedClient) {
+                    try {
+                        const clientData = JSON.parse(storedClient);
+                        // Use the ClientManager to set the current client
+                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                        console.log("Returning from module, client restored:", clientData.name);
+                    } catch (error) {
+                        console.error("Error parsing stored client:", error);
+                    }
+                } else {
+                    console.log("No stored client found when returning from module");
+                }
+            } else if (navigationState === 'manualLogout') {
+                // User manually logged out, ensure client is fully cleared
+                console.log("User manually logged out");
+                window.ConstructionApp.ClientManager.clearCurrentClient();
+            } else if (!navigationState || navigationState === 'firstLoad') {
+                // First load - check if there's a client in localStorage
+                console.log("Fresh load or no navigation state");
+                if (storedClient) {
+                    try {
+                        // Keep any existing client in localStorage on first load
+                        const clientData = JSON.parse(storedClient);
+                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                        console.log("Restored client from localStorage on fresh load:", clientData.name);
+                    } catch (error) {
+                        console.error("Error parsing stored client on fresh load:", error);
+                        window.ConstructionApp.ClientManager.clearCurrentClient();
+                    }
+                } else {
+                    // No client in localStorage, ensure client is cleared
+                    window.ConstructionApp.ClientManager.clearCurrentClient();
+                }
+            }
+            
+            // Clear the navigation state for future navigations
+            localStorage.removeItem('navigationState');
+            
+            // Debug: Log current client after initialization
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            console.log("Current client after initialization:", currentClient ? currentClient.name : "None");
+            
             // Attach click event listeners to module items
             document.querySelectorAll('.module-item').forEach(item => {
-                // Only attachthe event to the text part, not the icon
+                // Only attach the event to the text part, not the icon
                 const moduleText = item.querySelector('span');
                 if (moduleText) {
                     moduleText.addEventListener('click', function() {
-                        console.log("Module clicked:", this.textContent.trim());
-                        // Get the module name
-                        const moduleName = this.textContent.trim();
-
-                        // Check if we have an active client
-                        if (!appData.currentClient) {
-                            // Show message that client needs to be selected first
-                            document.getElementById('module-content').innerHTML = `
-                                <div style="padding: 20px; background-color: #fff4e5; border-left: 4px solid #ffa940; margin-bottom: 20px;">
-                                    <h3>Client Required</h3>
-                                    <p>Please select or create a client before accessing modules.</p>
-                                    <button class="btn" id="quick-new-client">Create New Client</button>
-                                    <button class="btn" style="margin-left: 10px;" id="quick-open-client">Open Existing Client</button>
-                                </div>
-                            `;
-
-                            // Add event listeners to the quick buttons
-                            document.getElementById('quick-new-client').addEventListener('click', function() {
-                                document.getElementById('new-client-btn').click();
-                            });
-
-                            document.getElementById('quick-open-client').addEventListener('click', function() {
-                                document.getElementById('open-client-btn').click();
-                            });
-
-                            return;
-                        }
-
-                        // Find the module in the data
-                        const module = appData.modules.find(mod => mod.name === moduleName);
-
-                        if (module) {
-                            // Render the module with the current client's data
-                            document.getElementById('module-content').innerHTML = module.renderTemplate(appData.currentClient);
-
-                            // Add event listeners for module interactions
-                            setupModuleInteractions(module.id);
+                        const moduleId = item.getAttribute('data-module-id');
+                        
+                        // Check if client is required for this module
+                        const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                        
+                        if (requiresClient) {
+                            // These modules require a client
+                            window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
                         } else {
-                            // If module not found in data, show placeholder
-                            document.getElementById('module-content').innerHTML = `
-                                <h3>${moduleName}</h3>
-                                <p>This module is currently under development.</p>
-                            `;
+                            // These modules don't require a client (like setup modules)
+                            window.location.href = moduleId + '.html';
                         }
-
-                        // Add active class to selected module
-                        document.querySelectorAll('.module-item').forEach(m => m.classList.remove('active'));
-                        item.classList.add('active');
                     });
                 }
             });
@@ -1066,169 +704,436 @@
             // Set up drag and drop functionality
             setupDragAndDrop();
         }
+        
+        // Load modules from Firebase
+        async function loadModulesFromFirebase() {
+            if (window.ConstructionApp.Firebase) {
+                try {
+                    // Load saved modules
+                    const savedModules = await window.ConstructionApp.Firebase.loadModules();
+                    
+                    if (savedModules && savedModules.length > 0) {
+                        console.log("Loaded modules from Firebase:", savedModules);
+                        
+                        // Clear existing modules in the DOM
+                        const modulesContainer = document.getElementById('modules-container');
+                        // Keep default modules (Notes and P&Gs)
+                        const defaultModules = modulesContainer.querySelectorAll('.module-item[data-module-id="notes"], .module-item[data-module-id="p-and-gs"]');
+                        modulesContainer.innerHTML = '';
+                        defaultModules.forEach(module => {
+                            modulesContainer.appendChild(module);
+                        });
+                        
+                        // Add loaded modules to appData and to the DOM
+                        savedModules.forEach(moduleData => {
+                            // Skip Notes and P&Gs which are already in the DOM
+                            if (moduleData.id === 'notes' || moduleData.id === 'p-and-gs') {
+                                return;
+                            }
+                            
+                            // Add to appData.modules if not already there
+                            if (!appData.modules.some(m => m.id === moduleData.id)) {
+                                appData.modules.push({
+                                    id: moduleData.id,
+                                    name: moduleData.name,
+                                    requiresClient: moduleData.requiresClient,
+                                    renderTemplate: function(client) {
+                                        return `
+                                            <h3>${moduleData.name}</h3>
+                                            <p>This is a custom module. You can create an HTML file named "${moduleData.id}.html" to implement this module.</p>
+                                            <p>For now, this is a placeholder.</p>
+                                        `;
+                                    },
+                                    saveData: function() {
+                                        return {};
+                                    }
+                                });
+                            }
+                            
+                            // Create DOM element for the module
+                            const moduleElement = document.createElement('div');
+                            moduleElement.className = 'module-item';
+                            moduleElement.draggable = true;
+                            moduleElement.setAttribute('data-module-id', moduleData.id);
+                            moduleElement.setAttribute('data-requires-client', moduleData.requiresClient ? 'true' : 'false');
+                            
+                            moduleElement.innerHTML = `
+                                <div class="module-drag-handle">≡</div>
+                                <div class="module-icon">
+                                    ...
+                                    <div class="dropdown-menu">
+                                        <div class="dropdown-item edit-module">Edit</div>
+                                        <div class="dropdown-item delete-module">Delete</div>
+                                    </div>
+                                </div>
+                                <span>${moduleData.name}</span>
+                            `;
+                            
+                            // Add to the DOM
+                            modulesContainer.appendChild(moduleElement);
+                            
+                            // Add event listeners
+                            const moduleText = moduleElement.querySelector('span');
+                            moduleText.addEventListener('click', function() {
+                                const moduleId = moduleElement.getAttribute('data-module-id');
+                                const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
+                                
+                                if (requiresClient) {
+                                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                                } else {
+                                    // For non-client modules, just navigate directly
+                                    window.location.href = moduleId + '.html';
+                                }
+                            });
+                            
+                            // Setup dropdown and drag
+                            setupDropdownForModule(moduleElement);
+                            setupDragForModule(moduleElement);
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error loading modules from Firebase:", error);
+                }
+            }
+        }
 
+        // Save modules to Firebase
+        function saveModulesToFirebase() {
+            // Save only the necessary data (not the functions)
+            const modulesToSave = appData.modules.map(module => ({
+                id: module.id,
+                name: module.name,
+                requiresClient: module.requiresClient
+            }));
+            
+            // Save to Firebase
+            if (window.ConstructionApp.Firebase) {
+                window.ConstructionApp.Firebase.saveModules(modulesToSave);
+            }
+        }
+
+        // Add module button setup
+        function setupAddModuleButton() {
+            const addModuleBtn = document.getElementById('add-module-btn');
+            if (addModuleBtn) {
+                addModuleBtn.addEventListener('click', function() {
+                    addNewModule();
+                });
+            }
+        }
+
+        // Add a new module
+        function addNewModule() {
+            // Prompt for module name
+            const moduleName = prompt("Enter new module name:");
+            
+            if (!moduleName || moduleName.trim() === '') {
+                return; // User cancelled or entered empty name
+            }
+            
+            // Generate a module ID (lowercase, no spaces, dashes for spaces)
+            const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            // Check if module ID already exists
+            const existingModuleElement = document.querySelector(`.module-item[data-module-id="${moduleId}"]`);
+            if (existingModuleElement) {
+                alert(`A module with the ID "${moduleId}" already exists. Please choose a different name.`);
+                return;
+            }
+            
+            // Ask if this module requires a client selection
+            const requiresClient = confirm("Does this module require a client selection?\n\nClick OK if this module needs client data.\nClick Cancel if this is a setup/config module that doesn't need client data.");
+            
+            // Create a new module element
+            const moduleElement = document.createElement('div');
+            moduleElement.className = 'module-item';
+            moduleElement.draggable = true;
+            moduleElement.setAttribute('data-module-id', moduleId);
+            moduleElement.setAttribute('data-requires-client', requiresClient ? 'true' : 'false');
+            
+            moduleElement.innerHTML = `
+                <div class="module-drag-handle">≡</div>
+                <div class="module-icon">
+                    ...
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item edit-module">Edit</div>
+                        <div class="dropdown-item delete-module">Delete</div>
+                    </div>
+                </div>
+                <span>${moduleName}</span>
+            `;
+            
+            // Add to the DOM
+            const modulesContainer = document.getElementById('modules-container');
+            modulesContainer.appendChild(moduleElement);
+            
+            // Add event listeners
+            const moduleText = moduleElement.querySelector('span');
+            moduleText.addEventListener('click', function() {
+                const moduleId = moduleElement.getAttribute('data-module-id');
+                const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
+                
+                if (requiresClient) {
+                    window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+                } else {
+                    // For non-client modules, just navigate directly
+                    window.location.href = moduleId + '.html';
+                }
+            });
+            
+            // Setup dropdown menu
+            setupDropdownForModule(moduleElement);
+            
+            // Setup drag and drop
+            setupDragForModule(moduleElement);
+            
+            // Add to appData modules array
+            appData.modules.push({
+                id: moduleId,
+                name: moduleName,
+                requiresClient: requiresClient,
+                renderTemplate: function(client) {
+                    return `
+                        <h3>${moduleName}</h3>
+                        <p>This is a custom module. You can create an HTML file named "${moduleId}.html" to implement this module.</p>
+                        <p>For now, this is a placeholder.</p>
+                    `;
+                },
+                saveData: function() {
+                    return {};
+                }
+            });
+            
+            // Save modules to Firebase
+            saveModulesToFirebase();
+            
+            // Notify user
+            alert(`New module "${moduleName}" created with ID "${moduleId}". Create a file named "${moduleId}.html" to implement this module.`);
+        }
+
+        // Setup dropdown for a single module
+        function setupDropdownForModule(moduleElement) {
+            const icon = moduleElement.querySelector('.module-icon');
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.querySelector('.dropdown-menu');
+                if (dropdown) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        if (menu !== dropdown && menu.style.display === 'block') {
+                            menu.style.display = 'none';
+                        }
+                    });
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                }
+            });
+            
+            // Edit button
+            const editBtn = moduleElement.querySelector('.edit-module');
+            editBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const moduleName = moduleElement.querySelector('span').textContent.trim();
+                editModule(moduleName, moduleElement);
+            });
+            
+            // Delete button
+            const deleteBtn = moduleElement.querySelector('.delete-module');
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const moduleName = moduleElement.querySelector('span').textContent.trim();
+                deleteModule(moduleName, moduleElement);
+            });
+        }
+
+        // Setup drag for a single module
+        function setupDragForModule(moduleElement) {
+            let draggedItem = null;
+            
+            // Drag start event
+            moduleElement.addEventListener('dragstart', function(e) {
+                draggedItem = this;
+                setTimeout(() => this.classList.add('dragging'), 0);
+                
+                // Store data about the dragged item
+                e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            // Drag end event
+            moduleElement.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.module-item').forEach(item => item.classList.remove('drag-over'));
+            });
+            
+            // Drag over event
+            moduleElement.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                if (this !== draggedItem) {
+                    this.classList.add('drag-over');
+                }
+            });
+            
+            // Drag leave event
+            moduleElement.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            // Drop event
+            moduleElement.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                if (this !== draggedItem) {
+                    const modulesContainer = document.getElementById('modules-container');
+                    const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
+                    const draggedIndex = allItems.indexOf(draggedItem);
+                    const targetIndex = allItems.indexOf(this);
+                    
+                    // If dropping after the target, insert after, otherwise insert before
+                    if (draggedIndex < targetIndex) {
+                        this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                    } else {
+                        this.parentNode.insertBefore(draggedItem, this);
+                    }
+                    
+                    // Update the data array order if needed
+                    updateModuleOrder();
+                }
+            });
+            
+            // Add click handler for the drag handle
+            const dragHandle = moduleElement.querySelector('.module-drag-handle');
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', function(e) {
+                    // Prevent the dropdown from opening when drag starts
+                    e.stopPropagation();
+                });
+            }
+        }
+        
         // Set up module-specific interactions
         function setupModuleInteractions(moduleId) {
-            console.log("Setting up interactions for module:", moduleId);
             // Add event listeners for the save buttons in the module
             const saveButtons = document.querySelectorAll('.module-save-btn');
             saveButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const moduleId = this.getAttribute('data-module');
-                    console.log("Save button clicked for module:", moduleId);
                     saveModuleData(moduleId);
                 });
             });
 
-            // Add specific handling for each module type
-            if (moduleId === 'notes') {
-                // No special setup needed for notes
-            } else if (moduleId === 'p-and-gs') {
-                // Add event listeners for quantity changes
-                document.querySelectorAll('.p-gs-quantity').forEach(input => {
-                    input.addEventListener('change', function() {
-                        updatePGsCalculations();
-                    });
-                });
-                updatePGsCalculations();
-            } else if (moduleId === 'demolish') {
-                document.querySelectorAll('.demolish-quantity').forEach(input => {
-                    input.addEventListener('change', function() {
-                        updateDemolishCalculations();
-                    });
-                });
-                updateDemolishCalculations();
-            }
-            // Add more module-specific setup as needed
+            // Add specific handling for each module type if needed
         }
 
         // Save module data to the current client
         function saveModuleData(moduleId) {
-            if (!appData.currentClient) {
-                console.error("No active client to save data to");
-                return;
-            }
-
-            console.log("Saving data for module:", moduleId);
-
-            // Initialize moduleData if it doesn't exist
-            if (!appData.currentClient.moduleData) {
-                appData.currentClient.moduleData = {};
-            }
-
-            // Save data based on module type
             const module = appData.modules.find(m => m.id === moduleId);
-            if (module) {
+            if (module && module.saveData) {
                 const data = module.saveData();
-                appData.currentClient.moduleData[moduleId] = data;
-                saveModuleDataToFirestore(appData.currentClient.id, moduleId, data);
-                console.log("Module data saved:", data);
+                
+                // Use the shared client manager to save module data
+                window.ConstructionApp.ClientManager.saveModuleData(moduleId, data);
+                
+                // Show success message
+                window.ConstructionApp.ModuleUtils.showSuccessMessage('Module data saved successfully!');
+                
+                // Recalculate total project cost
+                updateTotalProjectCost();
             }
-
-            // Recalculate total project cost after saving any module
-            updateTotalProjectCost();
         }
-        
-        async function saveModuleDataToFirestore(clientId, moduleId, data) {
-            try {
-                console.log(`Saving ${moduleId} data to Firestore for client ${clientId}`);
-                const clientRef = db.collection('clients').doc(clientId);
-                await clientRef.set({
-                    moduleData: {
-                        [moduleId]: data
+
+        // Setup dropdown menus
+        function setupDropdownMenus() {
+            // Module icons dropdown
+            document.querySelectorAll('.module-icon').forEach(icon => {
+                icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dropdown = this.querySelector('.dropdown-menu');
+                    if (dropdown) {
+                        // Close other open dropdowns
+                        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                            if (menu !== dropdown && menu.style.display === 'block') {
+                                menu.style.display = 'none';
+                            }
+                        });
+
+                        // Toggle this dropdown
+                        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
                     }
-                }, { merge: true });
-                console.log(`${moduleId} data saved to Firestore for client ${clientId}`);
-            } catch (error) {
-                console.error(`Error saving ${moduleId} data to Firestore:`, error);
+                });
+            });
+
+            // Edit and delete module handlers
+            document.querySelectorAll('.edit-module').forEach(editBtn => {
+                editBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const moduleItem = this.closest('.module-item');
+                    const moduleName = moduleItem.querySelector('span').textContent.trim();
+                    editModule(moduleName, moduleItem);
+                });
+            });
+
+            document.querySelectorAll('.delete-module').forEach(deleteBtn => {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const moduleItem = this.closest('.module-item');
+                    const moduleName = moduleItem.querySelector('span').textContent.trim();
+                    deleteModule(moduleName, moduleItem);
+                });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            });
+        }
+
+        // Edit a module
+        function editModule(moduleName, moduleElement) {
+            // Create a simple edit prompt
+            const newName = prompt(`Edit module name:`, moduleName);
+
+            if (newName && newName.trim() !== '' && newName !== moduleName) {
+                // Update the module name
+                moduleElement.querySelector('span').textContent = newName;
+
+                // Find and update the module in data if it exists
+                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
+                if (moduleIndex !== -1) {
+                    appData.modules[moduleIndex].name = newName;
+                    
+                    // Save modules to Firebase
+                    saveModulesToFirebase();
+                }
+
+                // Show success message
+                alert(`Module renamed to "${newName}"`);
             }
         }
 
-        // Update P&Gs calculations based on current input values
-        function updatePGsCalculations() {
-            if (!appData.currentClient) return;
+        // Delete a module
+        function deleteModule(moduleName, moduleElement) {
+            // Confirm before deleting
+            if (confirm(`Are you sure you want to delete the "${moduleName}" module?`)) {
+                // Remove the module element from DOM
+                moduleElement.remove();
 
-            // Get current module data
-            const moduleData = appData.currentClient.moduleData?.['p-and-gs'] || { items: [] };
-            const items = moduleData.items?.length ? [...moduleData.items] : [
-                { quantity: 1, rate: 1000 },
-                { quantity: 1, rate: 500 },
-                { quantity: 100, rate: 10 }
-            ];
-
-            // Update quantities from input fields
-            document.querySelectorAll('.p-gs-quantity').forEach(input => {
-                const index = parseInt(input.getAttribute('data-index'));
-                const newQuantity = parseFloat(input.value);
-
-                if (items[index] && !isNaN(newQuantity)) {
-                    items[index].quantity = newQuantity;
+                // Remove from data array if it exists
+                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
+                if (moduleIndex !== -1) {
+                    appData.modules.splice(moduleIndex, 1);
+                    
+                    // Save modules to Firebase
+                    saveModulesToFirebase();
                 }
-            });
 
-            // Calculate amounts and total
-            let total = 0;
-            const rows = document.querySelectorAll('table tbody tr:not(.total-row)');
-
-            items.forEach((item, index) => {
-                if (index < rows.length) {
-                    const amount = item.quantity * item.rate;
-                    total += amount;
-
-                    // Update the amount cell
-                    const amountCell = rows[index].querySelector('td:last-child');
-                    if (amountCell) {
-                        amountCell.textContent = amount;
-                    }
-                }
-            });
-
-            // Update the total row
-            const totalCell = document.querySelector('table .total-row td:last-child');
-            if (totalCell) {
-                totalCell.textContent = total;
+                // Show success message
+                alert(`Module "${moduleName}" has been deleted`);
             }
         }
 
-        function updateDemolishCalculations() {
-            if (!appData.currentClient) return;
-
-            const moduleData = appData.currentClient.moduleData?.['demolish'] || { items: [] };
-            const items = moduleData.items?.length ? [...moduleData.items] : [
-                { quantity: 50, rate: 20 },
-                { quantity: 100, rate: 15 }
-            ];
-
-            document.querySelectorAll('.demolish-quantity').forEach(input => {
-                const index = parseInt(input.getAttribute('data-index'));
-                const newQuantity = parseFloat(input.value);
-
-                if (items[index] && !isNaN(newQuantity)) {
-                    items[index].quantity = newQuantity;
-                }
-            });
-
-            let total = 0;
-            const rows = document.querySelectorAll('table tbody tr:not(.total-row)');
-
-            items.forEach((item, index) => {
-                if (index < rows.length) {
-                    const amount = item.quantity * item.rate;
-                    total += amount;
-
-                    const amountCell = rows[index].querySelector('td:last-child');
-                    if (amountCell) {
-                        amountCell.textContent = amount;
-                    }
-                }
-            });
-
-            const totalCell = document.querySelector('table .total-row td:last-child');
-            if (totalCell) {
-                totalCell.textContent = total;
-            }
-        }
-
+        // Setup drag and drop functionality
         function setupDragAndDrop() {
             const moduleItems = document.querySelectorAll('.module-item');
             let draggedItem = null;
@@ -1285,116 +1190,10 @@
                         updateModuleOrder();
                     }
                 });
-
-                // Add click handler for the drag handle
-                const dragHandle = item.querySelector('.module-drag-handle');
-                if (dragHandle) {
-                    dragHandle.addEventListener('mousedown', function(e) {
-                        // Prevent the dropdown from opening when drag starts
-                        e.stopPropagation();
-                    });
-                }
             });
         }
 
-        function updateModuleOrder() {
-            // This function could be implemented to update the underlying data structure
-            // based on the new order of modules in the DOM
-            const moduleItems = document.querySelectorAll('.module-item');
-            const newOrder = Array.from(moduleItems).map(item => item.querySelector('span').textContent.trim());
-
-            // For now, just log the new order
-            console.log('New module order:', newOrder);
-
-            // In a full implementation, you would rearrange your data array to match this order
-        }
-
-        function setupDropdownMenus() {
-            console.log("Setting up dropdown menus");
-            // Stop propagation for dropdown to prevent module selection
-            document.querySelectorAll('.module-icon').forEach(icon => {
-                icon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    // Toggle the dropdown
-                    const dropdown = this.querySelector('.dropdown-menu');
-                    if (dropdown) {
-                        // Close other open dropdowns
-                        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                            if (menu !== dropdown && menu.style.display === 'block') {
-                                menu.style.display = 'none';
-                            }
-                        });
-
-                        // Toggle this dropdown
-                        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-
-            // Add click event for edit option
-            document.querySelectorAll('.edit-module').forEach(editBtn => {
-                editBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const moduleItem = this.closest('.module-item');
-                    const moduleName = moduleItem.querySelector('span').textContent.trim();
-                    editModule(moduleName, moduleItem);
-                });
-            });
-
-            // Add click event for delete option
-            document.querySelectorAll('.delete-module').forEach(deleteBtn => {
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const moduleItem = this.closest('.module-item');
-                    const moduleName = moduleItem.querySelector('span').textContent.trim();
-                    deleteModule(moduleName, moduleItem);
-                });
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function() {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            });
-        }
-
-        function editModule(moduleName, moduleElement) {
-            // Create a simple edit prompt
-            const newName = prompt(`Edit module name:`, moduleName);
-
-            if (newName && newName.trim() !== '' && newName !== moduleName) {
-                // Update the module name
-                moduleElement.querySelector('span').textContent = newName;
-
-                // Find and update the module in data if it exists
-                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
-                if (moduleIndex !== -1) {
-                    appData.modules[moduleIndex].name = newName;
-                }
-
-                // Show success message
-                alert(`Module renamed to "${newName}"`);
-            }
-        }
-
-        function deleteModule(moduleName, moduleElement) {
-            // Confirm before deleting
-            if (confirm(`Are you sure you want to delete the "${moduleName}" module?`)) {
-                // Remove the module element from DOM
-                moduleElement.remove();
-
-                // Remove from data array if it exists
-                const moduleIndex = appData.modules.findIndex(mod => mod.name === moduleName);
-                if (moduleIndex !== -1) {
-                    appData.modules.splice(moduleIndex, 1);
-                }
-
-                // Show success message
-                alert(`Module "${moduleName}" has been deleted`);
-            }
-        }
-
+        // Set up client management
         function setupClientManagement() {
             console.log("Setting up client management");
             const newClientBtn = document.getElementById('new-client-btn');
@@ -1410,9 +1209,7 @@
 
             // New client button event listener
             newClientBtn.addEventListener('click', () => {
-                console.log("New Client button clicked");
                 const clientModal = createClientModal('new');
-                console.log("New client modal created");
                 
                 // Clear any existing content
                 modalOverlay.innerHTML = '';
@@ -1422,9 +1219,7 @@
 
             // Open client button event listener
             openClientBtn.addEventListener('click', () => {
-                console.log("Open Client button clicked");
                 const clientModal = createClientModal('open');
-                console.log("Open client modal created");
                 
                 // Clear any existing content
                 modalOverlay.innerHTML = '';
@@ -1440,12 +1235,13 @@
             });
         }
 
+        // Create client modal dialog
         function createClientModal(type) {
-            console.log(`Creating ${type} client modal`);
             const modal = document.createElement('div');
             modal.className = 'modal';
 
             if (type === 'new') {
+                // New client modal content
                 modal.innerHTML = `
                     <div class="modal-header">
                         <h2 class="modal-title">New Client</h2>
@@ -1467,23 +1263,13 @@
                     </div>
                 `;
 
-                // Set up event handlers after the modal is fully created
+                // Set up event handlers
                 setTimeout(() => {
-                    const closeBtn = modal.querySelector('.modal-close');
-                    closeBtn.addEventListener('click', () => {
-                        modal.closest('.modal-overlay').style.display = 'none';
-                    });
-
-                    const cancelBtn = modal.querySelector('.btn-cancel');
-                    cancelBtn.addEventListener('click', () => {
-                        modal.closest('.modal-overlay').style.display = 'none';
-                    });
+                    // Setup close and cancel buttons
+                    setupModalCloseButtons(modal);
 
                     const saveBtn = modal.querySelector('.btn-save');
-                    console.log("Save button in new client modal:", saveBtn);
-                    
                     saveBtn.addEventListener('click', () => {
-                        console.log("Save button clicked");
                         const name = document.getElementById('client-name').value;
                         const address = document.getElementById('client-address').value;
 
@@ -1492,36 +1278,36 @@
                             return;
                         }
 
+                        // Create new client
                         const newClient = {
                             name: name,
                             address: address,
-                            id: `client-${Date.now()}`, // Simple unique ID
                             moduleData: {}
                         };
 
-                        appData.clients.push(newClient);
-                        appData.currentClient = newClient;
-
-                        // Save to Firestore
-                        saveClientToFirestore(newClient);
+                        // Add client using the shared client manager
+                        const client = window.ConstructionApp.ClientManager.addClient(newClient);
+                        window.ConstructionApp.ClientManager.setCurrentClient(client);
 
                         alert(`Client "${name}" created and selected.`);
                         modal.closest('.modal-overlay').style.display = 'none';
-
-                        // Update dashboard to show client info
-                        updateDashboard(newClient);
                     });
                 }, 0);
             } else if (type === 'open') {
+                // Get clients from the shared client manager
+                const clients = window.ConstructionApp.ClientManager.getAllClients();
+                
+                // Generate client list HTML
                 let clientListHTML = '';
-                if (appData.clients.length > 0) {
-                    clientListHTML = appData.clients.map((client, index) => 
+                if (clients.length > 0) {
+                    clientListHTML = clients.map((client, index) => 
                         `<div class="client-list-item" data-client-index="${index}">${client.name}</div>`
                     ).join('');
                 } else {
                     clientListHTML = '<div class="client-list-item">No clients found</div>';
                 }
 
+                // Open client modal content
                 modal.innerHTML = `
                     <div class="modal-header">
                         <h2 class="modal-title">Open Client</h2>
@@ -1543,57 +1329,57 @@
 
                 // Set up event handlers
                 setTimeout(() => {
-                    const closeBtn = modal.querySelector('.modal-close');
-                    closeBtn.addEventListener('click', () => {
-                        modal.closest('.modal-overlay').style.display = 'none';
-                    });
-
-                    const cancelBtn = modal.querySelector('.btn-cancel');
-                    cancelBtn.addEventListener('click', () => {
-                        modal.closest('.modal-overlay').style.display = 'none';
-                    });
+                    // Setup close and cancel buttons
+                    setupModalCloseButtons(modal);
 
                     // Set up client selection
                     setupClientListSelection(modal);
 
                     // Set up search filtering
-                    const searchInput = modal.querySelector('#client-search');
-                    if (searchInput) {
-                        searchInput.addEventListener('input', () => {
-                            const searchTerm = searchInput.value.toLowerCase();
-                            const clientItems = modal.querySelectorAll('.client-list-item');
-                            
-                            clientItems.forEach(item => {
-                                const clientName = item.textContent.toLowerCase();
-                                if (clientName.includes(searchTerm)) {
-                                    item.style.display = 'block';
-                                } else {
-                                    item.style.display = 'none';
-                                }
-                            });
-                        });
-                    }
+                    setupClientSearch(modal);
                 }, 0);
             }
 
             return modal;
         }
 
-        async function saveClientToFirestore(client) {
-            try {
-                console.log("Attempting to save client:", client);
-                const clientRef = db.collection('clients').doc(client.id);
-                await clientRef.set(client);
-                console.log("Client data saved to Firestore:", client);
-            } catch (error) {
-                console.error("Error saving client data to Firestore:", error);
-                // Continue even if Firestore fails - we're using in-memory storage as backup
+        // Set up modal close buttons
+        function setupModalCloseButtons(modal) {
+            const closeBtn = modal.querySelector('.modal-close');
+            closeBtn.addEventListener('click', () => {
+                modal.closest('.modal-overlay').style.display = 'none';
+            });
+
+            const cancelBtn = modal.querySelector('.btn-cancel');
+            cancelBtn.addEventListener('click', () => {
+                modal.closest('.modal-overlay').style.display = 'none';
+            });
+        }
+
+        // Set up client search filtering
+        function setupClientSearch(modal) {
+            const searchInput = modal.querySelector('#client-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const clientItems = modal.querySelectorAll('.client-list-item');
+                    
+                    clientItems.forEach(item => {
+                        const clientName = item.textContent.toLowerCase();
+                        if (clientName.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
             }
         }
 
+        // Set up client list selection
         function setupClientListSelection(modal) {
-            console.log("Setting up client list selection");
             const clientListItems = modal.querySelectorAll('.client-list-item');
+            const clients = window.ConstructionApp.ClientManager.getAllClients();
             
             clientListItems.forEach(item => {
                 // Skip the "No clients found" message
@@ -1602,95 +1388,194 @@
                 }
                 
                 item.addEventListener('click', () => {
-                    const clientIndex = item.getAttribute('data-client-index');
-                    console.log("Client selected at index:", clientIndex);
+                    const clientIndex = parseInt(item.getAttribute('data-client-index'));
                     
-                    if (clientIndex !== null && appData.clients[clientIndex]) {
-                        appData.currentClient = appData.clients[clientIndex];
-                        
-                        // Update dashboard
-                        updateDashboard(appData.clients[clientIndex]);
+                    if (!isNaN(clientIndex) && clients[clientIndex]) {
+                        // Set as current client using the shared client manager
+                        window.ConstructionApp.ClientManager.setCurrentClient(clients[clientIndex]);
                         
                         modal.closest('.modal-overlay').style.display = 'none';
-                        alert(`Client "${appData.currentClient.name}" selected.`);
+                        alert(`Client "${clients[clientIndex].name}" selected.`);
                     }
                 });
             });
         }
 
+        // Update the dashboard
         function updateDashboard(client) {
             console.log("Updating dashboard for client:", client?.name);
             
-            const dashboardHeader = document.querySelector('.dashboard-header');
-            const dashboardDescription = document.querySelector('.dashboard-description');
-
+            const logoutBtn = document.getElementById('logout-btn');
+            
             if (client) {
+                // Update client display and show logout button
+                document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
+                document.querySelector('.dashboard-description').textContent = `Client: ${client.name}, Address: ${client.address || 'Not specified'}`;
+                logoutBtn.style.display = 'block';
+                logoutBtn.onclick = () => window.ConstructionApp.ModuleUtils.logoutClient();
+                
                 // Update total cost
-                const totalCost = calculateTotalProjectCost();
+                updateTotalProjectCost();
                 
-                dashboardHeader.innerHTML = `
-                    <div class="dashboard-title">
-                        <i>D</i> Dashboard
-                    </div>
-                    <div id="client-name-display" style="margin-left: 20px;">Client: ${client.name}</div>
-                    <div class="total-cost">
-                        Total Project Cost: $${totalCost}
-                    </div>
-                `;
-                
-                dashboardDescription.textContent = `Client: ${client.name}, Address: ${client.address || 'Not specified'}`;
-                
-                // If a module is open, re-render it for the selected client
-                const activeModule = document.querySelector('.module-item.active');
-                if (activeModule) {
-                    const moduleName = activeModule.querySelector('span').textContent.trim();
-                    const module = appData.modules.find(m => m.id === moduleName);
-                    if (module) {
-                        document.getElementById('module-content').innerHTML = module.renderTemplate(client);
-                        setupModuleInteractions(module.id);
-                    }
-                }
+                // Render the dashboard content
+                renderDashboardContent(client);
             } else {
-                dashboardHeader.innerHTML = `
-                    <div class="dashboard-title">
-                        <i>D</i> Dashboard
-                    </div>
-                    <div class="total-cost">
-                        Total Project Cost: $0
+                // Clear client display and hide logout button
+                document.getElementById('client-name-display').textContent = '';
+                document.getElementById('total-project-cost').textContent = 'Total Project Cost: R0.00';
+                document.querySelector('.dashboard-description').textContent = 'Overview of project data.';
+                logoutBtn.style.display = 'none';
+                
+                // Show the welcome message when no client is selected
+                document.getElementById('module-content').innerHTML = `
+                    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                        <h3>Getting Started</h3>
+                        <p>To start using the Construction Estimator:</p>
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li>Create a new client or open an existing client</li>
+                            <li>Select a module from the sidebar to begin estimating</li>
+                            <li>Add new modules using the "Add New Module" button</li>
+                        </ol>
                     </div>
                 `;
-                dashboardDescription.textContent = 'Please select a client to view project data.';
-                document.getElementById('module-content').innerHTML = ''; // Clear module content
             }
         }
 
-        function updateTotalProjectCost() {
-            const totalCost = calculateTotalProjectCost();
-            const totalCostElement = document.querySelector('.total-cost');
-            if (totalCostElement) {
-                totalCostElement.textContent = `Total Project Cost: $${totalCost}`;
-            }
-        }
-
-        function calculateTotalProjectCost() {
-            let totalCost = 0;
+        // Render dashboard content
+        function renderDashboardContent(client) {
+            const contentElement = document.getElementById('module-content');
+            contentElement.innerHTML = '';
             
-            if (appData.currentClient && appData.currentClient.moduleData) {
-                for (const moduleId in appData.currentClient.moduleData) {
-                    const moduleData = appData.currentClient.moduleData[moduleId];
-                    
-                    if (moduleId === 'p-and-gs' || moduleId === 'demolish') {
-                        if (moduleData && moduleData.items) {
-                            moduleData.items.forEach(item => {
-                                totalCost += item.quantity * item.rate;
-                            });
+            // Welcome message
+            let content = `
+                <div style="margin-bottom: 20px;">
+                    <h3>Welcome to ${client.name}'s Project</h3>
+                    <p>Use the modules in the sidebar to manage different aspects of this construction project.</p>
+                </div>
+            `;
+            
+            // Module summaries section
+            content += `
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h4>Module Summaries</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
+            `;
+            
+            // Modules with data
+            let hasModuleData = false;
+            if (client.moduleData) {
+                for (const moduleId in client.moduleData) {
+                    const module = appData.modules.find(m => m.id === moduleId);
+                    if (module) {
+                        hasModuleData = true;
+                        
+                        // Get module data
+                        const moduleData = client.moduleData[moduleId];
+                        
+                        // For P&Gs, calculate total
+                        let moduleTotal = 0;
+                        if (moduleId === 'p-and-gs' && moduleData.items) {
+                            moduleTotal = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
                         }
+                        
+                        // Add module card
+                        content += `
+                            <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <h5>${module.name}</h5>
+                                ${moduleTotal > 0 ? `<p>Total: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleTotal)}</p>` : ''}
+                                <button class="btn" style="margin-top: 10px;" onclick="window.ConstructionApp.ModuleUtils.navigateToModule('${moduleId}')">Open Module</button>
+                            </div>
+                        `;
                     }
-                    // Add other module type calculations as needed
                 }
             }
             
-            return totalCost;
+            // If no module data, show message
+            if (!hasModuleData) {
+                content += `
+                    <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p>No module data available yet. Start by clicking on a module in the sidebar.</p>
+                    </div>
+                `;
+            }
+            
+            content += `
+                    </div>
+                </div>
+            `;
+            
+            contentElement.innerHTML = content;
+        }
+
+        // Update total project cost
+        function updateTotalProjectCost() {
+            let totalCost = 0;
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            if (client && client.moduleData) {
+                // Calculate from P&Gs
+                if (client.moduleData['p-and-gs'] && client.moduleData['p-and-gs'].items) {
+                    totalCost += window.ConstructionApp.ModuleUtils.calculateModuleTotal(client.moduleData['p-and-gs'].items);
+                }
+                
+                // Calculate from other modules
+                // Add other module calculations as needed
+            }
+            
+            // Format and display
+            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
+            document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
+        }
+
+        // Update module order and save to Firebase
+        function updateModuleOrder() {
+            const moduleItems = document.querySelectorAll('.module-item');
+            const newOrder = Array.from(moduleItems).map(item => {
+                const moduleId = item.getAttribute('data-module-id');
+                const requiresClient = item.getAttribute('data-requires-client') === 'true';
+                const moduleName = item.querySelector('span').textContent.trim();
+                
+                return {
+                    id: moduleId,
+                    name: moduleName,
+                    requiresClient: requiresClient
+                };
+            });
+
+            // Log the new order
+            console.log('New module order:', newOrder);
+            
+            // Update appData.modules to match the new order
+            appData.modules = newOrder.map(orderData => {
+                // Find the original module to preserve functions
+                const existingModule = appData.modules.find(m => m.id === orderData.id);
+                
+                if (existingModule) {
+                    // Update name and requiresClient
+                    existingModule.name = orderData.name;
+                    existingModule.requiresClient = orderData.requiresClient;
+                    return existingModule;
+                } else {
+                    // Create a new module object if not found
+                    return {
+                        id: orderData.id,
+                        name: orderData.name,
+                        requiresClient: orderData.requiresClient,
+                        renderTemplate: function(client) {
+                            return `
+                                <h3>${orderData.name}</h3>
+                                <p>This is a custom module.</p>
+                            `;
+                        },
+                        saveData: function() {
+                            return {};
+                        }
+                    };
+                }
+            });
+            
+            // Save the updated order to Firebase
+            saveModulesToFirebase();
         }
     </script>
 </body>
