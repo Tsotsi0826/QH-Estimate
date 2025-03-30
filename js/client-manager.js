@@ -24,8 +24,10 @@
                 if (clientData) {
                     try {
                         _currentClient = JSON.parse(clientData);
+                        console.log("[ClientManager] Restored client from localStorage:", _currentClient.name);
                     } catch (error) {
-                        console.error("Error parsing stored client:", error);
+                        console.error("[ClientManager] Error parsing stored client:", error);
+                        localStorage.removeItem('currentClient');
                     }
                 }
             }
@@ -34,10 +36,17 @@
         
         // Set current client
         setCurrentClient: function(client) {
+            console.log("[ClientManager] Setting current client:", client ? client.name : "None");
             _currentClient = client;
             
             // Save to localStorage for persistence between pages
-            localStorage.setItem('currentClient', JSON.stringify(client));
+            if (client) {
+                localStorage.setItem('currentClient', JSON.stringify(client));
+                console.log("[ClientManager] Client saved to localStorage");
+            } else {
+                localStorage.removeItem('currentClient');
+                console.log("[ClientManager] Client removed from localStorage");
+            }
             
             // Notify any listeners
             if (typeof this.onClientChanged === 'function') {
@@ -57,6 +66,8 @@
                 moduleData: clientData.moduleData || {}
             };
             
+            console.log("[ClientManager] Adding new client:", client.name);
+            
             // Add to the clients array
             _clients.push(client);
             
@@ -70,6 +81,8 @@
         
         // Update an existing client
         updateClient: function(client) {
+            console.log("[ClientManager] Updating client:", client.name);
+            
             // Find and update the client in the array
             const index = _clients.findIndex(c => c.id === client.id);
             if (index >= 0) {
@@ -79,6 +92,7 @@
                 if (_currentClient && _currentClient.id === client.id) {
                     _currentClient = client;
                     localStorage.setItem('currentClient', JSON.stringify(client));
+                    console.log("[ClientManager] Updated current client in localStorage");
                 }
                 
                 // Save to Firestore if available
@@ -93,44 +107,25 @@
         
         // Load clients from Firestore
         loadClients: async function() {
+            console.log("[ClientManager] Loading clients from Firestore");
             if (window.ConstructionApp.Firebase) {
                 const loadedClients = await window.ConstructionApp.Firebase.loadClients();
                 if (loadedClients.length > 0) {
                     _clients = loadedClients;
+                    console.log("[ClientManager] Loaded", loadedClients.length, "clients");
                 }
             }
             return _clients;
         },
         
-        // Load current client from localStorage
-        loadCurrentClientFromStorage: function() {
-            const clientData = localStorage.getItem('currentClient');
-            if (clientData) {
-                try {
-                    _currentClient = JSON.parse(clientData);
-                    
-                    // Check if this client exists in our clients array
-                    const existingClient = _clients.find(c => c.id === _currentClient.id);
-                    if (!existingClient) {
-                        // Add to clients array if it doesn't exist
-                        _clients.push(_currentClient);
-                    }
-                    
-                    return _currentClient;
-                } catch (error) {
-                    console.error("Error parsing stored client:", error);
-                    return null;
-                }
-            }
-            return null;
-        },
-        
         // Save module data for the current client
         saveModuleData: function(moduleId, data) {
             if (!_currentClient) {
-                console.error("No current client to save module data for");
+                console.error("[ClientManager] No current client to save module data for");
                 return false;
             }
+            
+            console.log("[ClientManager] Saving module data for", moduleId, "to client", _currentClient.name);
             
             // Ensure moduleData exists
             if (!_currentClient.moduleData) {
@@ -142,6 +137,7 @@
             
             // Update localStorage
             localStorage.setItem('currentClient', JSON.stringify(_currentClient));
+            console.log("[ClientManager] Updated client in localStorage with new module data");
             
             // Save to Firestore if available
             if (window.ConstructionApp.Firebase) {
@@ -153,14 +149,16 @@
         
         // Get module data for the current client
         getModuleData: function(moduleId) {
-            if (!_currentClient || !_currentClient.moduleData) {
+            const client = this.getCurrentClient();
+            if (!client || !client.moduleData) {
                 return null;
             }
-            return _currentClient.moduleData[moduleId] || null;
+            return client.moduleData[moduleId] || null;
         },
         
         // Clear the current client
         clearCurrentClient: function() {
+            console.log("[ClientManager] Clearing current client");
             _currentClient = null;
             localStorage.removeItem('currentClient'); // Remove from localStorage
             
@@ -172,22 +170,41 @@
             return true;
         },
         
-        // Debug function to check state
-        debugClientState: function() {
-            console.log("--- Client Manager Debug ---");
-            console.log("Current navigation state:", localStorage.getItem('navigationState'));
-            console.log("Current client:", _currentClient ? _currentClient.name : "None");
-            
-            const storedClient = localStorage.getItem('currentClient');
-            console.log("localStorage client:", storedClient ? 
-                JSON.parse(storedClient).name : "None");
+        // Force a refresh of the current client from localStorage
+        refreshCurrentClient: function() {
+            const clientData = localStorage.getItem('currentClient');
+            if (clientData) {
+                try {
+                    _currentClient = JSON.parse(clientData);
+                    console.log("[ClientManager] Refreshed current client from localStorage:", _currentClient.name);
+                    
+                    // Notify any listeners
+                    if (typeof this.onClientChanged === 'function') {
+                        this.onClientChanged(_currentClient);
+                    }
+                    
+                    return _currentClient;
+                } catch (error) {
+                    console.error("[ClientManager] Error refreshing client from localStorage:", error);
+                    localStorage.removeItem('currentClient');
+                    _currentClient = null;
+                    
+                    // Notify any listeners
+                    if (typeof this.onClientChanged === 'function') {
+                        this.onClientChanged(null);
+                    }
+                }
+            } else {
+                console.log("[ClientManager] No client found in localStorage during refresh");
+                _currentClient = null;
                 
-            console.log("---------------------------");
-            return {
-                navState: localStorage.getItem('navigationState'),
-                currentClient: _currentClient,
-                storedClient: storedClient ? JSON.parse(storedClient) : null
-            };
+                // Notify any listeners
+                if (typeof this.onClientChanged === 'function') {
+                    this.onClientChanged(null);
+                }
+            }
+            
+            return null;
         },
         
         // Event handler for client changes - to be implemented by consumers
