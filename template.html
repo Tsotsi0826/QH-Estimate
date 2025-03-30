@@ -330,7 +330,7 @@
             content: "▼";
             opacity: 1;
         }
-
+        
         /* Debug panel for troubleshooting */
         .debug-panel {
             position: fixed;
@@ -418,7 +418,7 @@
             <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
         </div>
     </div>
-
+    
     <!-- Debug panel for troubleshooting -->
     <div class="debug-panel" id="debug-panel"></div>
 
@@ -913,7 +913,7 @@
             // Show saving indicator
             window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
             
-            // First, update the client directly
+            // IMPORTANT: Get current client and directly update its moduleData
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (client) {
                 // Ensure moduleData exists
@@ -921,23 +921,19 @@
                     client.moduleData = {};
                 }
                 
-                // Apply module data directly to the client object
+                // Store updated module data directly in the client object
                 client.moduleData[MODULE.id] = {...moduleData};
                 
-                // Make sure the client's timestamp is updated
+                // Update client's lastModified timestamp
                 client.lastModified = new Date().toISOString();
                 
-                // Update sessionStorage immediately
-                sessionStorage.setItem('currentClient', JSON.stringify(client));
-                console.log(`[${MODULE.id}] Updated client in sessionStorage directly`);
+                // CRITICAL: Update client in both the ClientManager and sessionStorage
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
                 
-                // Update debug panel if enabled
-                if (DEBUG) {
-                    updateDebugPanel();
-                }
+                console.log(`[${MODULE.id}] Directly updated client object with module data, total cost: ${moduleData.totalCost}`);
             }
             
-            // Save using the client manager with callback
+            // Also save using the ClientManager's API for Firebase persistence
             window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
                 if (success) {
                     const message = isAutoSave ? 'Auto-saved' : 'Saved';
@@ -946,11 +942,6 @@
                     // Show success message (only for manual saves)
                     if (!isAutoSave) {
                         window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
-                    }
-                    
-                    // Update debug panel if enabled
-                    if (DEBUG) {
-                        updateDebugPanel();
                     }
                 } else {
                     window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
@@ -968,11 +959,11 @@
                 // Ask user if they want to save before returning
                 const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
                 if (shouldSave) {
-                    // Save first - but don't rely on callback for navigation
+                    // Save first - but don't navigate in the callback to avoid timing issues
                     saveModuleData();
                     
-                    // We'll still return to dashboard after giving the save a moment to process
-                    setTimeout(() => navigateToDashboard(), 500);
+                    // We'll use a short delay to make sure saving completes
+                    setTimeout(() => navigateToDashboard(), 300);
                     return;
                 }
             }
@@ -985,39 +976,40 @@
         function navigateToDashboard() {
             console.log(`[${MODULE.id}] Navigating to dashboard`);
             
-            // Cancel auto-save before navigating
+            // Cancel auto-save timer
             if (cancelAutoSave) cancelAutoSave();
             
-            // Force refresh the client from sessionStorage (ensures we have the latest version)
-            window.ConstructionApp.ClientManager.refreshCurrentClient();
-            
-            // Get the current client again to ensure it's the latest
+            // Get the current client
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             
-            // Extra safety: ensure the client is set in sessionStorage before returning
             if (client) {
-                console.log(`[${MODULE.id}] Saving client state before returning:`, client.name);
-                sessionStorage.setItem('currentClient', JSON.stringify(client));
-                
-                // Force update of last modified time
-                client.lastModified = new Date().toISOString();
-                sessionStorage.setItem('currentClient', JSON.stringify(client));
-            }
-            
-            // Set the navigation state to indicate we're returning from a module
-            sessionStorage.setItem('navigationState', 'returningToDashboard');
-            console.log(`[${MODULE.id}] Set navigation state: returningToDashboard`);
-            
-            // Force any pending Firebase saves to complete
-            if (window.ConstructionApp.Firebase && typeof window.ConstructionApp.Firebase.commitBatch === 'function') {
-                try {
-                    window.ConstructionApp.Firebase.commitBatch();
-                } catch (e) {
-                    console.error("Error committing Firebase batch:", e);
+                // CRITICAL: Update client's module data even if we didn't save
+                // This ensures the data is available when returning to the dashboard
+                if (!client.moduleData) {
+                    client.moduleData = {};
                 }
+                
+                // Always update the moduleData with the latest values
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // Store client directly in sessionStorage (reliable backup approach)
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log(`[${MODULE.id}] Client data saved to sessionStorage before navigation`);
+                
+                // IMPORTANT: Force a client update through the client manager
+                // This ensures any listeners (like the dashboard) are notified
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
             }
             
-            // Return to dashboard
+            // IMPORTANT: Set navigation state to explicitly indicate returning from a module
+            // This tells the dashboard that it should restore the client
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+            console.log(`[${MODULE.id}] Navigation state set to: returningToDashboard`);
+            
+            // Navigate back to the dashboard
             window.location.href = 'index.html';
         }
         
@@ -1058,9 +1050,13 @@
                 console.error("Error parsing session client:", e);
             }
             
+            // Get navigation state
+            const navigationState = sessionStorage.getItem('navigationState');
+            
             // Create debug info
             let debugInfo = `
                 <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
                 <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
                 <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
                 <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
