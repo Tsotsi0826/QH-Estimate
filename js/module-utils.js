@@ -9,6 +9,8 @@
     const ModuleUtils = {
         // Navigate to a specific module
         navigateToModule: function(moduleId) {
+            console.log("[ModuleUtils] Navigating to module:", moduleId);
+            
             // Check if we have a current client
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             
@@ -29,14 +31,15 @@
                 return false;
             }
             
-            // Ensure the current client is properly stored before navigation
+            // Ensure the client is properly saved to localStorage
             if (currentClient) {
+                console.log("[ModuleUtils] Saving current client before navigation:", currentClient.name);
                 localStorage.setItem('currentClient', JSON.stringify(currentClient));
-                console.log("Client saved to localStorage before module navigation:", currentClient.name);
             }
             
             // Set a flag to indicate we're navigating to a module
-            localStorage.setItem('navigationState', 'fromModulePage');
+            localStorage.setItem('navigationState', 'fromDashboard');
+            console.log("[ModuleUtils] Set navigation state: fromDashboard");
             
             // Navigate to the module page
             window.location.href = moduleId + '.html';
@@ -45,15 +48,18 @@
         
         // Return to dashboard
         returnToDashboard: function() {
+            console.log("[ModuleUtils] Returning to dashboard");
+            
             // Ensure the current client is properly stored
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             if (currentClient) {
+                console.log("[ModuleUtils] Saving client before return:", currentClient.name);
                 localStorage.setItem('currentClient', JSON.stringify(currentClient));
-                console.log("Client saved to localStorage before returning to dashboard:", currentClient.name);
             }
             
             // Set the navigation state to indicate we're returning from a module
             localStorage.setItem('navigationState', 'returningToDashboard');
+            console.log("[ModuleUtils] Set navigation state: returningToDashboard");
             
             // Navigate back to the index page
             window.location.href = 'index.html';
@@ -61,14 +67,36 @@
         
         // Log out the current client
         logoutClient: function() {
-            // Clear the client
+            console.log("[ModuleUtils] Logging out client");
+            
+            // Clear the client using the client manager
             window.ConstructionApp.ClientManager.clearCurrentClient();
             
             // Set the navigation state to indicate manual logout
             localStorage.setItem('navigationState', 'manualLogout');
+            console.log("[ModuleUtils] Set navigation state: manualLogout");
             
             // Refresh the page to update the UI
             window.location.reload();
+        },
+        
+        // Check if the page was accessed correctly and handle if not
+        checkModuleAccess: function() {
+            const navigationState = localStorage.getItem('navigationState');
+            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            console.log("[ModuleUtils] Checking module access. Nav state:", navigationState, "Client:", currentClient?.name);
+            
+            // If this module requires a client but none is selected, or accessed directly without navigation
+            if ((!currentClient || navigationState !== 'fromDashboard') && window.location.pathname !== '/index.html') {
+                console.log("[ModuleUtils] Invalid module access, redirecting to dashboard");
+                // Redirect to the dashboard
+                localStorage.setItem('navigationState', 'redirectedToDashboard');
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            return true;
         },
         
         // Format currency (Rand)
