@@ -653,7 +653,7 @@
             });
         });
 
-        // Initialize app function 
+        // Initialize app function - UPDATED VERSION
         function initApp() {
             console.log("[Dashboard] Initializing app");
             
@@ -661,8 +661,7 @@
             const navigationState = sessionStorage.getItem('navigationState');
             console.log("[Dashboard] Navigation state:", navigationState);
             
-            // Clear the navigation state for future navigations
-            sessionStorage.removeItem('navigationState');
+            // DON'T immediately clear the navigation state (we'll do it at the end)
             
             // Log client state for debugging
             const storedClientStr = sessionStorage.getItem('currentClient');
@@ -674,7 +673,17 @@
                     // Parse and set the client
                     const clientData = JSON.parse(storedClientStr);
                     console.log("[Dashboard] Restoring client from sessionStorage:", clientData.name);
+                    
+                    // IMPORTANT: Directly set the client from sessionStorage
                     window.ConstructionApp.ClientManager.setCurrentClient(clientData);
+                    
+                    // Update dashboard with the client data
+                    if (typeof updateDashboard === 'function') {
+                        updateDashboard(clientData);
+                    }
+                    
+                    console.log("[Dashboard] Client restored successfully with modules:", 
+                        Object.keys(clientData.moduleData || {}).join(', '));
                 } catch (error) {
                     console.error("[Dashboard] Error parsing stored client:", error);
                     window.ConstructionApp.ClientManager.clearCurrentClient();
@@ -706,6 +715,12 @@
                 }
             }
             
+            // Update total project cost after client is set
+            updateTotalProjectCost();
+            
+            // NOW clear the navigation state (after we've handled it)
+            sessionStorage.removeItem('navigationState');
+            
             // Log client state after initialization
             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
             console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
@@ -733,7 +748,7 @@
             });
         }
         
-        // Update debug panel with current state
+        // Update debug panel with current state - UPDATED VERSION
         function updateDebugPanel() {
             const debugPanel = document.getElementById('debug-panel');
             
@@ -753,11 +768,17 @@
             // Add module data if client exists
             if (currentClient && currentClient.moduleData) {
                 debugInfo += '<strong>Module Data:</strong><br>';
+                let totalCost = 0;
                 
                 for (const moduleId in currentClient.moduleData) {
                     const moduleData = currentClient.moduleData[moduleId];
-                    debugInfo += `- ${moduleId}: ${JSON.stringify(moduleData).substring(0, 50)}...<br>`;
+                    const moduleCost = moduleData.totalCost || 0;
+                    totalCost += parseFloat(moduleCost);
+                    
+                    debugInfo += `- ${moduleId}: Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost)}<br>`;
                 }
+                
+                debugInfo += `<strong>Total Project Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}<br>`;
             }
             
             // Update panel
@@ -1779,10 +1800,26 @@
                         // Get module data
                         const moduleData = client.moduleData[moduleId];
                         
+                        // Calculate module cost for display
+                        let moduleCost = 0;
+                        if (moduleData.totalCost) {
+                            moduleCost = moduleData.totalCost;
+                        } else if (moduleData.items && Array.isArray(moduleData.items)) {
+                            moduleData.items.forEach(item => {
+                                if (item.qty > 0) {
+                                    moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
+                                }
+                            });
+                        }
+                        
+                        // Format the cost
+                        const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
+                        
                         // Add module card
                         content += `
                             <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 <h5>${module.name}</h5>
+                                <p>Cost: ${formattedCost}</p>
                                 <button class="btn module-open-btn" style="margin-top: 10px;" data-module-id="${moduleId}">Open Module</button>
                             </div>
                         `;
@@ -1826,19 +1863,41 @@
             });
         }
 
-        // Update total project cost
+        // Update total project cost - UPDATED VERSION 
         function updateTotalProjectCost() {
             let totalCost = 0;
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             
             if (client && client.moduleData) {
+                console.log("[Dashboard] Calculating total cost for client:", client.name);
+                
                 // Calculate from each module
-                // (Note: P&Gs calculation removed as requested)
+                for (const moduleId in client.moduleData) {
+                    const moduleData = client.moduleData[moduleId];
+                    
+                    // Check if the module has a totalCost property
+                    if (moduleData.totalCost) {
+                        console.log(`[Dashboard] Adding module cost from ${moduleId}: ${moduleData.totalCost}`);
+                        totalCost += parseFloat(moduleData.totalCost) || 0;
+                    }
+                    // Alternative: if the module has 'items' array, calculate from items
+                    else if (moduleData.items && Array.isArray(moduleData.items)) {
+                        let moduleCost = 0;
+                        moduleData.items.forEach(item => {
+                            if (item.qty > 0) {
+                                moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
+                            }
+                        });
+                        console.log(`[Dashboard] Calculated module cost for ${moduleId}: ${moduleCost}`);
+                        totalCost += moduleCost;
+                    }
+                }
             }
             
             // Format and display
             const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
             document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
+            console.log("[Dashboard] Updated total project cost:", formattedTotal);
         }
     </script>
 </body>
