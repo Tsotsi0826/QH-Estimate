@@ -609,7 +609,7 @@
         </div>
 
         <div class="dashboard-description">
-            <!-- Address will go here -->
+            Overview of project data.
         </div>
 
         <div class="dashboard-content">
@@ -1790,7 +1790,7 @@
             }
         }
 
-        // Render dashboard content - UPDATED VERSION (STREAMLINED)
+        // Render dashboard content - UPDATED VERSION WITH SMALLER TILES AND ORDERED DISPLAY
         function renderDashboardContent(client) {
             const contentElement = document.getElementById('module-content');
             contentElement.innerHTML = '';
@@ -1799,24 +1799,30 @@
             let content = `
                 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
                     <h4 style="margin-bottom: 15px;">Module Summaries</h4>
-                    <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">
             `;
             
-            // Modules with data
+            // Check if there's any module data
             let hasModuleData = false;
+            for (const moduleId in client.moduleData) {
+                if (client.moduleData[moduleId]) {
+                    hasModuleData = true;
+                    break;
+                }
+            }
             
-            if (client.moduleData) {
-                for (const moduleId in client.moduleData) {
-                    // Skip certain modules if needed
-                    if (moduleId === 'to-skip') continue;
-                    
+            if (hasModuleData) {
+                // Get the modules in the same order as the sidebar
+                const orderedModules = [...appData.modules]; // Create a copy of the modules array
+                
+                // For each module in the ordered list, check if there's data for it
+                orderedModules.forEach(module => {
+                    const moduleId = module.id;
                     const moduleData = client.moduleData[moduleId];
-                    const module = appData.modules.find(m => m.id === moduleId);
                     
-                    if (module) {
-                        hasModuleData = true;
-                        
-                        // Calculate module cost for display
+                    // If this module has data, create a tile for it
+                    if (moduleData) {
+                        // Calculate module cost
                         let moduleCost = 0;
                         if (moduleData.totalCost !== undefined) {
                             moduleCost = moduleData.totalCost;
@@ -1841,11 +1847,9 @@
                             </div>
                         `;
                     }
-                }
-            }
-            
-            // If no module data, show message
-            if (!hasModuleData) {
+                });
+            } else {
+                // If no module data, show message
                 content += `
                     <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <p>No module data available yet. Start by clicking on a module in the sidebar.</p>
