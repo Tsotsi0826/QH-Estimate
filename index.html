@@ -609,15 +609,10 @@
         </div>
 
         <div class="dashboard-description">
-            Overview of project data.
+            <!-- Address will go here -->
         </div>
 
         <div class="dashboard-content">
-            <div class="dashboard-content-header">
-                <div class="dashboard-content-title">Project Dashboard</div>
-                <div class="dashboard-content-description">Welcome to the dashboard! Here's where key project information will be displayed.</div>
-            </div>
-
             <div id="module-content">
                 <!-- Dashboard content will be loaded here -->
                 <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
@@ -1731,7 +1726,7 @@
             });
         }
 
-        // Update the dashboard
+        // Update the dashboard - UPDATED VERSION
         function updateDashboard(client) {
             console.log("[Dashboard] Updating dashboard for client:", client?.name);
             
@@ -1741,14 +1736,14 @@
             if (client) {
                 // Update client display and show logout button
                 document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
-                document.querySelector('.dashboard-description').textContent = `Client: ${client.name}, Address: ${client.address || 'Not specified'}`;
+                document.querySelector('.dashboard-description').textContent = `${client.address || ''}`;
                 logoutBtn.style.display = 'block';
                 logoutBtn.onclick = () => window.ConstructionApp.ModuleUtils.logoutClient();
                 
                 // Update total cost
                 updateTotalProjectCost();
                 
-                // Render the dashboard content
+                // Render the dashboard content without headers
                 renderDashboardContent(client);
                 
                 // Update debug panel
@@ -1757,7 +1752,7 @@
                 // Clear client display and hide logout button
                 document.getElementById('client-name-display').textContent = '';
                 document.getElementById('total-project-cost').textContent = 'Total Project Cost: R0.00';
-                document.querySelector('.dashboard-description').textContent = 'Overview of project data.';
+                document.querySelector('.dashboard-description').textContent = '';
                 logoutBtn.style.display = 'none';
                 
                 // Show a more prominent message when no client is selected
@@ -1769,15 +1764,6 @@
                             <button id="prompt-new-client" class="btn no-client-button">Create New Client</button>
                             <button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button>
                         </div>
-                    </div>
-                    <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
-                        <h3>Getting Started</h3>
-                        <p>To start using the Construction Estimator:</p>
-                        <ol style="margin-left: 20px; margin-top: 10px;">
-                            <li>Create a new client or open an existing client</li>
-                            <li>Select a module from the sidebar to begin estimating</li>
-                            <li>Add new modules using the "Add New Module" button</li>
-                        </ol>
                     </div>
                 `;
                 
@@ -1804,22 +1790,14 @@
             }
         }
 
-        // Render dashboard content - UPDATED VERSION WITH MODULE TILES
+        // Render dashboard content - UPDATED VERSION (STREAMLINED)
         function renderDashboardContent(client) {
             const contentElement = document.getElementById('module-content');
             contentElement.innerHTML = '';
             
-            // Welcome message
+            // Remove the welcome headers and go straight to module tiles
             let content = `
-                <div style="margin-bottom: 20px;">
-                    <h3>Welcome to ${client.name}'s Project</h3>
-                    <p>Use the modules in the sidebar to manage different aspects of this construction project.</p>
-                </div>
-            `;
-            
-            // Module summaries section
-            content += `
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
                     <h4 style="margin-bottom: 15px;">Module Summaries</h4>
                     <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
             `;
@@ -1914,7 +1892,7 @@
             });
         }
 
-        // Add new function to clear module data
+        // Add function to clear module data
         function clearModuleData(moduleId) {
             // Get current client
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
