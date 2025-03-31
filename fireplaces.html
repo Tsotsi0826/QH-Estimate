@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Fireplaces and Braais - Construction Estimator</title>
+
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+
+    
+    
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+
+    <style>
+        /* Basic reset and font */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Flex layout for the main body */
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+            background-color: #f5f5f5;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 25%;
+            background-color: #1c2639; /* Dark blue */
+            color: #fff;
+            height: 100%;
+            overflow-y: auto; /* Scroll only if needed */
+            border-right: 1px solid #333; /* Separator */
+        }
+
+        /* Main content area styling */
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden; /* Prevent overflow */
+            background-color: white;
+            color: #333;
+            position: relative; /* For potential absolute positioning inside */
+            display: flex;
+            flex-direction: column; /* Stack header, description, content */
+        }
+
+        /* Sidebar header */
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Sidebar content padding */
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        /* Spacing for sidebar sections */
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        /* Title for sidebar sections */
+        .sidebar-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* Individual items/links in the sidebar */
+        .sidebar-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #2d364a; /* Slightly lighter blue */
+            border-radius: 4px;
+            margin-bottom: 8px;
+            transition: background-color 0.2s ease; /* Smooth hover */
+        }
+
+        .sidebar-item:hover {
+            background-color: #3a4967; /* Hover effect */
+        }
+
+        /* Styling for links within sidebar items */
+        .sidebar-link {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+        }
+
+        /* Main content header */
+        .module-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #1c2639; /* Match sidebar */
+            color: #fff;
+        }
+
+        /* Module title in the header */
+        .module-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Optional icon styling */
+        .module-title i {
+            margin-right: 10px;
+        }
+
+        /* Area below the main header, for buttons/status */
+        .module-description {
+            padding: 10px 20px;
+            color: #aaa;
+            background-color: #1c2639; /* Match sidebar */
+            display: flex;
+            justify-content: flex-end; /* Align buttons to the right */
+            align-items: center;
+            border-bottom: 1px solid #333; /* Separator */
+        }
+
+        /* Main content scrolling area */
+        .module-content {
+            padding: 20px;
+            background-color: #fff;
+            margin: 0;
+            color: #333;
+            flex: 1; /* Take remaining vertical space */
+            overflow-y: auto; /* Enable vertical scroll */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Custom scrollbar for module content */
+        .module-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .module-content::-webkit-scrollbar-thumb {
+            background-color: #aaa;
+            border-radius: 4px;
+        }
+
+        .module-content::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent; /* Blend with sidebar */
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* General button styling */
+        .btn {
+            background-color: #4eca8b; /* Green */
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.9em; /* Slightly smaller font for buttons */
+        }
+
+        .btn:hover {
+            background-color: #3db97a; /* Darker green */
+        }
+
+        /* Secondary button styling */
+        .btn-secondary {
+            background-color: #6c757d; /* Gray */
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268; /* Darker gray */
+        }
+        
+        /* Danger button styling (for delete - kept in case needed later) */
+        .btn-danger {
+            background-color: #dc3545; /* Red */
+            font-size: 0.8em; /* Smaller delete button */
+            padding: 4px 8px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333; /* Darker red */
+        }
+
+
+        /* Container for header actions (total cost) */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between elements if more are added */
+        }
+
+        /* Table styling */
+        .module-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px; /* Restore top margin */
+            margin-bottom: 30px; /* Add space below table */
+            table-layout: fixed; /* Crucial for fixed column widths */
+        }
+
+        /* Table header and data cells */
+        .module-table th, /* Style header cells */
+        .module-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+            overflow: hidden; /* Prevent content overflow */
+            white-space: nowrap; /* Prevent text wrapping by default */
+            text-overflow: ellipsis; /* Show ellipsis (...) if text overflows */
+            vertical-align: middle; /* Align content vertically */
+        }
+
+        /* Column width definitions - Adjusted for 5 columns */
+        .module-table th:nth-child(1), /* Description */
+        .module-table td:nth-child(1) {
+            width: 50%; /* Adjusted width */
+            white-space: normal; /* Allow description to wrap */
+        }
+
+        .module-table th:nth-child(2), /* Qty */
+        .module-table td:nth-child(2) {
+            width: 8%; /* Adjusted width */
+        }
+
+        .module-table th:nth-child(3), /* Rate */
+        .module-table td:nth-child(3) {
+            width: 15%;
+        }
+
+        .module-table th:nth-child(4), /* Empty Spacer */
+        .module-table td:nth-child(4) {
+            width: 2%; /* Adjusted width */
+            border-left: none; /* Hide borders for spacer */
+            border-right: none;
+        }
+         .module-table th:nth-child(4) { /* Header specific border */
+             border-bottom: 1px solid #ddd;
+         }
+
+
+        .module-table th:nth-child(5), /* Total */
+        .module-table td:nth-child(5) {
+            width: 15%;
+        }
+
+        /* Table header specific styling */
+        .module-table th {
+            background-color: #f2f2f2; /* Light gray background */
+            font-weight: bold;
+            position: relative; /* For potential future sorting arrows */
+        }
+
+        /* Alternating row colors */
+        .module-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Row hover effect */
+        .module-table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Input fields within table cells */
+        .module-table input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid transparent; /* Invisible border */
+            background-color: transparent; /* Blend with cell */
+            font-size: inherit; /* Match cell font size */
+            font-family: inherit;
+        }
+        /* Style for read-only inputs */
+        .module-table input:read-only {
+             color: #555; /* Slightly dimmer text */
+             cursor: default;
+        }
+
+
+        /* Input focus styling */
+        .module-table input:focus {
+            border: 1px solid #4eca8b; /* Highlight border on focus */
+            background-color: #fff; /* White background on focus */
+            outline: none; /* Remove default outline */
+        }
+
+        /* Number input alignment */
+        .module-table input[type="number"] {
+            text-align: right;
+        }
+
+        /* Currency cell alignment */
+        .module-table .currency {
+            text-align: right;
+        }
+
+        /* REMOVED Allow cell specific style */
+        /* REMOVED Checkbox cell alignment */
+        /* REMOVED Checkbox styling */
+
+
+        /* Table footer row styling */
+        .module-table .footer-row {
+            font-weight: bold;
+            background-color: #e9e9e9; /* Slightly darker gray */
+        }
+        .module-table .footer-row td { /* Ensure footer cells have borders */
+             border-top: 1px solid #bbb;
+        }
+
+
+        /* Specific styling for the quantity cell background */
+        .module-table .qty-cell {
+            background-color: #f0faf3; /* Light green background */
+        }
+
+
+        /* Save status indicator styling */
+        #save-status {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.9em;
+            transition: opacity 0.3s;
+        }
+
+        /* Add item button styling */
+        .add-item-btn {
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        /* REMOVED Table header sorting styles */
+
+        /* Debug panel styling */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+         /* Debug toggle button styling */
+         #debug-toggle-btn {
+             position: fixed;
+             bottom: 10px;
+             right: 10px;
+             z-index: 10000;
+             padding: 5px 10px;
+             background: #333;
+             color: white;
+             border: none;
+             border-radius: 3px;
+             cursor: pointer;
+             font-size: 12px;
+         }
+
+        /* REMOVED Notes Section Styles */
+
+    </style>
+</head>
+<body>
+    
+    <div class="sidebar">
+        
+        <div class="sidebar-header">Fireplaces & Braais</div>
+
+        <div class="sidebar-content">
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Navigation</div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
+                </div>
+            </div>
+
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Actions</div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="add-custom-item">Add Custom Item</a>
+                </div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="save-module-data">Save Data</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="main-content">
+        
+        <div class="module-header">
+            <div class="module-title">
+                
+                <i>F</i> <span id="module-title-text">Fireplaces and Braais</span>
+            </div>
+            
+            <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
+            <div class="header-actions">
+                
+                <div id="total-module-cost">
+                    Total Fireplace Cost: R0.00 
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="module-description">
+            <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                
+                <div id="save-status"></div>
+                
+                <button id="save-btn" class="btn">Save</button>
+                
+                <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
+            </div>
+        </div>
+
+        
+        <div class="module-content">
+            
+            <table class="module-table" id="items-table">
+                <thead> 
+                    <tr>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Rate</th>
+                        <th></th> 
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table-body">
+                    
+                </tbody>
+                <tfoot>
+                    
+                    <tr class="footer-row">
+                        
+                        <td colspan="4" style="text-align: right;">Total</td> 
+                        <td class="currency" id="table-total">R0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            
+            <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
+
+            
+            
+
+        </div>
+    </div>
+
+    
+    <div class="debug-panel" id="debug-panel"></div>
+     
+    <button id="debug-toggle-btn" style="display: none;">Debug</button>
+
+
+    <script>
+        // =====================================================================
+        // MODULE CONFIGURATION - ** CUSTOMIZED FOR FIREPLACES AND BRAAIS **
+        // =====================================================================
+        const MODULE = {
+            id: 'fireplaces', // Unique ID for this module (matches filename)
+            title: 'Fireplaces and Braais', // User-facing title (Corrected grammar)
+            defaultItems: [ // Items specific to this module based on screenshot
+                // Rates from screenshot, all items editable: true
+                // Removed 'allow' and 'checked' properties
+                { id: 'fire-braai', description: 'Braai', qty: 0, rate: 12500.00, editable: true },
+                { id: 'fire-fireplace', description: 'Fireplace', qty: 0, rate: 15000.00, editable: true },
+                { id: 'fire-gas-conn', description: 'Gas Connection', qty: 0, rate: 7500.00, editable: true },
+                { id: 'fire-installs', description: 'Installations', qty: 0, rate: 5000.00, editable: true },
+                { id: 'fire-flues', description: 'Flues', qty: 0, rate: 2500.00, editable: true }, // Corrected 'Flue's'
+                { id: 'fire-bricks', description: 'Fire Bricks', qty: 0, rate: 38.00, editable: true },
+                { id: 'fire-insulation', description: 'Insulation around Braai / Fireplace', qty: 0, rate: 750.00, editable: true },
+                { id: 'fire-other', description: 'Fire - Braai Other', qty: 0, rate: 0.00, editable: true }
+            ]
+        };
+
+        // =====================================================================
+        // MODULE STATE & UTILITIES
+        // =====================================================================
+
+        // Holds the current data for this module instance (items only)
+        let moduleData = {
+            items: [],
+            // notes: [], // REMOVED notes array
+            totalCost: 0,
+            lastModified: new Date().toISOString()
+        };
+
+        // Stores the function to cancel the auto-save timer
+        let cancelAutoSave = null;
+
+        // Flag to enable/disable the debug panel
+        const DEBUG = true; // Set to false to hide debug panel and button
+
+        // References to frequently used elements
+        let tableBodyElement = null;
+        // let notesListElement = null; // REMOVED notes list reference
+
+        // =====================================================================
+        // INITIALIZATION
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(`[${MODULE.id}] DOM loaded, initializing module`);
+
+            // Cache frequently used elements
+            tableBodyElement = document.getElementById('items-table-body');
+            // notesListElement = document.getElementById('notes-list'); // REMOVED
+            if (!tableBodyElement /*|| !notesListElement*/) { // Adjusted check
+                 console.error(`[${MODULE.id}] Critical error: Table body element not found!`);
+                 return; // Stop initialization
+            }
+
+            // Set up debug panel and toggle button if DEBUG is true
+            if (DEBUG) {
+                setupDebugPanel();
+            }
+
+            // Update titles based on MODULE configuration
+            updateModuleTitles();
+
+            // --- Access Control & Client Loading ---
+            const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
+            if (!validAccess) {
+                console.warn(`[${MODULE.id}] Invalid access detected, redirecting via ModuleUtils.`);
+                return;
+            }
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) {
+                console.error(`[${MODULE.id}] No client data found. Returning to dashboard.`);
+                window.ConstructionApp.ModuleUtils.showErrorMessage('No client selected. Please return to the dashboard and select a client.');
+                setTimeout(() => window.ConstructionApp.ModuleUtils.returnToDashboard(MODULE.id, moduleData, false), 500);
+                return;
+            }
+            const clientNameDisplay = document.getElementById('client-name-display');
+             if(clientNameDisplay) {
+                clientNameDisplay.textContent = `Client: ${client.name}`;
+             } else {
+                 console.warn(`[${MODULE.id}] Element #client-name-display not found.`);
+             }
+
+            // --- Setup UI Components & Data ---
+            window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
+            setupEventListeners(); // Sets up static listeners
+            initModuleData(); // Loads items, calls updateUI
+
+             // Set up tracking for unsaved changes on table inputs
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input'); // Simplified selector
+
+
+            // --- Auto-Save & Final Steps ---
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
+            // setupTableSorting(); // REMOVED - No sorting without header
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+             console.log(`[${MODULE.id}] Initialization complete.`);
+        });
+
+        // =====================================================================
+        // UI UPDATE FUNCTIONS
+        // =====================================================================
+
+        /**
+         * Updates various titles on the page based on MODULE.title.
+         */
+        function updateModuleTitles() {
+            document.title = `${MODULE.title} - Construction Estimator`;
+             const sidebarHeader = document.querySelector('.sidebar-header');
+             if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
+             const moduleTitleText = document.getElementById('module-title-text');
+             if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
+             const totalModuleCost = document.getElementById('total-module-cost');
+             // Update total cost label text slightly for clarity
+             if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: R0.00`;
+        }
+
+        /**
+         * Renders the items table from moduleData.
+         */
+        function updateUI() {
+             if (!tableBodyElement) {
+                 console.error(`[${MODULE.id}] Cannot update UI: Table body element not found.`);
+                 return;
+             }
+            console.log(`[${MODULE.id}] Updating UI - Items: ${moduleData.items.length}`);
+            
+            // --- Update Items Table ---
+            tableBodyElement.innerHTML = ''; // Clear existing rows
+            moduleData.items.forEach(item => {
+                addTableRow(item);
+            });
+            calculateTotals(); // Recalculate item totals
+
+            // --- REMOVED Update Notes List ---
+
+            // --- Update Debug Panel ---
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+        }
+
+        /**
+         * Creates and adds a single table row (<tr>) for an item.
+         * Simplified to remove Allow and Pc columns.
+         * @param {object} item - The item object.
+         */
+        function addTableRow(item) {
+             if (!tableBodyElement) return;
+            const row = document.createElement('tr');
+            row.setAttribute('data-item-id', item.id);
+            const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
+            const total = (item.qty > 0) ? (item.qty * item.rate) : 0;
+            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(total);
+            const readonlyAttribute = item.editable ? '' : 'readonly';
+
+            // Updated innerHTML for 5 columns: Desc, Qty, Rate, Spacer, Total
+            row.innerHTML = `
+                <td> <input type="text" class="description-input" value="${item.description || ''}" ${readonlyAttribute}></td>
+                <td class="qty-cell"> <input type="number" class="qty-input" value="${item.qty}" min="0" step="1" data-item-id="${item.id}"></td>
+                <td> <input type="text" class="rate-input currency" value="${rateFormatted}" ${readonlyAttribute} data-item-id="${item.id}"></td>
+                <td></td> 
+                <td class="total-cell currency"> ${totalFormatted}</td>
+            `;
+            tableBodyElement.appendChild(row);
+            setupRowInputHandlers(row, item);
+        }
+
+        // REMOVED updateNotesUI function
+        // REMOVED addNoteListItem function
+
+
+        // =====================================================================
+        // DATA INITIALIZATION & MANAGEMENT
+        // =====================================================================
+
+        /**
+         * Loads module data (items only) from the client or initializes with defaults.
+         */
+        function initModuleData() {
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+             if (!client) {
+                 console.error(`[${MODULE.id}] Critical error during initModuleData: Client object disappeared.`);
+                 return;
+             }
+
+            const savedData = client.moduleData?.[MODULE.id];
+
+            if (savedData) {
+                console.log(`[${MODULE.id}] Restoring saved data.`);
+                // Restore items
+                if (savedData.items && Array.isArray(savedData.items)) {
+                    moduleData.items = savedData.items;
+                    mergeWithDefaultItems(); // Merge items
+                } else {
+                     console.warn(`[${MODULE.id}] Saved items data invalid/missing. Initializing items with defaults.`);
+                     moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
+                }
+                // REMOVED Notes restoration
+                moduleData.totalCost = savedData.totalCost || 0;
+                moduleData.lastModified = savedData.lastModified || new Date().toISOString();
+
+            } else {
+                console.log(`[${MODULE.id}] No saved data found, initializing with defaults.`);
+                // Initialize items with defaults
+                moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
+                // REMOVED Notes initialization
+                moduleData.totalCost = 0;
+                moduleData.lastModified = new Date().toISOString();
+            }
+            updateUI(); // Render items table
+        }
+
+        /**
+         * Merges saved items with default items. Simplified.
+         */
+        function mergeWithDefaultItems() {
+            console.log(`[${MODULE.id}] Merging saved items with default items.`);
+            const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
+            const mergedItems = [];
+            MODULE.defaultItems.forEach(defaultItem => {
+                const savedItem = savedItemsMap.get(defaultItem.id);
+                if (savedItem) {
+                    // Use saved item, ensure critical defaults
+                    mergedItems.push({
+                        ...savedItem,
+                        description: defaultItem.description,
+                        editable: defaultItem.editable,
+                        // No 'allow' or 'checked' to merge
+                        custom: false
+                    });
+                    savedItemsMap.delete(defaultItem.id);
+                } else {
+                     console.log(`[${MODULE.id}] Adding new default item: ${defaultItem.id}`);
+                    mergedItems.push({ ...defaultItem, custom: false });
+                }
+            });
+            // Add remaining custom items
+            savedItemsMap.forEach(customItem => {
+                 if (customItem.custom) {
+                     console.log(`[${MODULE.id}] Preserving custom item: ${customItem.id}`);
+                    mergedItems.push(customItem);
+                 } else {
+                     console.warn(`[${MODULE.id}] Found saved item not in defaults and not marked custom: ${customItem.id}. Preserving it.`);
+                     mergedItems.push({...customItem, custom: true});
+                 }
+            });
+            moduleData.items = mergedItems;
+             console.log(`[${MODULE.id}] Merge complete. Final items count: ${moduleData.items.length}`);
+        }
+
+
+        /**
+         * Adds a new, empty custom item to the data and UI. Simplified.
+         */
+        function addCustomItem() {
+            console.log(`[${MODULE.id}] Adding new custom item.`);
+            const newId = `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            // Simplified newItem object
+            const newItem = {
+                id: newId, description: 'New Custom Item', qty: 0, rate: 0,
+                editable: true, custom: true
+            };
+            moduleData.items.push(newItem);
+            addTableRow(newItem);
+            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+            calculateTotals();
+             const newRow = tableBodyElement.querySelector(`tr[data-item-id="${newId}"]`);
+             if (newRow) {
+                 const descInput = newRow.querySelector('.description-input');
+                 if (descInput) { descInput.focus(); descInput.select(); }
+             }
+        }
+
+        // =====================================================================
+        // EVENT HANDLING & CALCULATIONS
+        // =====================================================================
+
+        /**
+         * Sets up input event handlers for a specific table row. Simplified.
+         * @param {HTMLTableRowElement} row - The table row element.
+         * @param {object} item - The corresponding item object from moduleData.
+         */
+        function setupRowInputHandlers(row, item) {
+            const descInput = row.querySelector('.description-input');
+            if (descInput && item.editable) {
+                descInput.addEventListener('input', () => { updateItemFromRow(row, item); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            }
+            // REMOVED Checkbox listener
+            const qtyInput = row.querySelector('.qty-input');
+            if (qtyInput) {
+                qtyInput.addEventListener('input', () => { updateItemFromRow(row, item); calculateRowTotal(row, item); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            }
+            const rateInput = row.querySelector('.rate-input');
+            if (rateInput && item.editable) {
+                rateInput.addEventListener('focus', function() { this.value = getNumericValue(this.value); this.select(); });
+                rateInput.addEventListener('blur', function() {
+                    const numericValue = getNumericValue(this.value);
+                    this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
+                    updateItemFromRow(row, item); calculateRowTotal(row, item); calculateTotals();
+                });
+                 rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            }
+        }
+
+        /**
+         * Updates the corresponding item object in moduleData based on the input values in a table row. Simplified.
+         * @param {HTMLTableRowElement} row - The table row element containing the inputs.
+         * @param {object} item - The item object in moduleData to update.
+         */
+        function updateItemFromRow(row, item) {
+            const descInput = row.querySelector('.description-input');
+            // REMOVED Checkbox reading
+            const qtyInput = row.querySelector('.qty-input');
+            const rateInput = row.querySelector('.rate-input');
+
+            if (descInput && item.editable) item.description = descInput.value;
+            // REMOVED item.checked update
+            if (qtyInput) item.qty = Math.max(0, parseInt(qtyInput.value, 10) || 0);
+            if (rateInput && item.editable) item.rate = getNumericValue(rateInput.value);
+
+            moduleData.lastModified = new Date().toISOString();
+            if (DEBUG) updateDebugPanel();
+        }
+
+        /**
+         * Calculates the total for a single row (Qty * Rate) and updates its display.
+         * @param {HTMLTableRowElement} row - The table row element.
+         * @param {object} item - The corresponding item object from moduleData.
+         * @returns {number} The calculated total for the row.
+         */
+        function calculateRowTotal(row, item) {
+            const totalCell = row.querySelector('.total-cell');
+            if (!totalCell) return 0;
+            const total = item.qty > 0 ? (item.qty * item.rate) : 0;
+            totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
+            return total;
+        }
+
+        /**
+         * Recalculates the total cost for the entire module and updates the UI.
+         */
+        function calculateTotals() {
+            const totalCost = moduleData.items.reduce((sum, item) => {
+                return sum + (item.qty > 0 ? (item.qty * item.rate) : 0);
+            }, 0);
+            moduleData.totalCost = totalCost;
+            const tableTotalElement = document.getElementById('table-total');
+             if(tableTotalElement) tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
+            const headerTotalElement = document.getElementById('total-module-cost');
+             if (headerTotalElement) headerTotalElement.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+            if (DEBUG) updateDebugPanel();
+        }
+
+        /**
+         * Converts a formatted currency string into a numeric value.
+         * @param {string|number} value - The value to parse.
+         * @returns {number} The numeric value, or 0 if parsing fails.
+         */
+        function getNumericValue(value) {
+            if (typeof value === 'number') return value;
+            if (typeof value !== 'string') return 0;
+            const numericString = value.replace(/R|\s|,|(P\.L)|(P\.D)/g, ''); // Remove R, space, comma, P.L, P.D
+            const number = parseFloat(numericString);
+            return isNaN(number) ? 0 : number;
+        }
+
+        // REMOVED Notes Event Handlers
+
+
+        // =====================================================================
+        // EVENT LISTENERS SETUP
+        // =====================================================================
+
+        /**
+         * Attaches event listeners to static elements like buttons and links.
+         */
+        function setupEventListeners() {
+            // --- Core Buttons ---
+            const saveBtn = document.getElementById('save-btn');
+            if (saveBtn) saveBtn.addEventListener('click', () => saveModuleData(false));
+            const saveSidebarLink = document.getElementById('save-module-data');
+            if (saveSidebarLink) saveSidebarLink.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); });
+            const returnBtn = document.getElementById('return-btn');
+            if(returnBtn) returnBtn.addEventListener('click', returnToDashboard);
+            const returnSidebarLink = document.getElementById('return-to-dashboard');
+            if (returnSidebarLink) returnSidebarLink.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); });
+            const addItemBtn = document.getElementById('add-item-btn');
+             if (addItemBtn) addItemBtn.addEventListener('click', addCustomItem);
+            const addSidebarLink = document.getElementById('add-custom-item');
+            if (addSidebarLink) addSidebarLink.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); });
+
+            // REMOVED Notes Section Button listeners
+        }
+
+        // =====================================================================
+        // TABLE SORTING (REMOVED)
+        // =====================================================================
+
+
+        // =====================================================================
+        // DATA PERSISTENCE (SAVING)
+        // =====================================================================
+        function saveModuleData(isAutoSave = false) {
+             const actionType = isAutoSave ? 'Auto-saving' : 'Saving';
+             console.log(`[${MODULE.id}] ${actionType} module data...`);
+            moduleData.lastModified = new Date().toISOString();
+            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) { /* ... error handling ... */ return; }
+            if (!client.moduleData) client.moduleData = {};
+            // Save the moduleData (items, totalCost, timestamp)
+            client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+            client.lastModified = new Date().toISOString();
+            window.ConstructionApp.ClientManager.setCurrentClient(client);
+             console.log(`[${MODULE.id}] Updated client object in memory/sessionStorage.`);
+            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
+                if (success) {
+                     const message = isAutoSave ? 'Auto-saved' : 'Saved';
+                     console.log(`[${MODULE.id}] ${message} successful.`);
+                     window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
+                     if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
+                 } else {
+                     const errorMsg = error || 'Unknown error during save';
+                     console.error(`[${MODULE.id}] Save failed:`, errorMsg);
+                     window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`);
+                     window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving ${MODULE.title} data: ${errorMsg}`);
+                 }
+            });
+        }
+
+        // =====================================================================
+        // NAVIGATION
+        // =====================================================================
+        function returnToDashboard() {
+            console.log(`[${MODULE.id}] Initiating return to dashboard...`);
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                const shouldSave = confirm("You have unsaved changes. Would you like to save before returning?");
+                if (shouldSave) {
+                    saveModuleData(false); setTimeout(navigateToDashboard, 200); return;
+                }
+            }
+            navigateToDashboard();
+        }
+        function navigateToDashboard() {
+             console.log(`[${MODULE.id}] Preparing to navigate to dashboard.`);
+            if (cancelAutoSave) cancelAutoSave();
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                if (!client.moduleData) client.moduleData = {};
+                // Saves current state (items, totalCost) to client object before navigating
+                client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                client.lastModified = new Date().toISOString();
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                 console.log(`[${MODULE.id}] Client object updated with current module state.`);
+            }
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+             console.log(`[${MODULE.id}] Redirecting to index.html...`);
+            window.location.href = 'index.html';
+        }
+
+        // =====================================================================
+        // DEBUGGING UTILITIES (Simplified)
+        // =====================================================================
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            const toggleBtn = document.getElementById('debug-toggle-btn');
+            if (!debugPanel || !toggleBtn) return;
+            toggleBtn.style.display = 'block';
+            toggleBtn.addEventListener('click', function() {
+                 const isVisible = debugPanel.style.display === 'block';
+                 debugPanel.style.display = isVisible ? 'none' : 'block';
+                 toggleBtn.textContent = isVisible ? 'Debug' : 'Hide Debug';
+                 if (!isVisible) updateDebugPanel();
+            });
+        }
+        function updateDebugPanel() {
+             if (!DEBUG) return;
+             const debugPanel = document.getElementById('debug-panel');
+             if (!debugPanel || debugPanel.style.display === 'none') return;
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {}
+            const navigationState = sessionStorage.getItem('navigationState');
+            const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges();
+            let debugInfo = `
+                <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Title:</strong> ${MODULE.title}<br>
+                <strong>Nav State:</strong> ${navigationState || 'None'}<br><hr>
+                <strong>Client (M):</strong> ${client?.name || 'N/A'}<br>
+                <strong>Client (S):</strong> ${sessionClientData?.name || 'N/A'}<br><hr>
+                <strong>Items:</strong> ${moduleData.items.length}<br> 
+                <strong>Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
+                <strong>Unsaved:</strong> ${unsavedChanges ? 'Yes' : 'No'}<br>
+                <strong>Modified:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<br><hr>
+                <strong>Items Data[0]:</strong><br>
+                <pre style="font-size: 10px; max-height: 40px; overflow-y: auto;">${JSON.stringify(moduleData.items[0], null, 1)}</pre>
+            `;
+            debugPanel.innerHTML = debugInfo;
+        }
+
+        // =====================================================================
+        // PAGE UNLOAD HANDLING
+        // =====================================================================
+        window.addEventListener('beforeunload', function(e) {
+            if (cancelAutoSave) cancelAutoSave();
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (client) {
+                     try {
+                         if (!client.moduleData) client.moduleData = {};
+                         client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                         client.lastModified = new Date().toISOString();
+                        sessionStorage.setItem('currentClient', JSON.stringify(client));
+                     } catch (error) { console.error(`[${MODULE.id}] Error storing client data:`, error); }
+                }
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = message; return message;
+            }
+        });
+
+    </script>
+</body>
+</html>
