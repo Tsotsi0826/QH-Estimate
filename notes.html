@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    <title>Notes - Construction Estimator</title>
+
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+
+    
+    
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+
+    <style>
+        /* Basic reset and font */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Flex layout for the main body */
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+            background-color: #f5f5f5;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 25%;
+            background-color: #1c2639; /* Dark blue */
+            color: #fff;
+            height: 100%;
+            overflow-y: auto; /* Scroll only if needed */
+            border-right: 1px solid #333; /* Separator */
+        }
+
+        /* Main content area styling */
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden; /* Prevent overflow */
+            background-color: white;
+            color: #333;
+            position: relative; /* For potential absolute positioning inside */
+            display: flex;
+            flex-direction: column; /* Stack header, description, content */
+        }
+
+        /* Sidebar header */
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Sidebar content padding */
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        /* Spacing for sidebar sections */
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        /* Title for sidebar sections */
+        .sidebar-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* Individual items/links in the sidebar */
+        .sidebar-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #2d364a; /* Slightly lighter blue */
+            border-radius: 4px;
+            margin-bottom: 8px;
+            transition: background-color 0.2s ease; /* Smooth hover */
+        }
+
+        .sidebar-item:hover {
+            background-color: #3a4967; /* Hover effect */
+        }
+
+        /* Styling for links within sidebar items */
+        .sidebar-link {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+        }
+
+        /* Main content header */
+        .module-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between; /* Keep space-between for potential future elements */
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #1c2639; /* Match sidebar */
+            color: #fff;
+        }
+
+        /* Module title in the header */
+        .module-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Optional icon styling */
+        .module-title i {
+            margin-right: 10px;
+        }
+
+        /* Area below the main header, for buttons/status */
+        .module-description {
+            padding: 10px 20px;
+            color: #aaa;
+            background-color: #1c2639; /* Match sidebar */
+            display: flex;
+            justify-content: flex-end; /* Align buttons to the right */
+            align-items: center;
+            border-bottom: 1px solid #333; /* Separator */
+        }
+
+        /* Main content scrolling area */
+        .module-content {
+            padding: 20px;
+            background-color: #fff;
+            margin: 0;
+            color: #333;
+            flex: 1; /* Take remaining vertical space */
+            overflow-y: auto; /* Enable vertical scroll */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Custom scrollbar for module content */
+        .module-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .module-content::-webkit-scrollbar-thumb {
+            background-color: #aaa;
+            border-radius: 4px;
+        }
+
+        .module-content::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent; /* Blend with sidebar */
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* General button styling */
+        .btn {
+            background-color: #4eca8b; /* Green */
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.9em; /* Slightly smaller font for buttons */
+        }
+
+        .btn:hover {
+            background-color: #3db97a; /* Darker green */
+        }
+
+        /* Secondary button styling */
+        .btn-secondary {
+            background-color: #6c757d; /* Gray */
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268; /* Darker gray */
+        }
+        
+        /* Danger button styling (for delete) */
+        .btn-danger {
+            background-color: #dc3545; /* Red */
+            font-size: 0.8em; /* Smaller delete button */
+            padding: 4px 8px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333; /* Darker red */
+        }
+
+
+        /* Container for header actions (REMOVED total cost display) */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* REMOVED Table styling */
+
+        /* Save status indicator styling */
+        #save-status {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.9em;
+            transition: opacity 0.3s;
+        }
+
+        /* REMOVED Add item button styling */
+
+        /* Debug panel styling */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+         /* Debug toggle button styling */
+         #debug-toggle-btn {
+             position: fixed;
+             bottom: 10px;
+             right: 10px;
+             z-index: 10000;
+             padding: 5px 10px;
+             background: #333;
+             color: white;
+             border: none;
+             border-radius: 3px;
+             cursor: pointer;
+             font-size: 12px;
+         }
+
+        /* --- Notes Section Styles --- */
+        #notes-section {
+            /* margin-top: 30px; No table above, less margin needed */
+            /* padding-top: 20px; */
+            /* border-top: 1px solid #e0e0e0; */ /* No need for top border if it's the first element */
+        }
+
+        #notes-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            color: #333;
+        }
+
+        #notes-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        #notes-list li {
+            display: flex;
+            align-items: center;
+            padding: 8px 5px;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 10px; /* Space between checkbox, input, button */
+        }
+        #notes-list li:last-child {
+            border-bottom: none;
+        }
+
+
+        .note-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0; /* Prevent checkbox from shrinking */
+        }
+
+        .note-text {
+            flex-grow: 1; /* Allow text input to take available space */
+            border: 1px solid transparent;
+            padding: 5px;
+            font-size: 0.95em;
+            background-color: transparent;
+        }
+        .note-text:focus {
+             border: 1px solid #4eca8b;
+             background-color: #fff;
+             outline: none;
+        }
+
+        /* Strikethrough style for completed notes */
+        .note-text.completed {
+            text-decoration: line-through;
+            color: #888; /* Dim completed text */
+            background-color: #f9f9f9; /* Slightly different background */
+        }
+
+        .delete-note-btn {
+            flex-shrink: 0; /* Prevent delete button from shrinking */
+        }
+
+        #add-note-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #new-note-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+         #new-note-input:focus {
+             border-color: #4eca8b;
+             outline: none;
+         }
+    </style>
+</head>
+<body>
+    
+    <div class="sidebar">
+        
+        
+        <div class="sidebar-header">Notes</div>
+
+        <div class="sidebar-content">
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Navigation</div>
+                <div class="sidebar-item">
+                    <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
+                </div>
+            </div>
+
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Actions</div>
+                
+                <div class="sidebar-item">
+                    
+                    <a href="#" class="sidebar-link" id="save-module-data">Save Notes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="main-content">
+        
+        <div class="module-header">
+            <div class="module-title">
+                
+                <i>N</i> <span id="module-title-text">Notes</span>
+            </div>
+            
+            <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
+            <div class="header-actions">
+                
+                
+            </div>
+        </div>
+
+        
+        <div class="module-description">
+            <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                
+                <div id="save-status"></div>
+                
+                
+                <button id="save-btn" class="btn">Save Notes</button>
+                
+                <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
+            </div>
+        </div>
+
+        
+        <div class="module-content">
+            
+            
+
+            
+            
+
+            
+            <div id="notes-section">
+                <h3>Notes</h3>
+                <ul id="notes-list">
+                    
+                </ul>
+                <div id="add-note-container">
+                    <input type="text" id="new-note-input" placeholder="Add a new note...">
+                    <button id="add-note-btn" class="btn">Add Note</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    
+    <div class="debug-panel" id="debug-panel"></div>
+     
+    <button id="debug-toggle-btn" style="display: none;">Debug</button>
+
+
+    <script>
+        // =====================================================================
+        // MODULE CONFIGURATION - ** RENAMED AND SIMPLIFIED FOR NOTES **
+        // =====================================================================
+        const MODULE = {
+            id: 'notes', // Unique ID for this module (matches desired filename)
+            title: 'Notes' // User-facing title
+        };
+
+        // =====================================================================
+        // MODULE STATE & UTILITIES
+        // =====================================================================
+
+        // Holds the current data for this module instance (notes only)
+        let moduleData = {
+            notes: [],
+            lastModified: new Date().toISOString()
+        };
+
+        // Stores the function to cancel the auto-save timer
+        let cancelAutoSave = null;
+
+        // Flag to enable/disable the debug panel
+        const DEBUG = true; // Set to false to hide debug panel and button
+
+        // References to frequently used elements
+        let notesListElement = null;
+
+        // =====================================================================
+        // INITIALIZATION
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(`[${MODULE.id}] DOM loaded, initializing module`);
+
+            // Cache frequently used elements
+            notesListElement = document.getElementById('notes-list');
+            if (!notesListElement) {
+                 console.error(`[${MODULE.id}] Critical error: Notes list element not found!`);
+                 return; // Stop initialization
+            }
+
+            // Set up debug panel and toggle button if DEBUG is true
+            if (DEBUG) {
+                setupDebugPanel();
+            }
+
+            // Update titles based on MODULE configuration
+            updateModuleTitles();
+
+            // --- Access Control & Client Loading ---
+            const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
+            if (!validAccess) {
+                console.warn(`[${MODULE.id}] Invalid access detected, redirecting via ModuleUtils.`);
+                return;
+            }
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) {
+                console.error(`[${MODULE.id}] No client data found. Returning to dashboard.`);
+                window.ConstructionApp.ModuleUtils.showErrorMessage('No client selected. Please return to the dashboard and select a client.');
+                setTimeout(() => window.ConstructionApp.ModuleUtils.returnToDashboard(MODULE.id, moduleData, false), 500);
+                return;
+            }
+            const clientNameDisplay = document.getElementById('client-name-display');
+             if(clientNameDisplay) {
+                clientNameDisplay.textContent = `Client: ${client.name}`;
+             } else {
+                 console.warn(`[${MODULE.id}] Element #client-name-display not found.`);
+             }
+
+            // --- Setup UI Components & Data ---
+            window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
+            setupEventListeners(); // Sets up static listeners including notes add button
+            initModuleData(); // Loads notes, calls updateUI
+
+             // Set up tracking for unsaved changes on notes inputs
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('#new-note-input, .note-text');
+
+
+            // --- Auto-Save & Final Steps ---
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
+            // No table sorting needed
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+             console.log(`[${MODULE.id}] Initialization complete.`);
+        });
+
+        // =====================================================================
+        // UI UPDATE FUNCTIONS
+        // =====================================================================
+
+        /**
+         * Updates various titles on the page based on MODULE.title.
+         */
+        function updateModuleTitles() {
+            document.title = `${MODULE.title} - Construction Estimator`;
+             const sidebarHeader = document.querySelector('.sidebar-header');
+             if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
+             const moduleTitleText = document.getElementById('module-title-text');
+             if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
+             // No total cost display to update
+        }
+
+        /**
+         * Renders the notes list from moduleData.
+         */
+        function updateUI() {
+             if (!notesListElement) {
+                 console.error(`[${MODULE.id}] Cannot update UI: Notes list element not found.`);
+                 return;
+             }
+            console.log(`[${MODULE.id}] Updating UI - Notes: ${moduleData.notes.length}`);
+            
+            // --- Update Notes List ---
+            updateNotesUI(); // Call dedicated function to render notes
+
+            // --- Update Debug Panel ---
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+        }
+
+        /**
+         * Renders the notes list based on moduleData.notes.
+         */
+        function updateNotesUI() {
+            if (!notesListElement) return;
+            notesListElement.innerHTML = ''; // Clear existing notes
+            moduleData.notes.forEach(note => {
+                addNoteListItem(note);
+            });
+        }
+
+        /**
+         * Creates and adds a single list item (<li>) for a note.
+         * @param {object} note - The note object {id, text, completed}.
+         */
+        function addNoteListItem(note) {
+            if (!notesListElement) return;
+            const listItem = document.createElement('li');
+            listItem.setAttribute('data-note-id', note.id);
+
+            // Create checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'note-checkbox';
+            checkbox.checked = note.completed;
+            checkbox.addEventListener('change', handleNoteCheckboxChange);
+
+            // Create text input
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.className = 'note-text';
+            textInput.value = note.text;
+            if (note.completed) {
+                textInput.classList.add('completed'); // Apply strikethrough if completed
+            }
+            textInput.addEventListener('input', handleNoteTextInput);
+            textInput.addEventListener('blur', handleNoteTextBlur); // Finalize update on blur
+
+            // Create delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.className = 'btn btn-danger delete-note-btn';
+            deleteButton.addEventListener('click', handleDeleteNote);
+
+            // Append elements to list item
+            listItem.appendChild(checkbox);
+            listItem.appendChild(textInput);
+            listItem.appendChild(deleteButton);
+
+            // Append list item to the list
+            notesListElement.appendChild(listItem);
+        }
+
+
+        // =====================================================================
+        // DATA INITIALIZATION & MANAGEMENT
+        // =====================================================================
+
+        /**
+         * Loads module data (notes only) from the client or initializes.
+         */
+        function initModuleData() {
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+             if (!client) {
+                 console.error(`[${MODULE.id}] Critical error during initModuleData: Client object disappeared.`);
+                 return;
+             }
+
+            const savedData = client.moduleData?.[MODULE.id];
+
+            if (savedData) {
+                console.log(`[${MODULE.id}] Restoring saved data.`);
+                // Restore notes
+                if (savedData.notes && Array.isArray(savedData.notes)) {
+                    moduleData.notes = savedData.notes;
+                } else {
+                     console.warn(`[${MODULE.id}] Saved notes data invalid/missing. Initializing notes as empty.`);
+                     moduleData.notes = []; // Initialize notes if not present
+                }
+                moduleData.lastModified = savedData.lastModified || new Date().toISOString();
+
+            } else {
+                console.log(`[${MODULE.id}] No saved data found, initializing notes as empty.`);
+                // Initialize notes as empty
+                moduleData.notes = [];
+                moduleData.lastModified = new Date().toISOString();
+            }
+            updateUI(); // Render notes
+        }
+
+        // =====================================================================
+        // EVENT HANDLING & CALCULATIONS
+        // =====================================================================
+
+         /**
+         * Converts a formatted currency string into a numeric value.
+         * Kept just in case ModuleUtils needs it, otherwise could be removed.
+         * @param {string|number} value - The value to parse.
+         * @returns {number} The numeric value, or 0 if parsing fails.
+         */
+        function getNumericValue(value) {
+            if (typeof value === 'number') return value;
+            if (typeof value !== 'string') return 0;
+            const numericString = value.replace(/R|\s|,|(P\.L)|(P\.D)/g, ''); // Remove R, space, comma, P.L, P.D
+            const number = parseFloat(numericString);
+            return isNaN(number) ? 0 : number;
+        }
+
+
+        // --- Notes Event Handlers ---
+
+        /**
+         * Handles adding a new note when the "Add Note" button is clicked.
+         */
+        function handleAddNote() {
+            const inputElement = document.getElementById('new-note-input');
+            if (!inputElement) return;
+            const text = inputElement.value.trim();
+
+            if (text) {
+                const newNote = {
+                    id: `note-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    text: text,
+                    completed: false
+                };
+                moduleData.notes.push(newNote);
+                addNoteListItem(newNote); // Add just the new note to the UI
+                inputElement.value = ''; // Clear input
+                window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                moduleData.lastModified = new Date().toISOString();
+                if (DEBUG) updateDebugPanel();
+                console.log(`[${MODULE.id}] Added new note: ${newNote.id}`);
+            }
+        }
+
+        /**
+         * Handles changes to a note's checkbox.
+         * @param {Event} event - The change event object.
+         */
+        function handleNoteCheckboxChange(event) {
+            const checkbox = event.target;
+            const listItem = checkbox.closest('li');
+            const noteId = listItem?.getAttribute('data-note-id');
+            const textInput = listItem?.querySelector('.note-text');
+
+            if (noteId && textInput) {
+                const note = moduleData.notes.find(n => n.id === noteId);
+                if (note) {
+                    note.completed = checkbox.checked;
+                    textInput.classList.toggle('completed', note.completed); // Add/remove strikethrough class
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                    moduleData.lastModified = new Date().toISOString();
+                    if (DEBUG) updateDebugPanel();
+                     console.log(`[${MODULE.id}] Toggled note complete status: ${noteId}, Completed: ${note.completed}`);
+                }
+            }
+        }
+
+         /**
+         * Handles input events on a note's text field (marks changes).
+         * @param {Event} event - The input event object.
+         */
+         function handleNoteTextInput(event) {
+             window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+         }
+
+
+        /**
+         * Handles the blur event on a note's text field (updates data model).
+         * @param {Event} event - The blur event object.
+         */
+        function handleNoteTextBlur(event) {
+            const textInput = event.target;
+            const listItem = textInput.closest('li');
+            const noteId = listItem?.getAttribute('data-note-id');
+
+            if (noteId) {
+                const note = moduleData.notes.find(n => n.id === noteId);
+                if (note && note.text !== textInput.value) { // Only update if text actually changed
+                    note.text = textInput.value;
+                    moduleData.lastModified = new Date().toISOString();
+                    if (DEBUG) updateDebugPanel();
+                     console.log(`[${MODULE.id}] Updated note text: ${noteId}`);
+                }
+            }
+        }
+
+        /**
+         * Handles deleting a note when its delete button is clicked.
+         * @param {Event} event - The click event object.
+         */
+        function handleDeleteNote(event) {
+            const deleteButton = event.target;
+            const listItem = deleteButton.closest('li');
+            const noteId = listItem?.getAttribute('data-note-id');
+
+            if (noteId) {
+                 if (!confirm("Are you sure you want to delete this note?")) {
+                     return;
+                 }
+                const noteIndex = moduleData.notes.findIndex(n => n.id === noteId);
+                if (noteIndex > -1) {
+                    moduleData.notes.splice(noteIndex, 1);
+                    listItem.remove(); // Remove from UI
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                    moduleData.lastModified = new Date().toISOString();
+                    if (DEBUG) updateDebugPanel();
+                     console.log(`[${MODULE.id}] Deleted note: ${noteId}`);
+                }
+            }
+        }
+
+
+        // =====================================================================
+        // EVENT LISTENERS SETUP
+        // =====================================================================
+
+        /**
+         * Attaches event listeners to static elements like buttons and links.
+         */
+        function setupEventListeners() {
+            // --- Core Buttons ---
+            const saveBtn = document.getElementById('save-btn');
+            if (saveBtn) saveBtn.addEventListener('click', () => saveModuleData(false));
+            const saveSidebarLink = document.getElementById('save-module-data');
+            if (saveSidebarLink) saveSidebarLink.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); });
+            const returnBtn = document.getElementById('return-btn');
+            if(returnBtn) returnBtn.addEventListener('click', returnToDashboard);
+            const returnSidebarLink = document.getElementById('return-to-dashboard');
+            if (returnSidebarLink) returnSidebarLink.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); });
+            
+            // --- Notes Section Buttons ---
+            const addNoteBtn = document.getElementById('add-note-btn');
+            if (addNoteBtn) addNoteBtn.addEventListener('click', handleAddNote);
+            const newNoteInput = document.getElementById('new-note-input');
+            if (newNoteInput) {
+                newNoteInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); handleAddNote(); }
+                });
+            }
+        }
+
+        // =====================================================================
+        // DATA PERSISTENCE (SAVING)
+        // =====================================================================
+        function saveModuleData(isAutoSave = false) {
+             const actionType = isAutoSave ? 'Auto-saving' : 'Saving';
+             console.log(`[${MODULE.id}] ${actionType} module data...`);
+            moduleData.lastModified = new Date().toISOString();
+            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) { /* ... error handling ... */ return; }
+            if (!client.moduleData) client.moduleData = {};
+            // Save the simplified moduleData (notes and timestamp)
+            client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+            client.lastModified = new Date().toISOString();
+            window.ConstructionApp.ClientManager.setCurrentClient(client);
+             console.log(`[${MODULE.id}] Updated client object in memory/sessionStorage.`);
+            // Use a generic save function or adapt ClientManager if needed
+            // Assuming saveModuleData can handle saving just notes under the module ID
+            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
+                if (success) {
+                     const message = isAutoSave ? 'Auto-saved' : 'Saved';
+                     console.log(`[${MODULE.id}] ${message} successful.`);
+                     window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
+                     if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved successfully!`);
+                 } else {
+                     const errorMsg = error || 'Unknown error during save';
+                     console.error(`[${MODULE.id}] Save failed:`, errorMsg);
+                     window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`);
+                     window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving ${MODULE.title}: ${errorMsg}`);
+                 }
+            });
+        }
+
+        // =====================================================================
+        // NAVIGATION
+        // =====================================================================
+        function returnToDashboard() {
+            console.log(`[${MODULE.id}] Initiating return to dashboard...`);
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                const shouldSave = confirm("You have unsaved changes. Would you like to save before returning?");
+                if (shouldSave) {
+                    saveModuleData(false); setTimeout(navigateToDashboard, 200); return;
+                }
+            }
+            navigateToDashboard();
+        }
+        function navigateToDashboard() {
+             console.log(`[${MODULE.id}] Preparing to navigate to dashboard.`);
+            if (cancelAutoSave) cancelAutoSave();
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                if (!client.moduleData) client.moduleData = {};
+                // Saves current state (notes) to client object before navigating
+                client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                client.lastModified = new Date().toISOString();
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                 console.log(`[${MODULE.id}] Client object updated with current module state.`);
+            }
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+             console.log(`[${MODULE.id}] Redirecting to index.html...`);
+            window.location.href = 'index.html';
+        }
+
+        // =====================================================================
+        // DEBUGGING UTILITIES (Simplified)
+        // =====================================================================
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            const toggleBtn = document.getElementById('debug-toggle-btn');
+            if (!debugPanel || !toggleBtn) return;
+            toggleBtn.style.display = 'block';
+            toggleBtn.addEventListener('click', function() {
+                 const isVisible = debugPanel.style.display === 'block';
+                 debugPanel.style.display = isVisible ? 'none' : 'block';
+                 toggleBtn.textContent = isVisible ? 'Debug' : 'Hide Debug';
+                 if (!isVisible) updateDebugPanel();
+            });
+        }
+        function updateDebugPanel() {
+             if (!DEBUG) return;
+             const debugPanel = document.getElementById('debug-panel');
+             if (!debugPanel || debugPanel.style.display === 'none') return;
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {}
+            const navigationState = sessionStorage.getItem('navigationState');
+            const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges();
+            let debugInfo = `
+                <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Title:</strong> ${MODULE.title}<br>
+                <strong>Nav State:</strong> ${navigationState || 'None'}<br><hr>
+                <strong>Client (M):</strong> ${client?.name || 'N/A'}<br>
+                <strong>Client (S):</strong> ${sessionClientData?.name || 'N/A'}<br><hr>
+                <strong>Notes:</strong> ${moduleData.notes.length}<br> 
+                <strong>Unsaved:</strong> ${unsavedChanges ? 'Yes' : 'No'}<br>
+                <strong>Modified:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<br><hr>
+                <strong>Notes Data[0]:</strong><br>
+                <pre style="font-size: 10px; max-height: 40px; overflow-y: auto;">${JSON.stringify(moduleData.notes[0], null, 1)}</pre>
+            `;
+            debugPanel.innerHTML = debugInfo;
+        }
+
+        // =====================================================================
+        // PAGE UNLOAD HANDLING
+        // =====================================================================
+        window.addEventListener('beforeunload', function(e) {
+            if (cancelAutoSave) cancelAutoSave();
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (client) {
+                     try {
+                         if (!client.moduleData) client.moduleData = {};
+                         client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                         client.lastModified = new Date().toISOString();
+                        sessionStorage.setItem('currentClient', JSON.stringify(client));
+                     } catch (error) { console.error(`[${MODULE.id}] Error storing client data:`, error); }
+                }
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = message; return message;
+            }
+        });
+
+    </script>
+</body>
+</html>
