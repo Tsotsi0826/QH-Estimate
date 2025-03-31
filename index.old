@@ -513,6 +513,44 @@
             padding: 10px 20px;
             font-size: 16px;
         }
+
+        /* Module card clear button */
+        .clear-module-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            padding: 0;
+        }
+
+        .clear-module-btn:hover {
+            background-color: #f8d7da;
+        }
+
+        /* Module tile styles */
+        .module-tile {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .module-tile-cost {
+            font-size: 20px;
+            margin: 10px 0;
+            color: #4eca8b;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -1766,7 +1804,7 @@
             }
         }
 
-        // Render dashboard content
+        // Render dashboard content - UPDATED VERSION WITH MODULE TILES
         function renderDashboardContent(client) {
             const contentElement = document.getElementById('module-content');
             contentElement.innerHTML = '';
@@ -1782,27 +1820,27 @@
             // Module summaries section
             content += `
                 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                    <h4>Module Summaries</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <h4 style="margin-bottom: 15px;">Module Summaries</h4>
+                    <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
             `;
             
             // Modules with data
             let hasModuleData = false;
+            
             if (client.moduleData) {
                 for (const moduleId in client.moduleData) {
-                    // Skip P&Gs module as requested
-                    if (moduleId === 'p-and-gs') continue;
+                    // Skip certain modules if needed
+                    if (moduleId === 'to-skip') continue;
                     
+                    const moduleData = client.moduleData[moduleId];
                     const module = appData.modules.find(m => m.id === moduleId);
+                    
                     if (module) {
                         hasModuleData = true;
                         
-                        // Get module data
-                        const moduleData = client.moduleData[moduleId];
-                        
                         // Calculate module cost for display
                         let moduleCost = 0;
-                        if (moduleData.totalCost) {
+                        if (moduleData.totalCost !== undefined) {
                             moduleCost = moduleData.totalCost;
                         } else if (moduleData.items && Array.isArray(moduleData.items)) {
                             moduleData.items.forEach(item => {
@@ -1815,11 +1853,12 @@
                         // Format the cost
                         const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
                         
-                        // Add module card
+                        // Add module card with clear button
                         content += `
-                            <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative;">
+                                <button class="clear-module-btn" data-module-id="${moduleId}" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px;" title="Clear module data">×</button>
                                 <h5>${module.name}</h5>
-                                <p>Cost: ${formattedCost}</p>
+                                <p style="font-size: 20px; margin: 10px 0; color: #4eca8b; font-weight: bold;">${formattedCost}</p>
                                 <button class="btn module-open-btn" style="margin-top: 10px;" data-module-id="${moduleId}">Open Module</button>
                             </div>
                         `;
@@ -1861,6 +1900,52 @@
                     window.location.href = moduleId + '.html';
                 });
             });
+            
+            // Add event listeners to the clear module buttons
+            document.querySelectorAll('.clear-module-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const moduleId = this.getAttribute('data-module-id');
+                    const module = appData.modules.find(m => m.id === moduleId);
+                    
+                    if (confirm(`Are you sure you want to clear all data for the ${module ? module.name : moduleId} module?`)) {
+                        clearModuleData(moduleId);
+                    }
+                });
+            });
+        }
+
+        // Add new function to clear module data
+        function clearModuleData(moduleId) {
+            // Get current client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            if (client && client.moduleData && client.moduleData[moduleId]) {
+                console.log(`[Dashboard] Clearing module data for: ${moduleId}`);
+                
+                // Remove the module data
+                delete client.moduleData[moduleId];
+                
+                // Update client's lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // Update the client in ClientManager and sessionStorage
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                
+                // Also update client via the saveModuleData API to ensure Firebase is updated
+                window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => {
+                    if (success) {
+                        window.ConstructionApp.ModuleUtils.showSuccessMessage(`Module data cleared successfully`);
+                    } else {
+                        window.ConstructionApp.ModuleUtils.showErrorMessage(`Error clearing module data: ${error || 'Unknown error'}`);
+                    }
+                });
+                
+                // Update the dashboard to reflect the changes
+                updateDashboard(client);
+                
+                // Update total project cost
+                updateTotalProjectCost();
+            }
         }
 
         // Update total project cost - UPDATED VERSION 
