@@ -243,36 +243,42 @@
             vertical-align: middle; /* Align content vertically */
         }
 
-        /* Column width definitions - Adjusted for 5 columns */
+        /* Column width definitions - Adjusted for 6 columns */
         .module-table th:nth-child(1), /* Description */
         .module-table td:nth-child(1) {
-            width: 50%; /* Adjusted width */
+            width: 45%; /* Adjusted width */
             white-space: normal; /* Allow description to wrap */
         }
-
-        .module-table th:nth-child(2), /* Qty */
+        
+        .module-table th:nth-child(2), /* Pc - NEW COLUMN */
         .module-table td:nth-child(2) {
+            width: 5%; 
+            text-align: center;
+        }
+
+        .module-table th:nth-child(3), /* Qty */
+        .module-table td:nth-child(3) {
             width: 8%; /* Adjusted width */
         }
 
-        .module-table th:nth-child(3), /* Rate */
-        .module-table td:nth-child(3) {
+        .module-table th:nth-child(4), /* Rate */
+        .module-table td:nth-child(4) {
             width: 15%;
         }
 
-        .module-table th:nth-child(4), /* Empty Spacer */
-        .module-table td:nth-child(4) {
+        .module-table th:nth-child(5), /* Empty Spacer */
+        .module-table td:nth-child(5) {
             width: 2%; /* Adjusted width */
             border-left: none; /* Hide borders for spacer */
             border-right: none;
         }
-         .module-table th:nth-child(4) { /* Header specific border */
+         .module-table th:nth-child(5) { /* Header specific border */
              border-bottom: 1px solid #ddd;
          }
 
 
-        .module-table th:nth-child(5), /* Total */
-        .module-table td:nth-child(5) {
+        .module-table th:nth-child(6), /* Total */
+        .module-table td:nth-child(6) {
             width: 15%;
         }
 
@@ -326,9 +332,19 @@
             text-align: right;
         }
 
-        /* REMOVED Allow cell specific style */
-        /* REMOVED Checkbox cell alignment */
-        /* REMOVED Checkbox styling */
+        /* Checkbox cell alignment */
+        .checkbox-cell {
+            text-align: center;
+            vertical-align: middle; /* Center checkbox vertically */
+        }
+
+        /* Checkbox styling */
+        .item-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            vertical-align: middle; /* Align with text if any */
+        }
 
 
         /* Table footer row styling */
@@ -463,6 +479,7 @@
                 <thead> 
                     <tr>
                         <th>Description</th>
+                        <th>Pc</th> 
                         <th>Qty</th>
                         <th>Rate</th>
                         <th></th> 
@@ -476,7 +493,7 @@
                     
                     <tr class="footer-row">
                         
-                        <td colspan="4" style="text-align: right;">Total</td> 
+                        <td colspan="5" style="text-align: right;">Total</td> 
                         <td class="currency" id="table-total">R0.00</td>
                     </tr>
                 </tfoot>
@@ -506,15 +523,15 @@
             title: 'Fireplaces and Braais', // User-facing title (Corrected grammar)
             defaultItems: [ // Items specific to this module based on screenshot
                 // Rates from screenshot, all items editable: true
-                // Removed 'allow' and 'checked' properties
-                { id: 'fire-braai', description: 'Braai', qty: 0, rate: 12500.00, editable: true },
-                { id: 'fire-fireplace', description: 'Fireplace', qty: 0, rate: 15000.00, editable: true },
-                { id: 'fire-gas-conn', description: 'Gas Connection', qty: 0, rate: 7500.00, editable: true },
-                { id: 'fire-installs', description: 'Installations', qty: 0, rate: 5000.00, editable: true },
-                { id: 'fire-flues', description: 'Flues', qty: 0, rate: 2500.00, editable: true }, // Corrected 'Flue's'
-                { id: 'fire-bricks', description: 'Fire Bricks', qty: 0, rate: 38.00, editable: true },
-                { id: 'fire-insulation', description: 'Insulation around Braai / Fireplace', qty: 0, rate: 750.00, editable: true },
-                { id: 'fire-other', description: 'Fire - Braai Other', qty: 0, rate: 0.00, editable: true }
+                // Added 'checked' property
+                { id: 'fire-braai', description: 'Braai', qty: 0, rate: 12500.00, checked: false, editable: true },
+                { id: 'fire-fireplace', description: 'Fireplace', qty: 0, rate: 15000.00, checked: false, editable: true },
+                { id: 'fire-gas-conn', description: 'Gas Connection', qty: 0, rate: 7500.00, checked: false, editable: true },
+                { id: 'fire-installs', description: 'Installations', qty: 0, rate: 5000.00, checked: false, editable: true },
+                { id: 'fire-flues', description: 'Flues', qty: 0, rate: 2500.00, checked: false, editable: true }, // Corrected 'Flue's'
+                { id: 'fire-bricks', description: 'Fire Bricks', qty: 0, rate: 38.00, checked: false, editable: true },
+                { id: 'fire-insulation', description: 'Insulation around Braai / Fireplace', qty: 0, rate: 750.00, checked: false, editable: true },
+                { id: 'fire-other', description: 'Fire - Braai Other', qty: 0, rate: 0.00, checked: false, editable: true }
             ]
         };
 
@@ -525,7 +542,6 @@
         // Holds the current data for this module instance (items only)
         let moduleData = {
             items: [],
-            // notes: [], // REMOVED notes array
             totalCost: 0,
             lastModified: new Date().toISOString()
         };
@@ -538,7 +554,6 @@
 
         // References to frequently used elements
         let tableBodyElement = null;
-        // let notesListElement = null; // REMOVED notes list reference
 
         // =====================================================================
         // INITIALIZATION
@@ -548,8 +563,7 @@
 
             // Cache frequently used elements
             tableBodyElement = document.getElementById('items-table-body');
-            // notesListElement = document.getElementById('notes-list'); // REMOVED
-            if (!tableBodyElement /*|| !notesListElement*/) { // Adjusted check
+            if (!tableBodyElement) {
                  console.error(`[${MODULE.id}] Critical error: Table body element not found!`);
                  return; // Stop initialization
             }
@@ -588,12 +602,12 @@
             initModuleData(); // Loads items, calls updateUI
 
              // Set up tracking for unsaved changes on table inputs
-            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input'); // Simplified selector
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input'); // Includes checkbox now
 
 
             // --- Auto-Save & Final Steps ---
             cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
-            // setupTableSorting(); // REMOVED - No sorting without header
+            // No sorting needed currently
             if (DEBUG) {
                 updateDebugPanel();
             }
@@ -614,7 +628,6 @@
              const moduleTitleText = document.getElementById('module-title-text');
              if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
              const totalModuleCost = document.getElementById('total-module-cost');
-             // Update total cost label text slightly for clarity
              if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: R0.00`;
         }
 
@@ -635,8 +648,6 @@
             });
             calculateTotals(); // Recalculate item totals
 
-            // --- REMOVED Update Notes List ---
-
             // --- Update Debug Panel ---
             if (DEBUG) {
                 updateDebugPanel();
@@ -645,7 +656,7 @@
 
         /**
          * Creates and adds a single table row (<tr>) for an item.
-         * Simplified to remove Allow and Pc columns.
+         * Includes the Pc column.
          * @param {object} item - The item object.
          */
         function addTableRow(item) {
@@ -657,9 +668,10 @@
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(total);
             const readonlyAttribute = item.editable ? '' : 'readonly';
 
-            // Updated innerHTML for 5 columns: Desc, Qty, Rate, Spacer, Total
+            // Updated innerHTML for 6 columns: Desc, Pc, Qty, Rate, Spacer, Total
             row.innerHTML = `
                 <td> <input type="text" class="description-input" value="${item.description || ''}" ${readonlyAttribute}></td>
+                <td class="checkbox-cell"> <input type="checkbox" class="item-checkbox" data-item-id="${item.id}" ${item.checked ? 'checked' : ''}></td>
                 <td class="qty-cell"> <input type="number" class="qty-input" value="${item.qty}" min="0" step="1" data-item-id="${item.id}"></td>
                 <td> <input type="text" class="rate-input currency" value="${rateFormatted}" ${readonlyAttribute} data-item-id="${item.id}"></td>
                 <td></td> 
@@ -668,10 +680,6 @@
             tableBodyElement.appendChild(row);
             setupRowInputHandlers(row, item);
         }
-
-        // REMOVED updateNotesUI function
-        // REMOVED addNoteListItem function
-
 
         // =====================================================================
         // DATA INITIALIZATION & MANAGEMENT
@@ -699,7 +707,6 @@
                      console.warn(`[${MODULE.id}] Saved items data invalid/missing. Initializing items with defaults.`);
                      moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
                 }
-                // REMOVED Notes restoration
                 moduleData.totalCost = savedData.totalCost || 0;
                 moduleData.lastModified = savedData.lastModified || new Date().toISOString();
 
@@ -707,7 +714,6 @@
                 console.log(`[${MODULE.id}] No saved data found, initializing with defaults.`);
                 // Initialize items with defaults
                 moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
-                // REMOVED Notes initialization
                 moduleData.totalCost = 0;
                 moduleData.lastModified = new Date().toISOString();
             }
@@ -715,7 +721,7 @@
         }
 
         /**
-         * Merges saved items with default items. Simplified.
+         * Merges saved items with default items. Includes 'checked' property.
          */
         function mergeWithDefaultItems() {
             console.log(`[${MODULE.id}] Merging saved items with default items.`);
@@ -724,12 +730,14 @@
             MODULE.defaultItems.forEach(defaultItem => {
                 const savedItem = savedItemsMap.get(defaultItem.id);
                 if (savedItem) {
-                    // Use saved item, ensure critical defaults
+                    // Use saved item, ensure critical defaults and 'checked'
                     mergedItems.push({
-                        ...savedItem,
-                        description: defaultItem.description,
-                        editable: defaultItem.editable,
-                        // No 'allow' or 'checked' to merge
+                        ...defaultItem, // Start with default structure
+                        ...savedItem,   // Override with saved values
+                        description: defaultItem.description, // Ensure description matches default
+                        editable: defaultItem.editable,     // Ensure editable status matches default
+                        // Ensure 'checked' exists, default to false if missing in saved data
+                        checked: savedItem.checked !== undefined ? savedItem.checked : false,
                         custom: false
                     });
                     savedItemsMap.delete(defaultItem.id);
@@ -738,13 +746,15 @@
                     mergedItems.push({ ...defaultItem, custom: false });
                 }
             });
-            // Add remaining custom items
+            // Add remaining custom items (ensure they have 'checked' property)
             savedItemsMap.forEach(customItem => {
                  if (customItem.custom) {
                      console.log(`[${MODULE.id}] Preserving custom item: ${customItem.id}`);
+                     if (customItem.checked === undefined) customItem.checked = false; // Add if missing
                     mergedItems.push(customItem);
                  } else {
                      console.warn(`[${MODULE.id}] Found saved item not in defaults and not marked custom: ${customItem.id}. Preserving it.`);
+                     if (customItem.checked === undefined) customItem.checked = false;
                      mergedItems.push({...customItem, custom: true});
                  }
             });
@@ -754,14 +764,15 @@
 
 
         /**
-         * Adds a new, empty custom item to the data and UI. Simplified.
+         * Adds a new, empty custom item to the data and UI. Includes 'checked'.
          */
         function addCustomItem() {
             console.log(`[${MODULE.id}] Adding new custom item.`);
             const newId = `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-            // Simplified newItem object
+            // Added 'checked' property
             const newItem = {
                 id: newId, description: 'New Custom Item', qty: 0, rate: 0,
+                checked: false, // Default checked state for custom items
                 editable: true, custom: true
             };
             moduleData.items.push(newItem);
@@ -780,7 +791,7 @@
         // =====================================================================
 
         /**
-         * Sets up input event handlers for a specific table row. Simplified.
+         * Sets up input event handlers for a specific table row. Includes checkbox.
          * @param {HTMLTableRowElement} row - The table row element.
          * @param {object} item - The corresponding item object from moduleData.
          */
@@ -789,7 +800,11 @@
             if (descInput && item.editable) {
                 descInput.addEventListener('input', () => { updateItemFromRow(row, item); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             }
-            // REMOVED Checkbox listener
+            // Added Checkbox listener
+            const checkbox = row.querySelector('.item-checkbox');
+            if (checkbox) {
+                checkbox.addEventListener('change', () => { updateItemFromRow(row, item); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            }
             const qtyInput = row.querySelector('.qty-input');
             if (qtyInput) {
                 qtyInput.addEventListener('input', () => { updateItemFromRow(row, item); calculateRowTotal(row, item); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
@@ -807,18 +822,18 @@
         }
 
         /**
-         * Updates the corresponding item object in moduleData based on the input values in a table row. Simplified.
+         * Updates the corresponding item object in moduleData based on the input values in a table row. Includes checkbox.
          * @param {HTMLTableRowElement} row - The table row element containing the inputs.
          * @param {object} item - The item object in moduleData to update.
          */
         function updateItemFromRow(row, item) {
             const descInput = row.querySelector('.description-input');
-            // REMOVED Checkbox reading
+            const checkbox = row.querySelector('.item-checkbox'); // Read checkbox
             const qtyInput = row.querySelector('.qty-input');
             const rateInput = row.querySelector('.rate-input');
 
             if (descInput && item.editable) item.description = descInput.value;
-            // REMOVED item.checked update
+            if (checkbox) item.checked = checkbox.checked; // Update checked state
             if (qtyInput) item.qty = Math.max(0, parseInt(qtyInput.value, 10) || 0);
             if (rateInput && item.editable) item.rate = getNumericValue(rateInput.value);
 
@@ -835,6 +850,7 @@
         function calculateRowTotal(row, item) {
             const totalCell = row.querySelector('.total-cell');
             if (!totalCell) return 0;
+            // Calculation still based on qty > 0, checkbox is for reference/reporting
             const total = item.qty > 0 ? (item.qty * item.rate) : 0;
             totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
             return total;
@@ -844,6 +860,7 @@
          * Recalculates the total cost for the entire module and updates the UI.
          */
         function calculateTotals() {
+            // Calculation still based on qty > 0, checkbox is for reference/reporting
             const totalCost = moduleData.items.reduce((sum, item) => {
                 return sum + (item.qty > 0 ? (item.qty * item.rate) : 0);
             }, 0);
@@ -868,16 +885,9 @@
             return isNaN(number) ? 0 : number;
         }
 
-        // REMOVED Notes Event Handlers
-
-
         // =====================================================================
         // EVENT LISTENERS SETUP
         // =====================================================================
-
-        /**
-         * Attaches event listeners to static elements like buttons and links.
-         */
         function setupEventListeners() {
             // --- Core Buttons ---
             const saveBtn = document.getElementById('save-btn');
@@ -892,14 +902,7 @@
              if (addItemBtn) addItemBtn.addEventListener('click', addCustomItem);
             const addSidebarLink = document.getElementById('add-custom-item');
             if (addSidebarLink) addSidebarLink.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); });
-
-            // REMOVED Notes Section Button listeners
         }
-
-        // =====================================================================
-        // TABLE SORTING (REMOVED)
-        // =====================================================================
-
 
         // =====================================================================
         // DATA PERSISTENCE (SAVING)
@@ -912,7 +915,6 @@
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (!client) { /* ... error handling ... */ return; }
             if (!client.moduleData) client.moduleData = {};
-            // Save the moduleData (items, totalCost, timestamp)
             client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
             client.lastModified = new Date().toISOString();
             window.ConstructionApp.ClientManager.setCurrentClient(client);
@@ -951,7 +953,6 @@
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (client) {
                 if (!client.moduleData) client.moduleData = {};
-                // Saves current state (items, totalCost) to client object before navigating
                 client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
                 client.lastModified = new Date().toISOString();
                 window.ConstructionApp.ClientManager.setCurrentClient(client);
@@ -963,7 +964,7 @@
         }
 
         // =====================================================================
-        // DEBUGGING UTILITIES (Simplified)
+        // DEBUGGING UTILITIES (Updated debug info)
         // =====================================================================
         function setupDebugPanel() {
             const debugPanel = document.getElementById('debug-panel');
@@ -992,6 +993,7 @@
                 <strong>Client (M):</strong> ${client?.name || 'N/A'}<br>
                 <strong>Client (S):</strong> ${sessionClientData?.name || 'N/A'}<br><hr>
                 <strong>Items:</strong> ${moduleData.items.length}<br> 
+                <strong>Checked Items:</strong> ${moduleData.items.filter(i => i.checked).length}<br> 
                 <strong>Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
                 <strong>Unsaved:</strong> ${unsavedChanges ? 'Yes' : 'No'}<br>
                 <strong>Modified:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<br><hr>
