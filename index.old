@@ -656,6 +656,71 @@
             ],
         };
 
+        // Register all known modules to ensure they appear in the dashboard
+        (function registerAllModules() {
+            // Define all known modules in your application
+            const knownModules = [
+                { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true },
+                { id: 'steel', name: 'Steel', requiresClient: true },
+                { id: 'demolish', name: 'Demolish', requiresClient: true },
+                { id: 'concrete', name: 'Concrete', requiresClient: true },
+                { id: 'brickwork', name: 'Brickwork', requiresClient: true }
+                // Add other modules as needed
+            ];
+            
+            console.log("[Dashboard] Registering all known modules");
+            
+            // Check if each known module exists in appData.modules, add if not
+            knownModules.forEach(knownModule => {
+                // Check if the module is already registered
+                const exists = appData.modules.some(m => m.id === knownModule.id);
+                
+                if (!exists) {
+                    console.log(`[Dashboard] Registering module: ${knownModule.name}`);
+                    
+                    // Add the module to appData.modules
+                    appData.modules.push({
+                        id: knownModule.id,
+                        name: knownModule.name,
+                        requiresClient: knownModule.requiresClient,
+                        renderTemplate: function(client) {
+                            return `
+                                <h3>${knownModule.name}</h3>
+                                <p>This module can be accessed from the sidebar.</p>
+                            `;
+                        },
+                        saveData: function() {
+                            return {};
+                        }
+                    });
+                    
+                    // Add to the sidebar if not already present
+                    const modulesContainer = document.getElementById('modules-container');
+                    if (!modulesContainer.querySelector(`[data-module-id="${knownModule.id}"]`)) {
+                        const moduleElement = document.createElement('div');
+                        moduleElement.className = 'module-item';
+                        moduleElement.draggable = true;
+                        moduleElement.setAttribute('data-module-id', knownModule.id);
+                        moduleElement.setAttribute('data-requires-client', knownModule.requiresClient ? 'true' : 'false');
+                        
+                        moduleElement.innerHTML = `
+                            <div class="module-drag-handle">≡</div>
+                            <div class="module-icon">
+                                ...
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item edit-module">Edit</div>
+                                    <div class="dropdown-item delete-module">Delete</div>
+                                </div>
+                            </div>
+                            <span>${knownModule.name}</span>
+                        `;
+                        
+                        modulesContainer.appendChild(moduleElement);
+                    }
+                }
+            });
+        })();
+
         // Initialize the application with proper module order loading
         document.addEventListener('DOMContentLoaded', function() {
             console.log("[Dashboard] DOM loaded, initializing app");
@@ -1812,28 +1877,39 @@
             }
             
             if (hasModuleData) {
-                // Get the modules in the same order as the sidebar
-                const orderedModules = [...appData.modules]; // Create a copy of the modules array
+                // Log all available module data for debugging
+                console.log("[Dashboard] Available module data in client:", Object.keys(client.moduleData));
                 
-                // For each module in the ordered list, check if there's data for it
-                orderedModules.forEach(module => {
-                    const moduleId = module.id;
+                // For all modules in client.moduleData, create tiles (even if not in appData.modules)
+                for (const moduleId in client.moduleData) {
                     const moduleData = client.moduleData[moduleId];
                     
-                    // If this module has data, create a tile for it
-                    if (moduleData) {
-                        // Calculate module cost
-                        let moduleCost = 0;
-                        if (moduleData.totalCost !== undefined) {
-                            moduleCost = moduleData.totalCost;
-                        } else if (moduleData.items && Array.isArray(moduleData.items)) {
-                            moduleData.items.forEach(item => {
-                                if (item.qty > 0) {
-                                    moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
-                                }
-                            });
-                        }
-                        
+                    // Skip if moduleData is null or empty
+                    if (!moduleData) continue;
+                    
+                    // Determine module name - use appData if possible, otherwise use moduleId
+                    let moduleName = moduleId;
+                    const moduleInfo = appData.modules.find(m => m.id === moduleId);
+                    if (moduleInfo) {
+                        moduleName = moduleInfo.name;
+                    }
+                    
+                    // Calculate module cost
+                    let moduleCost = 0;
+                    if (moduleData.totalCost !== undefined) {
+                        moduleCost = parseFloat(moduleData.totalCost) || 0;
+                        console.log(`[Dashboard] Module ${moduleId} has totalCost: ${moduleCost}`);
+                    } else if (moduleData.items && Array.isArray(moduleData.items)) {
+                        moduleData.items.forEach(item => {
+                            if (item.qty > 0) {
+                                moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
+                            }
+                        });
+                        console.log(`[Dashboard] Calculated total for ${moduleId}: ${moduleCost}`);
+                    }
+                    
+                    // Only display tiles with cost > 0
+                    if (moduleCost > 0) {
                         // Format the cost
                         const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
                         
@@ -1841,13 +1917,15 @@
                         content += `
                             <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative;">
                                 <button class="clear-module-btn" data-module-id="${moduleId}" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px;" title="Clear module data">×</button>
-                                <h5>${module.name}</h5>
+                                <h5>${moduleName}</h5>
                                 <p style="font-size: 20px; margin: 10px 0; color: #4eca8b; font-weight: bold;">${formattedCost}</p>
                                 <button class="btn module-open-btn" style="margin-top: 10px;" data-module-id="${moduleId}">Open Module</button>
                             </div>
                         `;
+                    } else {
+                        console.log(`[Dashboard] Skipping tile for ${moduleId} - cost is zero`);
                     }
-                });
+                }
             } else {
                 // If no module data, show message
                 content += `
@@ -1937,15 +2015,20 @@
             
             if (client && client.moduleData) {
                 console.log("[Dashboard] Calculating total cost for client:", client.name);
+                console.log("[Dashboard] Available modules:", Object.keys(client.moduleData).join(', '));
                 
                 // Calculate from each module
                 for (const moduleId in client.moduleData) {
                     const moduleData = client.moduleData[moduleId];
                     
+                    // Skip if moduleData is null or empty
+                    if (!moduleData) continue;
+                    
                     // Check if the module has a totalCost property
-                    if (moduleData.totalCost) {
-                        console.log(`[Dashboard] Adding module cost from ${moduleId}: ${moduleData.totalCost}`);
-                        totalCost += parseFloat(moduleData.totalCost) || 0;
+                    if (moduleData.totalCost !== undefined) {
+                        const cost = parseFloat(moduleData.totalCost) || 0;
+                        console.log(`[Dashboard] Adding module cost from ${moduleId}: ${cost}`);
+                        totalCost += cost;
                     }
                     // Alternative: if the module has 'items' array, calculate from items
                     else if (moduleData.items && Array.isArray(moduleData.items)) {
