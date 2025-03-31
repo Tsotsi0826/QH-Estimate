@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel - Construction Estimator</title>
     
-    <title>Special Steel - Construction Estimator</title>
-
-    
+    <!-- Firebase Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
-
     
-    
+    <!-- Shared JavaScript Files -->
     <script src="js/firebase-config.js"></script>
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
-
+    
     <style>
-        /* Basic reset and font */
         * {
             margin: 0;
             padding: 0;
@@ -26,37 +23,33 @@
             font-family: Arial, sans-serif;
         }
 
-        /* Flex layout for the main body */
         body {
             display: flex;
             height: 100vh;
-            overflow: hidden; /* Prevent body scroll */
+            overflow: hidden;
             background-color: #f5f5f5;
         }
 
-        /* Sidebar styling */
         .sidebar {
             width: 25%;
-            background-color: #1c2639; /* Dark blue */
+            background-color: #1c2639;
             color: #fff;
             height: 100%;
-            overflow-y: auto; /* Scroll only if needed */
-            border-right: 1px solid #333; /* Separator */
+            overflow-y: auto;
+            border-right: 1px solid #333;
         }
 
-        /* Main content area styling */
         .main-content {
             width: 75%;
             height: 100%;
-            overflow: hidden; /* Prevent overflow */
+            overflow: hidden;
             background-color: white;
             color: #333;
-            position: relative; /* For potential absolute positioning inside */
+            position: relative;
             display: flex;
-            flex-direction: column; /* Stack header, description, content */
+            flex-direction: column;
         }
 
-        /* Sidebar header */
         .sidebar-header {
             padding: 20px;
             font-size: 1.4em;
@@ -64,56 +57,22 @@
             border-bottom: 1px solid #333;
         }
 
-        /* Sidebar content padding */
-        .sidebar-content {
+        .section-title {
             padding: 20px;
-        }
-
-        /* Spacing for sidebar sections */
-        .sidebar-section {
-            margin-bottom: 30px;
-        }
-
-        /* Title for sidebar sections */
-        .sidebar-section-title {
-            font-size: 1.1em;
+            font-size: 1.2em;
             font-weight: bold;
-            margin-bottom: 15px;
         }
 
-        /* Individual items/links in the sidebar */
-        .sidebar-item {
-            padding: 10px;
-            cursor: pointer;
-            background-color: #2d364a; /* Slightly lighter blue */
-            border-radius: 4px;
-            margin-bottom: 8px;
-            transition: background-color 0.2s ease; /* Smooth hover */
-        }
-
-        .sidebar-item:hover {
-            background-color: #3a4967; /* Hover effect */
-        }
-
-        /* Styling for links within sidebar items */
-        .sidebar-link {
-            color: #fff;
-            text-decoration: none;
-            display: block;
-        }
-
-        /* Main content header */
         .module-header {
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #e0e0e0;
-            background-color: #1c2639; /* Match sidebar */
+            background-color: #1c2639;
             color: #fff;
         }
 
-        /* Module title in the header */
         .module-title {
             font-size: 1.5em;
             font-weight: bold;
@@ -121,34 +80,30 @@
             align-items: center;
         }
 
-        /* Optional icon styling */
         .module-title i {
             margin-right: 10px;
         }
 
-        /* Area below the main header, for buttons/status */
         .module-description {
             padding: 10px 20px;
             color: #aaa;
-            background-color: #1c2639; /* Match sidebar */
+            background-color: #1c2639;
             display: flex;
-            justify-content: flex-end; /* Align buttons to the right */
+            justify-content: flex-end;
             align-items: center;
-            border-bottom: 1px solid #333; /* Separator */
         }
 
-        /* Main content scrolling area */
         .module-content {
             padding: 20px;
             background-color: #fff;
             margin: 0;
             color: #333;
-            flex: 1; /* Take remaining vertical space */
-            overflow-y: auto; /* Enable vertical scroll */
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
-        /* Custom scrollbar for module content */
+        /* Custom scrollbar styling */
         .module-content::-webkit-scrollbar {
             width: 8px;
             background-color: #f5f5f5;
@@ -163,14 +118,73 @@
             background-color: #888;
         }
 
-        /* Custom scrollbar for sidebar */
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .sidebar-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #2d364a;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-item:hover {
+            background-color: #3a4967;
+        }
+
+        .sidebar-link {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+        }
+
+        .btn {
+            background-color: #4eca8b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #3db97a;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Custom scrollbar styling for sidebar */
         .sidebar::-webkit-scrollbar {
             width: 6px;
-            background-color: transparent; /* Blend with sidebar */
+            background-color: transparent;
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            background-color: rgba(255, 255, 255, 0.2);
             border-radius: 3px;
         }
 
@@ -178,172 +192,114 @@
             background-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* General button styling */
-        .btn {
-            background-color: #4eca8b; /* Green */
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        .btn:hover {
-            background-color: #3db97a; /* Darker green */
-        }
-
-        /* Secondary button styling */
-        .btn-secondary {
-            background-color: #6c757d; /* Gray */
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268; /* Darker gray */
-        }
-
-        /* Container for header actions (total cost) */
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px; /* Space between elements if more are added */
-        }
-
-        /* Table styling */
+        /* Table styles */
         .module-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: fixed; /* Crucial for fixed column widths */
+            table-layout: fixed; /* Added for fixed column widths */
         }
 
-        /* Table header and data cells */
-        .module-table th,
+        .module-table th, 
         .module-table td {
             padding: 10px;
             text-align: left;
             border: 1px solid #ddd;
-            overflow: hidden; /* Prevent content overflow */
-            white-space: nowrap; /* Prevent text wrapping */
-            text-overflow: ellipsis; /* Show ellipsis (...) if text overflows */
+            overflow: hidden; /* Prevent content from breaking layout */
         }
 
-        /* Column width definitions */
-        .module-table th:nth-child(1), /* Description */
+        /* Column width adjustments for Steel module */
+        .module-table th:nth-child(1),
         .module-table td:nth-child(1) {
-            width: 45%;
-            white-space: normal; /* Allow description to wrap */
+            width: 40%; /* Description column */
         }
 
-        .module-table th:nth-child(2), /* Pc (Checkbox) */
+        .module-table th:nth-child(2),
         .module-table td:nth-child(2) {
-            width: 6%;
+            width: 5%; /* Reference column */
             text-align: center;
         }
 
-        .module-table th:nth-child(3), /* Qty */
+        .module-table th:nth-child(3),
         .module-table td:nth-child(3) {
-            width: 6%;
+            width: 10%; /* Qty column */
+            text-align: center;
         }
 
-        .module-table th:nth-child(4), /* Rate */
+        .module-table th:nth-child(4),
         .module-table td:nth-child(4) {
-            width: 15%;
+            width: 15%; /* Rate column */
+            text-align: right;
         }
 
-        .module-table th:nth-child(5), /* Empty Spacer */
+        .module-table th:nth-child(5),
         .module-table td:nth-child(5) {
-            width: 3%;
-            border-left: none; /* Hide borders for spacer */
-            border-right: none;
+            width: 10%; /* Unit column */
+            text-align: center;
         }
-         .module-table th:nth-child(5) { /* Header specific border */
-             border-bottom: 1px solid #ddd;
-         }
 
-
-        .module-table th:nth-child(6), /* Total */
+        .module-table th:nth-child(6),
         .module-table td:nth-child(6) {
-            width: 15%;
+            width: 15%; /* Total column */
+            text-align: right;
         }
 
-        /* Table header specific styling */
         .module-table th {
-            background-color: #f2f2f2; /* Light gray background */
+            background-color: #f2f2f2;
             font-weight: bold;
-            position: relative; /* For sort arrows */
+            position: relative;
         }
 
-        /* Alternating row colors */
         .module-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
 
-        /* Row hover effect */
         .module-table tr:hover {
             background-color: #f1f1f1;
         }
 
-        /* Input fields within table cells */
         .module-table input {
             width: 100%;
             padding: 5px;
-            border: 1px solid transparent; /* Invisible border */
-            background-color: transparent; /* Blend with cell */
-            font-size: inherit; /* Match cell font size */
-            font-family: inherit;
-        }
-        /* Style for read-only inputs (though none should be readonly now for rate/desc) */
-        .module-table input:read-only {
-             color: #555; /* Slightly dimmer text */
-             cursor: default;
-             /* background-color: #eee; */ /* Optional: subtle background */
+            border: 1px solid transparent;
+            background-color: transparent;
         }
 
-
-        /* Input focus styling */
         .module-table input:focus {
-            border: 1px solid #4eca8b; /* Highlight border on focus */
-            background-color: #fff; /* White background on focus */
-            outline: none; /* Remove default outline */
+            border: 1px solid #4eca8b;
+            background-color: #fff;
+            outline: none;
         }
 
-        /* Number input alignment */
         .module-table input[type="number"] {
             text-align: right;
         }
 
-        /* Currency cell alignment */
         .module-table .currency {
             text-align: right;
         }
 
-        /* Table footer row styling */
         .module-table .footer-row {
             font-weight: bold;
-            background-color: #e9e9e9; /* Slightly darker gray */
+            background-color: #e9e9e9;
         }
 
-        /* Specific styling for the quantity cell background */
         .module-table .qty-cell {
-            background-color: #f0faf3; /* Light green background */
+            background-color: #f0faf3;
         }
 
-        /* Checkbox cell alignment */
+        /* Checkbox styles */
         .checkbox-cell {
             text-align: center;
-            vertical-align: middle; /* Center checkbox vertically */
         }
-
-        /* Checkbox styling */
+        
         .item-checkbox {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            vertical-align: middle; /* Align with text if any */
         }
 
-        /* Save status indicator styling */
+        /* Save status indicator */
         #save-status {
             display: inline-block;
             margin-left: 10px;
@@ -351,82 +307,61 @@
             transition: opacity 0.3s;
         }
 
-        /* Add item button styling */
+        /* Addition buttons */
         .add-item-btn {
             margin-top: 10px;
             display: inline-block;
         }
 
-        /* Table header sorting styles */
+        /* Headers with sort arrows */
         .sort-header {
             cursor: pointer;
         }
 
-        .sort-header::after { /* Default sort arrow (down) */
+        .sort-header::after {
             content: "▼";
             font-size: 0.8em;
             margin-left: 5px;
-            opacity: 0.3; /* Dimmed by default */
-            display: inline-block; /* Ensure space is reserved */
+            opacity: 0.3;
         }
 
-        .sort-header.sorted-asc::after { /* Up arrow when sorted ascending */
+        .sort-header.sorted-asc::after {
             content: "▲";
-            opacity: 1; /* Fully visible */
+            opacity: 1;
         }
 
-        .sort-header.sorted-desc::after { /* Down arrow when sorted descending */
+        .sort-header.sorted-desc::after {
             content: "▼";
-            opacity: 1; /* Fully visible */
+            opacity: 1;
         }
-
-        /* Debug panel styling */
+        
+        /* Debug panel for troubleshooting */
         .debug-panel {
             position: fixed;
             bottom: 10px;
             right: 10px;
-            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+            background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 10px;
             border-radius: 5px;
             font-size: 12px;
             max-width: 300px;
-            z-index: 9999; /* Ensure it's on top */
-            display: none; /* Hidden by default */
-            max-height: 200px; /* Limit height */
-            overflow-y: auto; /* Allow scrolling if content exceeds max height */
+            z-index: 9999;
+            display: none;
         }
-         /* Debug toggle button styling */
-         #debug-toggle-btn {
-             position: fixed;
-             bottom: 10px;
-             right: 10px;
-             z-index: 10000; /* Above debug panel */
-             padding: 5px 10px;
-             background: #333;
-             color: white;
-             border: none;
-             border-radius: 3px;
-             cursor: pointer;
-             font-size: 12px;
-         }
     </style>
 </head>
 <body>
-    
     <div class="sidebar">
+        <div class="sidebar-header">Steel</div>
         
-        <div class="sidebar-header">Special Steel</div>
-
         <div class="sidebar-content">
-            
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Navigation</div>
                 <div class="sidebar-item">
                     <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
                 </div>
             </div>
-
             
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Actions</div>
@@ -440,850 +375,758 @@
         </div>
     </div>
 
-    
     <div class="main-content">
-        
         <div class="module-header">
             <div class="module-title">
-                
-                <i>S</i> <span id="module-title-text">Special Steel</span>
+                <i>S</i> <span id="module-title-text">Steel</span>
             </div>
-            
-            <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
+            <div id="client-name-display" style="margin-left: 20px;"></div>
             <div class="header-actions">
-                
                 <div id="total-module-cost">
-                    Total Special Steel Cost: R0.00
+                    Total Steel Cost: R0.00
                 </div>
             </div>
         </div>
 
-        
         <div class="module-description">
             <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
-                
                 <div id="save-status"></div>
-                
                 <button id="save-btn" class="btn">Save</button>
-                
                 <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
             </div>
         </div>
 
-        
         <div class="module-content">
             <table class="module-table" id="items-table">
                 <thead>
                     <tr>
-                        
-                        <th class="sort-header" data-sort="description">Description</th>
-                        <th>Pc</th> 
+                        <th class="sort-header" data-sort="description">Special Steel</th>
+                        <th>Ref</th>
                         <th class="sort-header" data-sort="qty">Qty</th>
                         <th class="sort-header" data-sort="rate">Rate</th>
-                        <th></th> 
+                        <th>Unit</th>
                         <th class="sort-header" data-sort="total">Total</th>
                     </tr>
                 </thead>
                 <tbody id="items-table-body">
-                    
+                    <!-- Items will be added here dynamically -->
                 </tbody>
                 <tfoot>
-                    
                     <tr class="footer-row">
                         <td colspan="5" style="text-align: right;">Total</td>
                         <td class="currency" id="table-total">R0.00</td>
                     </tr>
                 </tfoot>
             </table>
-
             
             <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
         </div>
     </div>
-
     
+    <!-- Debug panel for troubleshooting -->
     <div class="debug-panel" id="debug-panel"></div>
-     
-    <button id="debug-toggle-btn" style="display: none;">Debug</button>
-
 
     <script>
-        // =====================================================================
-        // MODULE CONFIGURATION - ** CUSTOMIZED FOR SPECIAL STEEL **
-        // =====================================================================
+        // Module settings - CUSTOMIZED FOR STEEL MODULE
         const MODULE = {
-            id: 'special-steel', // Unique ID for this module
-            title: 'Special Steel', // User-facing title
-            defaultItems: [ // Items specific to the Special Steel module based on screenshot
-                // Rates are 0 based on screenshot, all items editable: true
-                { id: 'steel-ibeams', description: 'I-Beams', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'steel-mullions', description: 'Mullions', qty: 0, rate: 0.00, checked: false, editable: true }, // Corrected typo "Mallions"
-                { id: 'steel-other-1', description: 'Steel Other', qty: 0, rate: 0.00, checked: false, editable: true }, // First instance
-                { id: 'steel-other-2', description: 'Steel Other', qty: 0, rate: 0.00, checked: false, editable: true }, // Second instance
-                { id: 'steel-other-3', description: 'Steel Other', qty: 0, rate: 0.00, checked: false, editable: true }  // Third instance
+            id: 'steel', // Module ID matching filename
+            title: 'Steel', // Module title
+            defaultItems: [  // Steel default items from screenshot
+                { id: 'i-beams', description: 'I-Beams', rate: 85.00, unit: 'kg', checked: false, qty: 0, isDefault: true },
+                { id: 'mallions', description: 'Mallions', rate: 90.00, unit: 'kg', checked: false, qty: 0, isDefault: true },
+                { id: 'steel-other-1', description: 'Steel Other', rate: 75.00, unit: 'kg', checked: false, qty: 0, isDefault: true },
+                { id: 'steel-other-2', description: 'Steel Other', rate: 75.00, unit: 'kg', checked: false, qty: 0, isDefault: true },
+                { id: 'steel-other-3', description: 'Steel Other', rate: 75.00, unit: 'kg', checked: false, qty: 0, isDefault: true }
             ]
         };
-
-        // =====================================================================
-        // MODULE STATE & UTILITIES (Identical to previous template)
-        // =====================================================================
-
-        // Holds the current data for this module instance
+        
+        // Module data structure
         let moduleData = {
             items: [],
             totalCost: 0,
             lastModified: new Date().toISOString()
         };
-
-        // Stores the function to cancel the auto-save timer
+        
+        // Auto-save cancel function
         let cancelAutoSave = null;
-
-        // Flag to enable/disable the debug panel
-        const DEBUG = true; // Set to false to hide debug panel and button
-
-        // Reference to the table body for frequent updates
-        let tableBodyElement = null;
-
-        // =====================================================================
-        // INITIALIZATION (Identical to previous template)
-        // =====================================================================
+        
+        // Debug flag - set to true to enable debug panel
+        const DEBUG = true;
+        
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             console.log(`[${MODULE.id}] DOM loaded, initializing module`);
-
-            // Cache table body element
-            tableBodyElement = document.getElementById('items-table-body');
-            if (!tableBodyElement) {
-                 console.error(`[${MODULE.id}] Critical error: Table body element #items-table-body not found!`);
-                 return; // Stop initialization if table body is missing
-            }
-
-
-            // Set up debug panel and toggle button if DEBUG is true
+            
+            // Set up debug panel if needed
             if (DEBUG) {
                 setupDebugPanel();
             }
-
-            // Update titles based on MODULE configuration
+            
+            // Update module title everywhere
             updateModuleTitles();
-
-            // --- Access Control & Client Loading ---
-            // Ensure the module was accessed correctly (e.g., from the dashboard with a client selected)
+            
+            // Check module access - ensure we came from dashboard
             const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
             if (!validAccess) {
-                console.warn(`[${MODULE.id}] Invalid access detected, redirecting via ModuleUtils.`);
-                // ModuleUtils.checkModuleAccess handles the redirection if needed
-                return; // Stop initialization if access is invalid
+                console.log(`[${MODULE.id}] Invalid access detected, redirecting`);
+                return; // ModuleUtils will handle the redirect
             }
-
-            // Get the currently selected client from the ClientManager
+            
+            // Get the current client
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (!client) {
-                console.error(`[${MODULE.id}] No client data found. Returning to dashboard.`);
-                window.ConstructionApp.ModuleUtils.showErrorMessage('No client selected. Please return to the dashboard and select a client.');
-                // Redirect back to dashboard if no client is active
-                setTimeout(() => window.ConstructionApp.ModuleUtils.returnToDashboard(MODULE.id, moduleData, false), 500); // Delay slightly for message
+                console.error(`[${MODULE.id}] No client available, returning to dashboard`);
+                window.ConstructionApp.ModuleUtils.returnToDashboard();
                 return;
             }
-
-            // Display the client's name in the header
-            const clientNameDisplay = document.getElementById('client-name-display');
-             if(clientNameDisplay) {
-                clientNameDisplay.textContent = `Client: ${client.name}`;
-             } else {
-                 console.warn(`[${MODULE.id}] Element #client-name-display not found.`);
-             }
-
-
-            // --- Setup UI Components & Data ---
-            // Initialize the save status indicator (e.g., shows "Saved", "Saving...", "Unsaved")
+            
+            // Update client name display
+            document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
+            
+            // Initialize save status indicator
             window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
-
-            // Attach event listeners to buttons, links, etc.
+            
+            // Set up event listeners
             setupEventListeners();
-
-            // Load existing module data for the client or initialize with defaults
-            initModuleData(); // This function now calls updateUI internally
-
-             // Set up tracking for unsaved changes on table inputs
-            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input'); // More specific selector
-
-
-            // --- Auto-Save & Final Steps ---
-            // Set up automatic saving every 2 minutes (120,000 ms)
-            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
-
-            // Enable table column sorting
+            
+            // Initialize module data
+            initModuleData();
+            
+            // Set up change tracking
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table');
+            
+            // Set up auto-save (2 minutes interval)
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 2 * 60 * 1000);
+            
+            // Set up sorting
             setupTableSorting();
-
-            // Initial update for the debug panel if enabled
+            
+            // Update debug panel if enabled
             if (DEBUG) {
                 updateDebugPanel();
             }
-
-             console.log(`[${MODULE.id}] Initialization complete.`);
         });
-
-        // =====================================================================
-        // UI UPDATE FUNCTIONS (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Updates various titles on the page based on MODULE.title.
-         */
+        
+        // Update module titles across the UI
         function updateModuleTitles() {
             document.title = `${MODULE.title} - Construction Estimator`;
-             const sidebarHeader = document.querySelector('.sidebar-header');
-             if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
-
-             const moduleTitleText = document.getElementById('module-title-text');
-             if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
-
-             const totalModuleCost = document.getElementById('total-module-cost');
-             if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: R0.00`; // Initial value
+            document.querySelector('.sidebar-header').textContent = MODULE.title;
+            document.getElementById('module-title-text').textContent = MODULE.title;
+            document.getElementById('total-module-cost').textContent = `Total ${MODULE.title} Cost: R0.00`;
         }
-
-        /**
-         * Renders the items from moduleData into the table.
-         * Clears the existing table body and adds a row for each item.
-         */
+        
+        // Initialize module data from client
+        function initModuleData() {
+            // Get client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            // Check if we have saved data for this module
+            const savedData = client.moduleData?.[MODULE.id] || null;
+            
+            if (savedData) {
+                // Restore saved data
+                console.log(`[${MODULE.id}] Restoring saved data`);
+                moduleData = savedData;
+                
+                // Ensure items array exists
+                if (!moduleData.items || !Array.isArray(moduleData.items)) {
+                    moduleData.items = [];
+                }
+                
+                // Merge with default items to ensure all required items exist
+                mergeWithDefaultItems();
+                
+                // Update UI with saved data
+                updateUI();
+            } else {
+                console.log(`[${MODULE.id}] No saved data found, using defaults`);
+                // Try to use data-models default Steel items if available
+                if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.getSteelItems) {
+                    moduleData.items = window.ConstructionApp.DataModels.getSteelItems();
+                    console.log(`[${MODULE.id}] Loaded items from DataModels:`, moduleData.items.length);
+                } else {
+                    // Initialize with default items from this module
+                    moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); // Deep copy
+                    console.log(`[${MODULE.id}] Loaded default items:`, moduleData.items.length);
+                }
+                updateUI();
+            }
+        }
+        
+        // Merge saved items with default items
+        function mergeWithDefaultItems() {
+            // Use DataModels utility if available
+            if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.mergeWithDefaults && window.ConstructionApp.DataModels.getSteelItems) {
+                moduleData.items = window.ConstructionApp.DataModels.getSteelItems(moduleData.items);
+                return;
+            }
+            
+            // Fallback to manual merge
+            // Create a map of saved items by ID
+            const savedItemsMap = {};
+            moduleData.items.forEach(item => {
+                if (item.id) {
+                    savedItemsMap[item.id] = item;
+                }
+            });
+            
+            // Create a new array with default items, but use saved values if they exist
+            const mergedItems = [];
+            
+            // First add all default items (with saved values if available)
+            MODULE.defaultItems.forEach(defaultItem => {
+                if (savedItemsMap[defaultItem.id]) {
+                    // Item exists in saved data, use it but ensure required properties exist
+                    const savedItem = savedItemsMap[defaultItem.id];
+                    mergedItems.push({
+                        ...defaultItem,
+                        ...savedItem,
+                        // These properties should always match the default
+                        description: defaultItem.description,
+                        unit: defaultItem.unit,
+                        rate: defaultItem.rate,
+                        isDefault: true
+                    });
+                    // Remove from map so we know it's been processed
+                    delete savedItemsMap[defaultItem.id];
+                } else {
+                    // Item doesn't exist in saved data, use default
+                    mergedItems.push({...defaultItem});
+                }
+            });
+            
+            // Then add any custom items that weren't in the defaults
+            for (const id in savedItemsMap) {
+                if (savedItemsMap[id].custom) {
+                    mergedItems.push(savedItemsMap[id]);
+                }
+            }
+            
+            // Update module data
+            moduleData.items = mergedItems;
+        }
+        
+        // Update UI with current module data
         function updateUI() {
-             if (!tableBodyElement) {
-                 console.error(`[${MODULE.id}] Cannot update UI: Table body element not found.`);
-                 return;
-             }
-            console.log(`[${MODULE.id}] Updating UI with ${moduleData.items.length} items.`);
-            tableBodyElement.innerHTML = ''; // Clear existing rows efficiently
-
-            // Add a row for each item in the moduleData
+            const tableBody = document.getElementById('items-table-body');
+            tableBody.innerHTML = ''; // Clear existing rows
+            
+            // Add each item
             moduleData.items.forEach(item => {
                 addTableRow(item);
             });
-
-            // Recalculate and display totals
+            
+            // Update totals
             calculateTotals();
-
-            // Update the debug panel if it's enabled
+            
+            // Update debug panel if enabled
             if (DEBUG) {
                 updateDebugPanel();
             }
         }
-
-        /**
-         * Creates and adds a single table row (<tr>) to the table body for a given item.
-         * @param {object} item - The item object from moduleData.items.
-         */
+        
+        // Add a row to the table
         function addTableRow(item) {
-             if (!tableBodyElement) {
-                 console.error(`[${MODULE.id}] Cannot add table row: Table body element not found.`);
-                 return;
-             }
+            const tableBody = document.getElementById('items-table-body');
             const row = document.createElement('tr');
-            row.setAttribute('data-item-id', item.id); // Store item ID for easy reference
-
-            // Format currency values using the utility function
+            row.setAttribute('data-item-id', item.id);
+            
+            // Format currency
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
-            const total = (item.qty > 0) ? (item.qty * item.rate) : 0; // Calculate initial total
-            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(total);
-
-            // Determine if inputs should be read-only based on item.editable
-            const readonlyAttribute = item.editable ? '' : 'readonly';
-
-             // Set the inner HTML of the row with table cells (<td>)
-             // Uses template literals for easier HTML construction
+            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(
+                item.qty > 0 ? (item.qty * item.rate) : 0
+            );
+            
+            // Create row content - kept the Ref checkbox for reference only
             row.innerHTML = `
-                <td> <input type="text" class="description-input" value="${item.description || ''}" ${readonlyAttribute}>
+                <td>
+                    <input type="text" class="description-input" value="${item.description}" 
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
-                <td class="checkbox-cell"> <input type="checkbox" class="item-checkbox" data-item-id="${item.id}" ${item.checked ? 'checked' : ''}>
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}>
                 </td>
-                <td class="qty-cell"> <input type="number" class="qty-input" value="${item.qty}" min="0" step="1" data-item-id="${item.id}">
+                <td class="qty-cell">
+                    <input type="number" class="qty-input" value="${item.qty}" min="0" step="1">
                 </td>
-                <td> <input type="text" class="rate-input currency" value="${rateFormatted}" ${readonlyAttribute} data-item-id="${item.id}">
+                <td>
+                    <input type="text" class="rate-input currency" value="${rateFormatted}" 
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
-                <td></td> <td class="total-cell currency"> ${totalFormatted}
+                <td>
+                    ${item.unit}
                 </td>
+                <td class="total-cell currency">${totalFormatted}</td>
             `;
-
-            tableBodyElement.appendChild(row);
-
-            // Add event listeners to the inputs in this new row AFTER appending
-            setupRowInputHandlers(row, item);
+            
+            tableBody.appendChild(row);
+            
+            // Add event listeners to inputs
+            setupRowInputHandlers(row);
         }
-
-        // =====================================================================
-        // DATA INITIALIZATION & MANAGEMENT (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Loads module data from the current client or initializes with defaults.
-         */
-        function initModuleData() {
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-             // Should always have a client at this point due to checks in DOMContentLoaded
-             if (!client) {
-                 console.error(`[${MODULE.id}] Critical error during initModuleData: Client object disappeared.`);
-                 return; // Prevent further errors
-             }
-
-
-            // Check if the client object has saved data for this specific module
-            const savedData = client.moduleData?.[MODULE.id]; // Optional chaining
-
-            if (savedData && savedData.items && Array.isArray(savedData.items)) {
-                console.log(`[${MODULE.id}] Restoring saved data. Items count: ${savedData.items.length}`);
-                // Restore data from the saved state
-                moduleData = { ...savedData }; // Shallow copy is okay here if items are handled next
-                 // Ensure items array exists and is an array, just in case saved data is corrupted
-                 if (!moduleData.items || !Array.isArray(moduleData.items)) {
-                    console.warn(`[${MODULE.id}] Saved items data was invalid or missing. Resetting items.`);
-                    moduleData.items = [];
-                 }
-                // Merge saved items with default items to handle potential updates/new defaults
-                mergeWithDefaultItems();
-            } else {
-                console.log(`[${MODULE.id}] No saved data found or data invalid, initializing with defaults.`);
-                // No valid saved data, start with a deep copy of the default items
-                moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
-                moduleData.totalCost = 0; // Ensure total cost is reset
-                moduleData.lastModified = new Date().toISOString();
-            }
-
-            // Render the initial UI based on the loaded/default data
-            updateUI();
-        }
-
-        /**
-         * Merges saved items with default items. Ensures all default items are present,
-         * uses saved values if available, and preserves custom items.
-         */
-        function mergeWithDefaultItems() {
-            console.log(`[${MODULE.id}] Merging saved items with default items.`);
-            const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
-            const mergedItems = [];
-
-            // Process default items: Use saved version if exists, otherwise use default
-            MODULE.defaultItems.forEach(defaultItem => {
-                const savedItem = savedItemsMap.get(defaultItem.id);
-                if (savedItem) {
-                    // Use saved item, but ensure critical default properties (like description, editable status) are preserved
-                    mergedItems.push({
-                        ...savedItem, // Take most properties from saved
-                        description: defaultItem.description, // Ensure description matches default
-                        editable: defaultItem.editable,     // Ensure editable status matches default
-                        custom: false // Mark explicitly as not custom
-                    });
-                    savedItemsMap.delete(defaultItem.id); // Remove from map as it's processed
-                } else {
-                    // Default item not found in saved data, add the default version
-                     console.log(`[${MODULE.id}] Adding new default item: ${defaultItem.id}`);
-                    mergedItems.push({ ...defaultItem, custom: false }); // Deep copy default item
-                }
-            });
-
-            // Add remaining items from the map (these are custom items)
-            savedItemsMap.forEach(customItem => {
-                 if (customItem.custom) { // Only add items explicitly marked as custom or those not in defaults
-                     console.log(`[${MODULE.id}] Preserving custom item: ${customItem.id}`);
-                    mergedItems.push(customItem);
-                 } else {
-                     // This case might happen if a default item was removed from the config
-                     // but still exists in saved data. Decide whether to keep or discard.
-                     console.warn(`[${MODULE.id}] Found saved item not in defaults and not marked custom: ${customItem.id}. Preserving it.`);
-                     mergedItems.push({...customItem, custom: true}); // Mark as custom for safety
-                 }
-            });
-
-            moduleData.items = mergedItems;
-             console.log(`[${MODULE.id}] Merge complete. Final items count: ${moduleData.items.length}`);
-        }
-
-
-        /**
-         * Adds a new, empty custom item to the data and UI.
-         */
-        function addCustomItem() {
-            console.log(`[${MODULE.id}] Adding new custom item.`);
-            // Generate a unique ID for the new item
-            const newId = `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-            // Create the new item object
-            const newItem = {
-                id: newId,
-                description: 'New Custom Item', // Default description
-                qty: 0,
-                rate: 0,
-                checked: false,
-                editable: true, // Custom items are always editable
-                custom: true    // Mark as a custom item
-            };
-
-            // Add the new item to the module's data
-            moduleData.items.push(newItem);
-
-            // Add a corresponding row to the table UI
-            addTableRow(newItem);
-
-            // Mark that there are unsaved changes
-            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-
-            // Recalculate totals to include the new (zero-value) item
-            calculateTotals();
-
-             // Focus the description input of the newly added row
-             const newRow = tableBodyElement.querySelector(`tr[data-item-id="${newId}"]`);
-             if (newRow) {
-                 const descInput = newRow.querySelector('.description-input');
-                 if (descInput) {
-                     descInput.focus();
-                     descInput.select(); // Select the text for easy editing
-                 }
-             }
-        }
-
-        // =====================================================================
-        // EVENT HANDLING & CALCULATIONS (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Sets up input event handlers for a specific table row.
-         * @param {HTMLTableRowElement} row - The table row element.
-         * @param {object} item - The corresponding item object from moduleData.
-         */
-        function setupRowInputHandlers(row, item) {
-            // --- Description Input (only if editable) ---
+        
+        // Set up input handlers for a row
+        function setupRowInputHandlers(row) {
+            // Description input
             const descInput = row.querySelector('.description-input');
-            if (descInput && item.editable) {
-                descInput.addEventListener('input', () => {
-                    updateItemFromRow(row, item); // Update data model
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
+            if (descInput) {
+                descInput.addEventListener('input', function() {
+                    updateItemFromRow(row);
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
             }
-
-            // --- Checkbox Input ---
+            
+            // Checkbox input - for reference only, doesn't affect calculation
             const checkbox = row.querySelector('.item-checkbox');
             if (checkbox) {
-                checkbox.addEventListener('change', () => {
-                    updateItemFromRow(row, item); // Update data model (checked status)
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
+                checkbox.addEventListener('change', function() {
+                    updateItemFromRow(row);
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
             }
-
-            // --- Quantity Input ---
+            
+            // Quantity input - this affects the calculation
             const qtyInput = row.querySelector('.qty-input');
             if (qtyInput) {
-                qtyInput.addEventListener('input', () => {
-                    updateItemFromRow(row, item); // Update data model
-                    calculateRowTotal(row, item); // Update row total display
-                    calculateTotals(); // Update overall total display
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
+                qtyInput.addEventListener('input', function() {
+                    updateItemFromRow(row);
+                    calculateRowTotal(row);
+                    calculateTotals();
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
             }
-
-            // --- Rate Input (only if editable) ---
+            
+            // Rate input
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && item.editable) {
-                // On focus: Show raw number for easier editing
+            if (rateInput) {
                 rateInput.addEventListener('focus', function() {
+                    // When focusing, show raw number for editing
                     this.value = getNumericValue(this.value);
-                     this.select();
                 });
-
-                // On blur: Format back to currency and update calculations
+                
                 rateInput.addEventListener('blur', function() {
+                    // When losing focus, format as currency
                     const numericValue = getNumericValue(this.value);
                     this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
-                    updateItemFromRow(row, item);
-                    calculateRowTotal(row, item);
+                    updateItemFromRow(row);
+                    calculateRowTotal(row);
                     calculateTotals();
                 });
-
-                 // On input: Mark changes immediately while typing
-                 rateInput.addEventListener('input', () => {
-                     window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                 });
+                
+                rateInput.addEventListener('input', function() {
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
             }
         }
-
-        /**
-         * Updates the corresponding item object in moduleData based on the input values in a table row.
-         * @param {HTMLTableRowElement} row - The table row element containing the inputs.
-         * @param {object} item - The item object in moduleData to update.
-         */
-        function updateItemFromRow(row, item) {
-            // Find inputs within the row
-            const descInput = row.querySelector('.description-input');
-            const checkbox = row.querySelector('.item-checkbox');
-            const qtyInput = row.querySelector('.qty-input');
-            const rateInput = row.querySelector('.rate-input');
-
-            // Update item properties from input values, respecting editability
-            if (descInput && item.editable) {
-                item.description = descInput.value;
+        
+        // Update item data from row inputs
+        function updateItemFromRow(row) {
+            const itemId = row.getAttribute('data-item-id');
+            const item = moduleData.items.find(i => i.id === itemId);
+            
+            if (item) {
+                // Get values from inputs
+                const descInput = row.querySelector('.description-input');
+                const checkbox = row.querySelector('.item-checkbox');
+                const qtyInput = row.querySelector('.qty-input');
+                const rateInput = row.querySelector('.rate-input');
+                
+                if (descInput && !item.isDefault) {
+                    item.description = descInput.value;
+                }
+                
+                if (checkbox) {
+                    item.checked = checkbox.checked; // Store checkbox state for reference
+                }
+                
+                if (qtyInput) {
+                    item.qty = parseInt(qtyInput.value) || 0;
+                }
+                
+                if (rateInput && !item.isDefault) {
+                    item.rate = getNumericValue(rateInput.value);
+                }
             }
-            if (checkbox) {
-                item.checked = checkbox.checked;
-            }
-            if (qtyInput) {
-                item.qty = Math.max(0, parseInt(qtyInput.value, 10) || 0);
-            }
-            if (rateInput && item.editable) {
-                item.rate = getNumericValue(rateInput.value);
-            }
-
-             moduleData.lastModified = new Date().toISOString();
-             if (DEBUG) updateDebugPanel();
         }
-
-
-        /**
-         * Calculates the total for a single row (Qty * Rate) and updates its display.
-         * @param {HTMLTableRowElement} row - The table row element.
-         * @param {object} item - The corresponding item object from moduleData.
-         * @returns {number} The calculated total for the row.
-         */
-        function calculateRowTotal(row, item) {
-            const totalCell = row.querySelector('.total-cell');
-            if (!totalCell) return 0;
-
-            const total = item.qty > 0 ? (item.qty * item.rate) : 0;
-            totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
-            return total;
+        
+        // Calculate total for a row - based on qty only, not checkbox
+        function calculateRowTotal(row) {
+            const itemId = row.getAttribute('data-item-id');
+            const item = moduleData.items.find(i => i.id === itemId);
+            
+            if (item) {
+                // Include in total if quantity > 0 (checkbox doesn't affect this)
+                const total = item.qty > 0 ? (item.qty * item.rate) : 0;
+                const totalCell = row.querySelector('.total-cell');
+                
+                if (totalCell) {
+                    totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
+                }
+                
+                return total;
+            }
+            
+            return 0;
         }
-
-        /**
-         * Recalculates the total cost for the entire module and updates the UI.
-         */
+        
+        // Calculate all totals and update module data - based on qty only
         function calculateTotals() {
-            const totalCost = moduleData.items.reduce((sum, item) => {
-                return sum + (item.qty > 0 ? (item.qty * item.rate) : 0);
-            }, 0);
-
+            let totalCost = 0;
+            
+            // Sum all item totals (only items with qty > 0, regardless of checkbox)
+            moduleData.items.forEach(item => {
+                if (item.qty > 0) {
+                    totalCost += item.qty * item.rate;
+                }
+            });
+            
+            // Update module data
             moduleData.totalCost = totalCost;
-
-            const tableTotalElement = document.getElementById('table-total');
-             if(tableTotalElement) {
-                tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
-             }
-
-            const headerTotalElement = document.getElementById('total-module-cost');
-             if (headerTotalElement) {
-                headerTotalElement.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
-             }
-
+            
+            // Update UI
+            document.getElementById('table-total').textContent = 
+                window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
+            
+            document.getElementById('total-module-cost').textContent = 
+                `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+                
+            // Update debug panel if enabled
             if (DEBUG) {
                 updateDebugPanel();
             }
         }
-
-        /**
-         * Converts a formatted currency string (e.g., "R 1,234.56") into a numeric value.
-         * @param {string|number} value - The value to parse.
-         * @returns {number} The numeric value, or 0 if parsing fails.
-         */
-        function getNumericValue(value) {
-            if (typeof value === 'number') {
-                return value;
-            }
-            if (typeof value !== 'string') {
-                return 0;
-            }
-            const numericString = value
-                .replace(/R|\s/g, '')
-                .replace(/,/g, '');
-            const number = parseFloat(numericString);
-            return isNaN(number) ? 0 : number;
+        
+        // Add a new custom item
+        function addCustomItem() {
+            // Generate unique ID
+            const newId = 'custom-' + Date.now();
+            
+            // Create new item
+            const newItem = {
+                id: newId,
+                description: 'New Steel Item',
+                rate: 85.00,
+                unit: 'kg',
+                checked: false,
+                qty: 0,
+                isDefault: false,
+                custom: true
+            };
+            
+            // Add to module data
+            moduleData.items.push(newItem);
+            
+            // Add to UI
+            addTableRow(newItem);
+            
+            // Mark as unsaved
+            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+            
+            // Update totals
+            calculateTotals();
         }
-
-
-        // =====================================================================
-        // EVENT LISTENERS SETUP (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Attaches event listeners to static elements like buttons and links.
-         */
+        
+        // Setup event listeners
         function setupEventListeners() {
-            const saveBtn = document.getElementById('save-btn');
-            if (saveBtn) saveBtn.addEventListener('click', () => saveModuleData(false));
-
-            const saveSidebarLink = document.getElementById('save-module-data');
-            if (saveSidebarLink) {
-                saveSidebarLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    saveModuleData(false);
-                });
-            }
-
-            const returnBtn = document.getElementById('return-btn');
-            if(returnBtn) returnBtn.addEventListener('click', returnToDashboard);
-
-            const returnSidebarLink = document.getElementById('return-to-dashboard');
-            if (returnSidebarLink) {
-                returnSidebarLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    returnToDashboard();
-                });
-            }
-
-            const addItemBtn = document.getElementById('add-item-btn');
-             if (addItemBtn) addItemBtn.addEventListener('click', addCustomItem);
-
-            const addSidebarLink = document.getElementById('add-custom-item');
-            if (addSidebarLink) {
-                addSidebarLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    addCustomItem();
-                });
-            }
+            // Save buttons
+            document.getElementById('save-btn').addEventListener('click', function() {
+                saveModuleData();
+            });
+            
+            document.getElementById('save-module-data').addEventListener('click', function(e) {
+                e.preventDefault();
+                saveModuleData();
+            });
+            
+            // Return to dashboard
+            document.getElementById('return-btn').addEventListener('click', returnToDashboard);
+            document.getElementById('return-to-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToDashboard();
+            });
+            
+            // Add custom item buttons
+            document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
+            document.getElementById('add-custom-item').addEventListener('click', function(e) {
+                e.preventDefault();
+                addCustomItem();
+            });
         }
-
-        // =====================================================================
-        // TABLE SORTING (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Adds click listeners to sortable table headers.
-         */
+        
+        // Setup table sorting
         function setupTableSorting() {
             const sortHeaders = document.querySelectorAll('.sort-header');
             sortHeaders.forEach(header => {
                 header.addEventListener('click', function() {
                     const sortBy = this.getAttribute('data-sort');
-                    if (sortBy) {
-                        sortTable(sortBy, this);
-                    }
+                    sortTable(sortBy, this);
                 });
             });
         }
-
-        /**
-         * Sorts the moduleData.items array and updates the UI.
-         * @param {string} sortBy - The key of the item property to sort by ('description', 'qty', 'rate', 'total').
-         * @param {HTMLTableCellElement} header - The clicked header element (<th>).
-         */
+        
+        // Sort the table by column
         function sortTable(sortBy, header) {
+            // Determine sort direction
             let sortAsc = true;
-            const isCurrentlyAsc = header.classList.contains('sorted-asc');
-            const isCurrentlyDesc = header.classList.contains('sorted-desc');
-
-            document.querySelectorAll('.sort-header').forEach(h => {
-                h.classList.remove('sorted-asc', 'sorted-desc');
-            });
-
-            if (isCurrentlyAsc) {
+            if (header.classList.contains('sorted-asc')) {
                 sortAsc = false;
+                header.classList.remove('sorted-asc');
                 header.classList.add('sorted-desc');
             } else {
-                sortAsc = true;
+                // Remove sorted class from all headers
+                document.querySelectorAll('.sort-header').forEach(h => {
+                    h.classList.remove('sorted-asc');
+                    h.classList.remove('sorted-desc');
+                });
                 header.classList.add('sorted-asc');
             }
-             console.log(`[${MODULE.id}] Sorting by ${sortBy}, direction: ${sortAsc ? 'ASC' : 'DESC'}`);
-
+            
+            // Sort items
             moduleData.items.sort((a, b) => {
                 let aValue, bValue;
+                
                 switch (sortBy) {
                     case 'description':
-                        aValue = (a.description || '').toLowerCase();
-                        bValue = (b.description || '').toLowerCase();
+                        aValue = a.description.toLowerCase();
+                        bValue = b.description.toLowerCase();
                         break;
-                    case 'qty': aValue = a.qty; bValue = b.qty; break;
-                    case 'rate': aValue = a.rate; bValue = b.rate; break;
+                    case 'qty':
+                        aValue = a.qty;
+                        bValue = b.qty;
+                        break;
+                    case 'rate':
+                        aValue = a.rate;
+                        bValue = b.rate;
+                        break;
                     case 'total':
                         aValue = a.qty > 0 ? (a.qty * a.rate) : 0;
                         bValue = b.qty > 0 ? (b.qty * b.rate) : 0;
                         break;
-                    default: return 0;
+                    default:
+                        return 0;
                 }
-                let comparison = 0;
-                if (aValue < bValue) comparison = -1;
-                else if (aValue > bValue) comparison = 1;
-                return sortAsc ? comparison : (comparison * -1);
+                
+                if (aValue < bValue) return sortAsc ? -1 : 1;
+                if (aValue > bValue) return sortAsc ? 1 : -1;
+                return 0;
             });
+            
+            // Update UI
             updateUI();
         }
-
-
-        // =====================================================================
-        // DATA PERSISTENCE (SAVING) (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Saves the current module data to the client object and triggers persistence.
-         * @param {boolean} [isAutoSave=false] - Flag indicating if the save was triggered by auto-save.
-         */
+        
+        // Get numeric value from formatted currency string
+        function getNumericValue(value) {
+            if (typeof value === 'number') return value;
+            
+            // Remove currency symbol and spaces
+            let numericString = value.toString().replace(/[R\s]/g, '');
+            
+            // Replace comma with period for decimal
+            numericString = numericString.replace(/,/g, '.');
+            
+            return parseFloat(numericString) || 0;
+        }
+        
+        // Save module data with enhanced error handling
         function saveModuleData(isAutoSave = false) {
-             const actionType = isAutoSave ? 'Auto-saving' : 'Saving';
-             console.log(`[${MODULE.id}] ${actionType} module data...`);
+            // Update module data timestamps
             moduleData.lastModified = new Date().toISOString();
+            
+            // Show saving indicator
             window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
+            
+            // IMPORTANT: Get current client and directly update its moduleData
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!client) {
-                console.error(`[${MODULE.id}] Cannot save: Client object not found.`);
-                window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found');
-                window.ConstructionApp.ModuleUtils.showErrorMessage('Could not save data: Client information is missing.');
-                return;
+            if (client) {
+                // Ensure moduleData exists
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Store updated module data directly in the client object
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update client's lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // CRITICAL: Update client in both the ClientManager and sessionStorage
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                
+                console.log(`[${MODULE.id}] Directly updated client object with module data, total cost: ${moduleData.totalCost}`);
             }
-            if (!client.moduleData) client.moduleData = {};
-            client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
-            client.lastModified = new Date().toISOString();
-            window.ConstructionApp.ClientManager.setCurrentClient(client);
-             console.log(`[${MODULE.id}] Updated client object in memory/sessionStorage.`);
+            
+            // Also save using the ClientManager's API for Firebase persistence
             window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
                 if (success) {
                     const message = isAutoSave ? 'Auto-saved' : 'Saved';
-                    console.log(`[${MODULE.id}] ${message} successful.`);
                     window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
+                    
+                    // Show success message (only for manual saves)
                     if (!isAutoSave) {
                         window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
                     }
                 } else {
-                    const errorMsg = error || 'Unknown error during save';
-                    console.error(`[${MODULE.id}] Save failed:`, errorMsg);
-                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`);
-                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving ${MODULE.title} data: ${errorMsg}`);
+                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
+                    
+                    // Show error message
+                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving data: ${error || 'Unknown error'}`);
                 }
             });
         }
-
-        // =====================================================================
-        // NAVIGATION (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Handles the process of returning to the dashboard, prompting to save if necessary.
-         */
+        
+        // Return to dashboard with improved client preservation
         function returnToDashboard() {
-            console.log(`[${MODULE.id}] Initiating return to dashboard...`);
+            // Check if there are unsaved changes
             if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Ask user if they want to save before returning
                 const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
                 if (shouldSave) {
-                     console.log(`[${MODULE.id}] User chose to save before returning.`);
-                    saveModuleData(false);
-                    setTimeout(navigateToDashboard, 200);
+                    // Save first - but don't navigate in the callback to avoid timing issues
+                    saveModuleData();
+                    
+                    // We'll use a short delay to make sure saving completes
+                    setTimeout(() => navigateToDashboard(), 300);
                     return;
-                } else {
-                     console.log(`[${MODULE.id}] User chose *not* to save before returning.`);
-                 }
-            } else {
-                 console.log(`[${MODULE.id}] No unsaved changes detected.`);
-             }
+                }
+            }
+            
+            // If no changes or user doesn't want to save, navigate immediately
             navigateToDashboard();
         }
-
-        /**
-         * Performs the actual navigation to the dashboard page, ensuring state is preserved.
-         */
+        
+        // Navigate to dashboard with proper state preservation
         function navigateToDashboard() {
-             console.log(`[${MODULE.id}] Preparing to navigate to dashboard.`);
-            if (cancelAutoSave) {
-                cancelAutoSave();
-                 console.log(`[${MODULE.id}] Auto-save timer cancelled.`);
-            }
+            console.log(`[${MODULE.id}] Navigating to dashboard`);
+            
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // Get the current client
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
             if (client) {
-                if (!client.moduleData) client.moduleData = {};
-                client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                // CRITICAL: Update client's module data even if we didn't save
+                // This ensures the data is available when returning to the dashboard
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Always update the moduleData with the latest values
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update lastModified timestamp
                 client.lastModified = new Date().toISOString();
+                
+                // Store client directly in sessionStorage (reliable backup approach)
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log(`[${MODULE.id}] Client data saved to sessionStorage before navigation`);
+                
+                // IMPORTANT: Force a client update through the client manager
+                // This ensures any listeners (like the dashboard) are notified
                 window.ConstructionApp.ClientManager.setCurrentClient(client);
-                 console.log(`[${MODULE.id}] Client object updated with current module state before navigation.`);
-            } else {
-                 console.warn(`[${MODULE.id}] Client object not found during navigation preparation.`);
-             }
+            }
+            
+            // IMPORTANT: Set navigation state to explicitly indicate returning from a module
+            // This tells the dashboard that it should restore the client
             sessionStorage.setItem('navigationState', 'returningToDashboard');
-             console.log(`[${MODULE.id}] Navigation state set to 'returningToDashboard'.`);
-             console.log(`[${MODULE.id}] Redirecting to index.html...`);
+            console.log(`[${MODULE.id}] Navigation state set to: returningToDashboard`);
+            
+            // Navigate back to the dashboard
             window.location.href = 'index.html';
         }
-
-
-        // =====================================================================
-        // DEBUGGING UTILITIES (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Sets up the debug panel and its toggle button if DEBUG is true.
-         */
+        
+        // Setup debug panel
         function setupDebugPanel() {
             const debugPanel = document.getElementById('debug-panel');
-            const toggleBtn = document.getElementById('debug-toggle-btn');
-            if (!debugPanel || !toggleBtn) {
-                 console.warn(`[${MODULE.id}] Debug panel or toggle button element not found.`);
-                 return;
-             }
-            toggleBtn.style.display = 'block';
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = 'Debug';
+            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
+            document.body.appendChild(toggleBtn);
+            
+            // Toggle debug panel on click
             toggleBtn.addEventListener('click', function() {
                 const isVisible = debugPanel.style.display === 'block';
                 debugPanel.style.display = isVisible ? 'none' : 'block';
-                toggleBtn.textContent = isVisible ? 'Debug' : 'Hide Debug';
-                if (!isVisible) updateDebugPanel();
+                
+                if (!isVisible) {
+                    updateDebugPanel();
+                }
             });
         }
-
-        /**
-         * Updates the content of the debug panel with current state information.
-         */
+        
+        // Update debug panel
         function updateDebugPanel() {
-             if (!DEBUG) return;
-             const debugPanel = document.getElementById('debug-panel');
-             if (!debugPanel || debugPanel.style.display === 'none') return;
-
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Get client data
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            const sessionClient = sessionStorage.getItem('currentClient');
             let sessionClientData = null;
-            try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {}
+            try {
+                if (sessionClient) {
+                    sessionClientData = JSON.parse(sessionClient);
+                }
+            } catch (e) {
+                console.error("Error parsing session client:", e);
+            }
+            
+            // Get navigation state
             const navigationState = sessionStorage.getItem('navigationState');
-            const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges();
-
+            
+            // Create debug info
             let debugInfo = `
                 <strong>Module ID:</strong> ${MODULE.id}<br>
-                <strong>Module Title:</strong> ${MODULE.title}<br>
                 <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
-                <hr>
-                <strong>Client (Manager):</strong> ${client ? client.name : 'None'} (ID: ${client ? client.id : 'N/A'})<br>
-                <strong>Client (Session):</strong> ${sessionClientData ? sessionClientData.name : 'None'} (ID: ${sessionClientData ? sessionClientData.id : 'N/A'})<br>
-                <hr>
+                <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
+                <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
+                <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
                 <strong>Module Items:</strong> ${moduleData.items.length}<br>
+                <strong>Items with Qty > 0:</strong> ${moduleData.items.filter(item => item.qty > 0).length}<br>
+                <strong>Marked Items (Ref):</strong> ${moduleData.items.filter(item => item.checked).length}<br>
                 <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
-                <strong>Unsaved Changes:</strong> ${unsavedChanges ? 'Yes' : 'No'}<br>
-                <strong>Last Modified:</strong> ${new Date(moduleData.lastModified).toLocaleString()}<br>
-                <hr>
-                <strong>First 2 Items Data:</strong><br>
-                <pre style="font-size: 10px; max-height: 50px; overflow-y: auto;">${JSON.stringify(moduleData.items.slice(0, 2), null, 1)}</pre>
+                <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
+                <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
             `;
+            
+            // Add sample of module data
+            debugInfo += '<strong>Module Data Sample:</strong><br>';
+            const activeItems = moduleData.items.filter(item => item.qty > 0);
+            if (activeItems.length > 0) {
+                const sampleItem = activeItems[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}, Total: ${sampleItem.qty * sampleItem.rate}<br>`;
+            } else if (moduleData.items.length > 0) {
+                const sampleItem = moduleData.items[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
+            } else {
+                debugInfo += '- No items<br>';
+            }
+            
+            // Update panel
             debugPanel.innerHTML = debugInfo;
         }
-
-        // =====================================================================
-        // PAGE UNLOAD HANDLING (Identical to previous template)
-        // =====================================================================
-
-        /**
-         * Handles cleanup and prompts before the page unloads (e.g., closing tab/browser).
-         */
+        
+        // Clean up when leaving page
         window.addEventListener('beforeunload', function(e) {
-            console.log(`[${MODULE.id}] beforeunload event triggered.`);
-            if (cancelAutoSave) {
-                cancelAutoSave();
-                 console.log(`[${MODULE.id}] Auto-save timer cancelled on page unload.`);
-            }
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // If we have unsaved changes, warn user
             if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                 console.warn(`[${MODULE.id}] Unsaved changes detected on page unload attempt.`);
+                // Store client data in sessionStorage to prevent loss
                 const client = window.ConstructionApp.ClientManager.getCurrentClient();
                 if (client) {
-                     try {
-                         if (!client.moduleData) client.moduleData = {};
-                         client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
-                         client.lastModified = new Date().toISOString();
-                        sessionStorage.setItem('currentClient', JSON.stringify(client));
-                         console.log(`[${MODULE.id}] Stored client data to sessionStorage as backup during unload.`);
-                     } catch (error) {
-                         console.error(`[${MODULE.id}] Error storing client data to sessionStorage during unload:`, error);
-                     }
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
                 }
+                
+                // This will trigger the browser's "unsaved changes" warning
                 const message = 'You have unsaved changes. Are you sure you want to leave?';
                 e.returnValue = message;
                 return message;
             }
         });
-
     </script>
 </body>
 </html>
