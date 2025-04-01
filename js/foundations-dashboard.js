@@ -6,7 +6,7 @@
     window.ConstructionApp = window.ConstructionApp || {};
     
     // Private data
-    const _foundationModules = ['excavation', 'concrete', 'steel'];
+    const _foundationModules = ['foundations-excavation', 'foundations-concrete', 'foundations-steel'];
     let _initialized = false;
     
     // Foundations Dashboard object
@@ -88,8 +88,12 @@
                 if (module) return module.name;
             }
             
-            // Fallback to capitalized moduleId
-            return moduleId.charAt(0).toUpperCase() + moduleId.slice(1);
+            // Fallback to removing the foundations- prefix and capitalizing
+            let name = moduleId;
+            if (name.startsWith('foundations-')) {
+                name = name.replace('foundations-', '');
+            }
+            return name.charAt(0).toUpperCase() + name.slice(1);
         },
         
         // Render the foundations tile for the dashboard
@@ -111,16 +115,14 @@
             // Format the total cost
             const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(foundationTotals.total);
             
-            // Create foundations tile
+            // Create foundations tile (matching style of standard module tiles)
             const foundationsTile = document.createElement('div');
-            foundationsTile.style.cssText = `
-                background-color: white;
-                padding: 15px;
-                border-radius: 5px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                position: relative;
-                border-left: 4px solid #1c87c9;
-            `;
+            foundationsTile.style.backgroundColor = 'white';
+            foundationsTile.style.padding = '15px';
+            foundationsTile.style.borderRadius = '5px';
+            foundationsTile.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            foundationsTile.style.position = 'relative';
+            foundationsTile.style.borderLeft = '4px solid #1c87c9';
             foundationsTile.id = 'foundations-tile';
             
             // Generate content for the tile
