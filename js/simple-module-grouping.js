@@ -1,76 +1,90 @@
 /**
- * Simple Module Grouping
- * 
- * Direct approach to style modules with immediately visible changes
+ * Very Simple Module Grouping
  */
 
-// Run immediately when loaded
-(function() {
-    console.log("SIMPLE MODULE GROUPING SCRIPT LOADED");
+// Run when page loads
+window.addEventListener('load', function() {
+    console.log("MODULE GROUPING SCRIPT IS RUNNING - VERSION 1.0");
+    alert("Module grouping script is active!");
     
-    // Apply styling immediately
-    styleModules();
+    // Apply initial styling with delay to ensure modules are loaded
+    setTimeout(styleModules, 1000);
     
-    // Also set up to run when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("DOM LOADED - STYLING MODULES");
-        styleModules();
-        
-        // Also set up an interval to keep checking and applying styles
-        setInterval(styleModules, 1000);
-    });
-    
-    // If window is already loaded, apply styling now
-    if (document.readyState === 'complete') {
-        console.log("DOCUMENT ALREADY COMPLETE - STYLING MODULES");
-        styleModules();
-    }
-})();
+    // Also set up an interval to apply styling every 2 seconds
+    setInterval(styleModules, 2000);
+});
 
-// Main function to style modules - very direct approach
+// Main styling function
 function styleModules() {
     console.log("Applying module styling...");
     
-    // Define foundation modules (hardcoded for reliability)
-    const foundationModules = [
-        "foundations-excavation",
-        "foundations-concrete",
-        "foundations-steel"
-    ];
+    // Get all module items
+    const modules = document.querySelectorAll('.module-item');
+    console.log("Found " + modules.length + " modules");
     
-    // Find all modules in the sidebar
-    const allModules = document.querySelectorAll('.module-item');
-    console.log(`Found ${allModules.length} modules`);
-    
-    // First, create a clear header for Foundations if it doesn't exist
-    if (!document.querySelector('.foundation-header') && allModules.length > 0) {
-        const foundationsHeader = document.createElement('div');
-        foundationsHeader.className = 'foundation-header';
-        foundationsHeader.textContent = "FOUNDATIONS";
-        foundationsHeader.style.padding = "10px 20px";
-        foundationsHeader.style.fontWeight = "bold";
-        foundationsHeader.style.backgroundColor = "#4eca8b";
-        foundationsHeader.style.color = "white";
-        foundationsHeader.style.margin = "5px 0";
-        
-        // Insert at the beginning of the module container
-        const modulesContainer = document.getElementById('modules-container');
-        if (modulesContainer) {
-            modulesContainer.insertBefore(foundationsHeader, modulesContainer.firstChild);
-            console.log("Added Foundations header");
-        }
-    }
-    
-    // Now style all foundation modules
-    allModules.forEach(module => {
+    // Process each module
+    modules.forEach(function(module) {
         const moduleId = module.getAttribute('data-module-id');
+        const moduleText = module.querySelector('span');
         
-        // Style foundation modules
-        if (foundationModules.includes(moduleId)) {
-            // Add obvious styling
-            module.style.paddingLeft = "40px";
-            module.style.borderLeft = "3px solid #4eca8b";
-            console.log(`Styled module: ${moduleId}`);
+        if (!moduleId || !moduleText) return;
+        
+        // Style foundations module and its children
+        if (moduleId === 'foundations') {
+            // Main foundations module - green text
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('foundations-')) {
+            // Child foundations module - indented
+            module.style.paddingLeft = '40px';
+        }
+        
+        // Style brickwork module and its children
+        if (moduleId === 'brickwork') {
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('brickwork-')) {
+            module.style.paddingLeft = '40px';
+        }
+        
+        // Style surfacebeds module and its children
+        if (moduleId === 'surfacebeds') {
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('surfacebeds-')) {
+            module.style.paddingLeft = '40px';
+        }
+        
+        // Style plaster module and its children
+        if (moduleId === 'plaster') {
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('plaster-')) {
+            module.style.paddingLeft = '40px';
+        }
+        
+        // Style floor module and its children
+        if (moduleId === 'floor') {
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('floor-')) {
+            module.style.paddingLeft = '40px';
+        }
+        
+        // Style carpentry module and its children
+        if (moduleId === 'carpentry') {
+            moduleText.style.color = 'lime';
+            moduleText.style.fontWeight = 'bold';
+        }
+        else if (moduleId.startsWith('carpentry-')) {
+            module.style.paddingLeft = '40px';
         }
     });
+    
+    console.log("Module styling complete");
 }
