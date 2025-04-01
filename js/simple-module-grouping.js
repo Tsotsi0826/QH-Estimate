@@ -1,464 +1,378 @@
 /**
- * Dynamic Module Grouping
+ * Simple Module Grouping
  * 
- * A system to organize modules with parent-child relationships:
- * - Create main category modules and working modules
- * - Drag and drop modules to establish parent-child relationships
- * - Green headers for modules that have children
- * - Indentation for child modules
+ * A lightweight solution to organize modules into fixed categories:
+ * - Creates green headers for predefined module groups
+ * - Indents related modules underneath each group
+ * - Provides collapse/expand functionality
+ * - Maintains all existing module functionality
  */
 
 // Initialize when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("[ModuleGrouping] Initializing dynamic module grouping");
-    initializeModuleGroups();
+    console.log("[ModuleGrouping] Initializing module grouping");
+    setTimeout(initializeModuleGroups, 500); // Delay to ensure modules are loaded
 });
 
-// Module relationships storage
-let moduleRelationships = {
-    // Format: parentId: [childId1, childId2, ...]
+// Define fixed module groups and their members
+const moduleGroups = {
+    "Foundations": [
+        "foundations-excavation",
+        "foundations-concrete", 
+        "foundations-steel"
+    ],
+    "Brickwork": [
+        "brickwork",
+        "demolish"
+    ],
+    "Surfacebeds": [
+        "surfacebeds"
+    ],
+    "Plaster": [
+        "plaster"
+    ],
+    "Floor and Wall Covering": [
+        "floor-covering",
+        "wall-covering",
+        "tiling"
+    ],
+    "Carpentry and Joinery": [
+        "carpentry",
+        "windows",
+        "ceilings"
+    ]
+    // Admin group will be added later
 };
+
+// Module groups state (expanded/collapsed)
+let groupState = {};
 
 // Initialize module groups
 function initializeModuleGroups() {
-    // Wait for modules to be fully loaded before organizing
-    const checkModulesLoaded = setInterval(() => {
-        const moduleItems = document.querySelectorAll('.module-item');
-        if (moduleItems.length > 0) {
-            clearInterval(checkModulesLoaded);
-            console.log("[ModuleGrouping] Modules detected, initializing grouping system");
-            
-            // Load saved relationships
-            loadModuleRelationships();
-            
-            // Enhance drag and drop functionality
-            enhanceDragAndDrop();
-            
-            // Apply visual styling based on relationships
-            applyModuleHierarchy();
-            
-            // Setup observer for dynamic changes
-            setupModuleObserver();
-        }
-    }, 100);
+    console.log("[ModuleGrouping] Organizing modules into groups");
+    
+    // Load saved group state
+    loadGroupState();
+    
+    // Organize modules into groups
+    organizeModulesIntoGroups();
+    
+    // Add styles for the grouping system
+    addModuleGroupingStyles();
+    
+    // Setup observer for dynamic changes
+    setupModuleObserver();
 }
 
-// Load module relationships from storage
-function loadModuleRelationships() {
-    const savedRelationships = sessionStorage.getItem('moduleRelationships');
-    if (savedRelationships) {
+// Load group state from storage
+function loadGroupState() {
+    const savedState = sessionStorage.getItem('moduleGroupState');
+    if (savedState) {
         try {
-            moduleRelationships = JSON.parse(savedRelationships);
-            console.log("[ModuleGrouping] Loaded module relationships:", moduleRelationships);
+            groupState = JSON.parse(savedState);
+            console.log("[ModuleGrouping] Loaded group state:", groupState);
         } catch (error) {
-            console.error("[ModuleGrouping] Error parsing saved relationships:", error);
-            moduleRelationships = {};
+            console.error("[ModuleGrouping] Error parsing saved group state:", error);
+            groupState = {};
         }
     } else {
-        // Initialize with some common foundation modules as an example
-        const foundationsModule = document.querySelector('.module-item[data-module-id="foundations"]');
-        if (foundationsModule) {
-            moduleRelationships = {
-                "foundations": ["foundations-excavation", "foundations-concrete", "foundations-steel"]
-            };
-            saveModuleRelationships();
-        }
-    }
-}
-
-// Save module relationships to storage
-function saveModuleRelationships() {
-    sessionStorage.setItem('moduleRelationships', JSON.stringify(moduleRelationships));
-    
-    // Also save to Firebase if available
-    if (window.ConstructionApp && window.ConstructionApp.Firebase) {
-        window.ConstructionApp.Firebase.saveModuleRelationships(moduleRelationships)
-            .then(() => {
-                console.log("[ModuleGrouping] Saved module relationships to Firebase");
-            })
-            .catch(error => {
-                console.error("[ModuleGrouping] Error saving relationships to Firebase:", error);
-            });
-    }
-}
-
-// Enhance drag and drop to support module hierarchy
-function enhanceDragAndDrop() {
-    const moduleItems = document.querySelectorAll('.module-item');
-    
-    moduleItems.forEach(module => {
-        // Make all modules droppable (can receive other modules)
-        module.addEventListener('dragover', handleModuleDragOver);
-        module.addEventListener('dragleave', handleModuleDragLeave);
-        module.addEventListener('drop', handleModuleDrop);
-        
-        // Add special visual behavior for parent modules
-        if (isParentModule(module.getAttribute('data-module-id'))) {
-            styleAsParentModule(module);
-        }
-    });
-}
-
-// Handle drag over for parent-child relationship
-function handleModuleDragOver(event) {
-    event.preventDefault();
-    // Only add highlight if this could be a valid parent
-    const draggedModuleId = event.dataTransfer.getData('text/plain') || 
-                           document.querySelector('.dragging')?.getAttribute('data-module-id');
-    
-    if (draggedModuleId && draggedModuleId !== this.getAttribute('data-module-id')) {
-        this.classList.add('potential-parent');
-    }
-}
-
-// Handle drag leave for parent-child relationship
-function handleModuleDragLeave(event) {
-    this.classList.remove('potential-parent');
-}
-
-// Handle drop for parent-child relationship
-function handleModuleDrop(event) {
-    this.classList.remove('potential-parent');
-    
-    // Get the dragged module ID
-    const draggedModuleId = event.dataTransfer.getData('text/plain') || 
-                           document.querySelector('.dragging')?.getAttribute('data-module-id');
-    
-    if (!draggedModuleId) return;
-    
-    // Get the target (potential parent) module ID
-    const targetModuleId = this.getAttribute('data-module-id');
-    
-    // Prevent dropping onto itself
-    if (draggedModuleId === targetModuleId) return;
-    
-    // Check if Shift key is pressed - indicates creating a parent-child relationship
-    if (event.shiftKey) {
-        event.stopPropagation(); // Prevent regular reordering
-        
-        // Establish parent-child relationship
-        addChildToParent(targetModuleId, draggedModuleId);
-        
-        // Apply visual updates
-        applyModuleHierarchy();
-        
-        // Save the updated relationships
-        saveModuleRelationships();
-        
-        console.log(`[ModuleGrouping] Added ${draggedModuleId} as child of ${targetModuleId}`);
-    }
-    // Otherwise let the regular drag and drop handle reordering
-}
-
-// Add a child module to a parent
-function addChildToParent(parentId, childId) {
-    // Initialize parent array if needed
-    if (!moduleRelationships[parentId]) {
-        moduleRelationships[parentId] = [];
-    }
-    
-    // Add child if not already present
-    if (!moduleRelationships[parentId].includes(childId)) {
-        moduleRelationships[parentId].push(childId);
-    }
-    
-    // Remove child from any other parent
-    Object.keys(moduleRelationships).forEach(otherParentId => {
-        if (otherParentId !== parentId) {
-            const index = moduleRelationships[otherParentId].indexOf(childId);
-            if (index !== -1) {
-                moduleRelationships[otherParentId].splice(index, 1);
-                
-                // Clean up empty parents
-                if (moduleRelationships[otherParentId].length === 0) {
-                    delete moduleRelationships[otherParentId];
-                }
-            }
-        }
-    });
-}
-
-// Remove a child from its parent
-function removeChildFromParent(childId) {
-    Object.keys(moduleRelationships).forEach(parentId => {
-        const index = moduleRelationships[parentId].indexOf(childId);
-        if (index !== -1) {
-            moduleRelationships[parentId].splice(index, 1);
-            
-            // Clean up empty parents
-            if (moduleRelationships[parentId].length === 0) {
-                delete moduleRelationships[parentId];
-            }
-            
-            // Save the updated relationships
-            saveModuleRelationships();
-            
-            console.log(`[ModuleGrouping] Removed ${childId} from parent ${parentId}`);
-        }
-    });
-}
-
-// Check if a module is a parent
-function isParentModule(moduleId) {
-    return moduleRelationships[moduleId] && moduleRelationships[moduleId].length > 0;
-}
-
-// Get the parent ID of a child module
-function getParentModule(childId) {
-    for (const parentId in moduleRelationships) {
-        if (moduleRelationships[parentId].includes(childId)) {
-            return parentId;
-        }
-    }
-    return null;
-}
-
-// Style a module as a parent
-function styleAsParentModule(moduleElement) {
-    // Apply green background to indicate it's a parent
-    moduleElement.style.backgroundColor = '#4eca8b';
-    moduleElement.style.color = 'white';
-    moduleElement.style.fontWeight = 'bold';
-    
-    // Add an indicator icon
-    const moduleSpan = moduleElement.querySelector('span');
-    if (moduleSpan && !moduleSpan.querySelector('.parent-indicator')) {
-        const indicator = document.createElement('span');
-        indicator.className = 'parent-indicator';
-        indicator.textContent = ' ▾';
-        indicator.style.marginLeft = '5px';
-        moduleSpan.appendChild(indicator);
-    }
-    
-    // Add collapse/expand functionality
-    if (!moduleElement.hasAttribute('data-collapsible')) {
-        moduleElement.setAttribute('data-collapsible', 'true');
-        moduleElement.addEventListener('click', toggleChildrenVisibility);
-    }
-}
-
-// Reset module styling
-function resetModuleStyling(moduleElement) {
-    moduleElement.style.backgroundColor = '';
-    moduleElement.style.color = '';
-    moduleElement.style.fontWeight = '';
-    moduleElement.style.paddingLeft = '';
-    
-    // Remove indicator if present
-    const indicator = moduleElement.querySelector('.parent-indicator');
-    if (indicator) {
-        indicator.remove();
-    }
-    
-    // Remove collapse handler
-    if (moduleElement.hasAttribute('data-collapsible')) {
-        moduleElement.removeAttribute('data-collapsible');
-        moduleElement.removeEventListener('click', toggleChildrenVisibility);
-    }
-}
-
-// Toggle visibility of child modules
-function toggleChildrenVisibility(event) {
-    // Only proceed if clicking the module itself, not a child element
-    if (event.target !== this && !event.target.classList.contains('parent-indicator')) {
-        return;
-    }
-    
-    const parentId = this.getAttribute('data-module-id');
-    const isCollapsed = this.getAttribute('data-collapsed') === 'true';
-    
-    // Toggle collapsed state
-    this.setAttribute('data-collapsed', !isCollapsed);
-    
-    // Update indicator
-    const indicator = this.querySelector('.parent-indicator');
-    if (indicator) {
-        indicator.textContent = isCollapsed ? ' ▾' : ' ▸';
-    }
-    
-    // Toggle visibility of children
-    if (moduleRelationships[parentId]) {
-        moduleRelationships[parentId].forEach(childId => {
-            const childElement = document.querySelector(`.module-item[data-module-id="${childId}"]`);
-            if (childElement) {
-                childElement.style.display = isCollapsed ? 'flex' : 'none';
-            }
+        // Initialize with all groups expanded
+        Object.keys(moduleGroups).forEach(group => {
+            groupState[group] = true; // true = expanded, false = collapsed
         });
     }
 }
 
-// Apply module hierarchy styling
-function applyModuleHierarchy() {
-    // First reset all modules to default
-    const allModules = document.querySelectorAll('.module-item');
-    allModules.forEach(module => {
-        resetModuleStyling(module);
-    });
-    
-    // Style parent modules
-    Object.keys(moduleRelationships).forEach(parentId => {
-        const parentElement = document.querySelector(`.module-item[data-module-id="${parentId}"]`);
-        if (parentElement && moduleRelationships[parentId].length > 0) {
-            styleAsParentModule(parentElement);
-        }
-    });
-    
-    // Style and indent child modules
-    allModules.forEach(module => {
-        const moduleId = module.getAttribute('data-module-id');
-        const parentId = getParentModule(moduleId);
-        
-        if (parentId) {
-            // This is a child module
-            module.style.paddingLeft = '40px';
-        }
-    });
-    
-    // Update context menu options
-    updateContextMenuOptions();
+// Save group state to storage
+function saveGroupState() {
+    sessionStorage.setItem('moduleGroupState', JSON.stringify(groupState));
 }
 
-// Update context menu options to include group actions
-function updateContextMenuOptions() {
-    const moduleItems = document.querySelectorAll('.module-item');
+// Organize modules into their respective groups
+function organizeModulesIntoGroups() {
+    const modulesContainer = document.getElementById('modules-container');
     
-    moduleItems.forEach(module => {
-        const moduleId = module.getAttribute('data-module-id');
-        const dropdownMenu = module.querySelector('.dropdown-menu');
+    if (!modulesContainer) {
+        console.error("[ModuleGrouping] Modules container not found");
+        return;
+    }
+    
+    // Create a document fragment to build the new structure
+    const fragment = document.createDocumentFragment();
+    
+    // Get all current modules before we start modifying the DOM
+    const allModuleElements = Array.from(document.querySelectorAll('.module-item'));
+    
+    // Process each predefined group
+    Object.keys(moduleGroups).forEach(groupName => {
+        // Create the group header
+        const groupHeader = createGroupHeader(groupName);
+        fragment.appendChild(groupHeader);
         
-        if (dropdownMenu) {
-            // Remove any existing group actions
-            const existingActions = dropdownMenu.querySelectorAll('.group-action');
-            existingActions.forEach(action => action.remove());
+        // Process child modules for this group
+        const groupModuleIds = moduleGroups[groupName];
+        
+        // Find modules that belong to this group
+        groupModuleIds.forEach(moduleId => {
+            // Find the module element
+            const moduleElement = allModuleElements.find(el => 
+                el.getAttribute('data-module-id') === moduleId
+            );
             
-            // Add appropriate actions based on module status
-            if (isParentModule(moduleId)) {
-                // Parent module options
-                const ungroup = document.createElement('div');
-                ungroup.className = 'dropdown-item group-action ungroup-module';
-                ungroup.textContent = 'Ungroup Children';
-                ungroup.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    delete moduleRelationships[moduleId];
-                    saveModuleRelationships();
-                    applyModuleHierarchy();
-                });
+            if (moduleElement) {
+                // Clone to remove existing event listeners
+                const clonedModule = moduleElement.cloneNode(true);
                 
-                dropdownMenu.appendChild(ungroup);
-            } else if (getParentModule(moduleId)) {
-                // Child module options
-                const removeFromGroup = document.createElement('div');
-                removeFromGroup.className = 'dropdown-item group-action remove-from-group';
-                removeFromGroup.textContent = 'Remove from Group';
-                removeFromGroup.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    removeChildFromParent(moduleId);
-                    applyModuleHierarchy();
-                });
+                // Apply styling
+                clonedModule.style.paddingLeft = '40px';
                 
-                dropdownMenu.appendChild(removeFromGroup);
+                // Set display based on group state
+                if (groupState[groupName] === false) {
+                    clonedModule.style.display = 'none';
+                }
+                
+                // Add to fragment
+                fragment.appendChild(clonedModule);
+                
+                // Mark as processed so we don't include it again
+                moduleElement.setAttribute('data-processed', 'true');
             }
+        });
+    });
+    
+    // Find modules that don't belong to any predefined group
+    const ungroupedModules = allModuleElements.filter(module => 
+        !module.hasAttribute('data-processed')
+    );
+    
+    // If there are ungrouped modules, add them without a header
+    ungroupedModules.forEach(module => {
+        // Clone to remove existing event listeners
+        const clonedModule = module.cloneNode(true);
+        fragment.appendChild(clonedModule);
+    });
+    
+    // Clear the container and add the new structure
+    modulesContainer.innerHTML = '';
+    modulesContainer.appendChild(fragment);
+    
+    // Reattach event listeners
+    reattachModuleEventListeners();
+    
+    console.log("[ModuleGrouping] Module organization complete");
+}
+
+// Create a group header element
+function createGroupHeader(groupName) {
+    const isCollapsed = groupState[groupName] === false;
+    
+    const header = document.createElement('div');
+    header.className = 'module-group-header';
+    header.textContent = isCollapsed ? `▸ ${groupName}` : groupName;
+    header.dataset.group = groupName;
+    header.style.cssText = `
+        background-color: #4eca8b;
+        color: white;
+        padding: 8px 20px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 5px;
+        user-select: none;
+    `;
+    
+    // Add indicator icon if not already present
+    if (!header.textContent.includes('▸') && !header.textContent.includes('▾')) {
+        // Add dropdown indicator
+        const indicator = document.createElement('span');
+        indicator.className = 'group-indicator';
+        indicator.textContent = ' ▾';
+        indicator.style.cssText = 'float: right;';
+        header.appendChild(indicator);
+    }
+    
+    // Add click handler to collapse/expand the group
+    header.addEventListener('click', toggleGroupVisibility);
+    
+    return header;
+}
+
+// Toggle visibility of modules in a group
+function toggleGroupVisibility() {
+    const groupName = this.dataset.group;
+    const isCurrentlyExpanded = groupState[groupName] !== false;
+    
+    // Toggle state
+    groupState[groupName] = !isCurrentlyExpanded;
+    
+    // Update indicator
+    if (isCurrentlyExpanded) {
+        // Changing to collapsed
+        this.textContent = `▸ ${groupName}`;
+    } else {
+        // Changing to expanded
+        this.textContent = groupName;
+        // Add dropdown indicator
+        const indicator = document.createElement('span');
+        indicator.className = 'group-indicator';
+        indicator.textContent = ' ▾';
+        indicator.style.cssText = 'float: right;';
+        this.appendChild(indicator);
+    }
+    
+    // Get all modules in this group
+    const groupModules = moduleGroups[groupName] || [];
+    
+    // Toggle visibility of children
+    groupModules.forEach(moduleId => {
+        const moduleElement = document.querySelector(`.module-item[data-module-id="${moduleId}"]`);
+        if (moduleElement) {
+            moduleElement.style.display = isCurrentlyExpanded ? 'none' : 'flex';
         }
     });
+    
+    // Save updated state
+    saveGroupState();
+}
+
+// Add CSS for the grouping system
+function addModuleGroupingStyles() {
+    if (!document.getElementById('module-grouping-styles')) {
+        const styleElement = document.createElement('style');
+        styleElement.id = 'module-grouping-styles';
+        styleElement.textContent = `
+            .module-group-header {
+                background-color: #4eca8b;
+                color: white;
+                padding: 8px 20px;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 5px;
+                user-select: none;
+            }
+            
+            .module-group-header:hover {
+                background-color: #3db97a;
+            }
+        `;
+        document.head.appendChild(styleElement);
+    }
 }
 
 // Observer to handle dynamically added modules
 function setupModuleObserver() {
     // Create a MutationObserver to watch for new modules being added
     const observer = new MutationObserver(function(mutations) {
+        let shouldReorganize = false;
+        
         mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                // Check if we need to update
-                const shouldUpdate = Array.from(mutation.addedNodes).some(node => {
-                    return node.nodeType === 1 && node.classList.contains('module-item');
-                });
-                
-                if (shouldUpdate) {
-                    console.log("[ModuleGrouping] New modules detected, updating hierarchy");
-                    setTimeout(() => {
-                        enhanceDragAndDrop();
-                        applyModuleHierarchy();
-                    }, 100);
-                }
+            if (mutation.type === 'childList' && 
+                (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
+                shouldReorganize = true;
             }
         });
+        
+        if (shouldReorganize) {
+            console.log("[ModuleGrouping] DOM changes detected, reorganizing modules");
+            setTimeout(organizeModulesIntoGroups, 100);
+        }
     });
     
     // Start observing the modules container
     const modulesContainer = document.getElementById('modules-container');
     if (modulesContainer) {
-        observer.observe(modulesContainer, { childList: true, subtree: true });
+        observer.observe(modulesContainer, { childList: true });
         console.log("[ModuleGrouping] Module observer started");
     }
 }
 
-// Add CSS for the grouping system
-function addModuleGroupingStyles() {
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        .module-item.potential-parent {
-            background-color: rgba(78, 202, 139, 0.3);
-            box-shadow: inset 0 0 0 2px #4eca8b;
+// Reattach event listeners to modules
+function reattachModuleEventListeners() {
+    // Re-initialize module click handlers
+    const moduleItems = document.querySelectorAll('.module-item');
+    moduleItems.forEach(module => {
+        if (typeof setupModuleClickHandler === 'function') {
+            setupModuleClickHandler(module);
+        } else {
+            // Basic click handler if the main function isn't available
+            setupDefaultModuleClickHandler(module);
         }
-        
-        .module-group-header {
-            background-color: #4eca8b;
-            color: white;
-            padding: 8px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-    `;
-    document.head.appendChild(styleElement);
+    });
+    
+    // Re-initialize drag and drop if available
+    if (typeof setupDragAndDrop === 'function') {
+        setupDragAndDrop();
+    }
+    
+    // Re-initialize dropdowns if available
+    if (typeof setupDropdownMenus === 'function') {
+        setupDropdownMenus();
+    } else {
+        // Basic dropdown setup
+        setupBasicDropdowns();
+    }
+    
+    console.log("[ModuleGrouping] Event listeners reattached to modules");
 }
 
-// Initialize styles
-document.addEventListener('DOMContentLoaded', function() {
-    addModuleGroupingStyles();
-});
+// Setup default module click handler (if main function not available)
+function setupDefaultModuleClickHandler(moduleElement) {
+    const moduleText = moduleElement.querySelector('span');
+    if (moduleText) {
+        moduleText.addEventListener('click', function() {
+            const moduleId = moduleElement.getAttribute('data-module-id');
+            const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
+            
+            if (requiresClient) {
+                // Verify client is selected
+                const client = window.ConstructionApp && 
+                              window.ConstructionApp.ClientManager && 
+                              window.ConstructionApp.ClientManager.getCurrentClient();
+                
+                if (!client) {
+                    alert("Please select or create a client first to access this module.");
+                    return;
+                }
+                
+                // Set navigation state before navigating
+                sessionStorage.setItem('navigationState', 'fromDashboard');
+                
+                // Save current client to sessionStorage
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                
+                // Navigate to the module
+                window.location.href = moduleId + '.html';
+            } else {
+                // For non-client modules, just navigate directly
+                window.location.href = moduleId + '.html';
+            }
+        });
+    }
+}
 
-// Add info popup to explain the new functionality
-function addInfoPopup() {
-    const popup = document.createElement('div');
-    popup.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: #4eca8b;
-        color: white;
-        padding: 15px;
-        border-radius: 5px;
-        max-width: 300px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 1000;
-        font-size: 14px;
-    `;
+// Setup basic dropdowns (if main function not available)
+function setupBasicDropdowns() {
+    document.querySelectorAll('.module-icon').forEach(icon => {
+        icon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = this.querySelector('.dropdown-menu');
+            if (dropdown) {
+                // Close other open dropdowns
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu !== dropdown && menu.style.display === 'block') {
+                        menu.style.display = 'none';
+                    }
+                });
+                
+                // Toggle this dropdown
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            }
+        });
+    });
     
-    popup.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 10px;">Module Grouping Tip</div>
-        <p>To create groups, hold Shift while dragging a module onto another module.</p>
-        <p>Green modules are parent modules with children underneath.</p>
-        <p>Click a parent module to collapse/expand its children.</p>
-        <div style="text-align: right; margin-top: 10px;">
-            <button id="close-info-popup" style="background: white; color: #4eca8b; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Got it</button>
-        </div>
-    `;
-    
-    document.body.appendChild(popup);
-    
-    // Close button handler
-    document.getElementById('close-info-popup').addEventListener('click', function() {
-        popup.remove();
-        sessionStorage.setItem('moduleGroupingInfoSeen', 'true');
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
     });
 }
-
-// Show info popup once
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        if (sessionStorage.getItem('moduleGroupingInfoSeen') !== 'true') {
-            addInfoPopup();
-        }
-    }, 2000);
-});
