@@ -1,15 +1,13 @@
 /**
- * Module Grouping with Dynamic Drag and Drop
+ * Module Grouping with Enhanced Drag and Drop
  * - Makes category module text green
  * - Indents child modules
- * - Allows drag and drop to create sub-modules
- * - Auto-detects existing module relationships
+ * - Allows any module to become a sub-module through drag and drop
  */
 
 // Store parent-child relationships
 let moduleRelationships = {
     // parentId: [childId1, childId2, ...] 
-    // e.g. 'foundations': ['foundations-concrete', 'foundations-steel']
 };
 
 // Main parent categories
@@ -24,18 +22,18 @@ const mainCategories = [
 
 // Run when page loads
 window.addEventListener('load', function() {
-    console.log("Module grouping script running - v2.1");
+    console.log("Module grouping script running - v3.0");
     
-    // Wait a moment for the DOM to be ready
+    // Wait a moment for modules to load
     setTimeout(function() {
-        // Load or detect relationships
+        // Initialize module relationships
         initializeRelationships();
         
-        // Apply initial styling
+        // Apply styling
         styleModules();
         
-        // Set up drag and drop
-        setupDragAndDrop();
+        // Enhance the drag and drop functionality
+        enhanceDragAndDrop();
     }, 500);
 });
 
@@ -57,7 +55,7 @@ function initializeRelationships() {
     console.log("No saved relationships found, auto-detecting...");
     moduleRelationships = {};
     
-    // Initialize parent categories
+    // Initialize each main category as a parent
     mainCategories.forEach(category => {
         moduleRelationships[category] = [];
     });
@@ -70,13 +68,13 @@ function initializeRelationships() {
         const moduleId = module.getAttribute('data-module-id');
         if (!moduleId) return;
         
+        // Skip main categories (they can't be children)
+        if (mainCategories.includes(moduleId)) return;
+        
         // Check if this is a child module of a main category
         for (const category of mainCategories) {
-            if (moduleId !== category && moduleId.startsWith(category + '-')) {
+            if (moduleId.startsWith(category + '-')) {
                 // This module ID indicates it's a child (e.g., "foundations-concrete")
-                if (!moduleRelationships[category]) {
-                    moduleRelationships[category] = [];
-                }
                 moduleRelationships[category].push(moduleId);
                 console.log(`Auto-detected ${moduleId} as child of ${category}`);
                 break;
@@ -159,121 +157,188 @@ function styleModules() {
     console.log("Module styling complete");
 }
 
-// Set up enhanced drag and drop
-function setupDragAndDrop() {
-    // Get all module items
-    const modules = document.querySelectorAll('.module-item');
+// Global reference for the module being dragged
+let draggedModule = null;
+
+// Enhance drag and drop functionality
+function enhanceDragAndDrop() {
+    // Add custom event listeners for drag operations
+    const moduleItems = document.querySelectorAll('.module-item');
     
-    // Add new drag events to all modules
-    modules.forEach(function(module) {
-        // Add dragenter handler
-        module.addEventListener('dragenter', function(e) {
-            e.preventDefault();
-            if (!module.classList.contains('dragging')) {
-                module.style.borderTop = '2px solid #4eca8b';
-            }
+    moduleItems.forEach(function(module) {
+        // ===== DRAG START =====
+        module.addEventListener('dragstart', function(e) {
+            console.log('Drag started', this.getAttribute('data-module-id'));
+            
+            // Store reference to dragged module
+            draggedModule = this;
+            
+            // Add dragging class for styling
+            setTimeout(() => {
+                this.classList.add('dragging');
+            }, 0);
+            
+            // Store module ID for Firefox
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
+            e.dataTransfer.effectAllowed = 'move';
         });
         
-        // Add dragleave handler
-        module.addEventListener('dragleave', function(e) {
-            module.style.borderTop = '';
+        // ===== DRAG END =====
+        module.addEventListener('dragend', function() {
+            console.log('Drag ended');
+            
+            // Remove dragging class
+            this.classList.remove('dragging');
+            
+            // Clear highlight from all modules
+            document.querySelectorAll('.module-item').forEach(item => {
+                item.style.borderTop = '';
+                item.style.backgroundColor = '';
+            });
+            
+            // Reset reference
+            draggedModule = null;
         });
         
-        // Add dragover handler
+        // ===== DRAG OVER =====
         module.addEventListener('dragover', function(e) {
-            e.preventDefault(); // Required to allow drop
+            // Required to allow drop
+            e.preventDefault();
+            
+            // Skip if this is the module being dragged
+            if (this === draggedModule) return;
+            
+            // Highlight drop zone
+            this.style.borderTop = '2px solid #4eca8b';
         });
         
-        // Add drop handler
+        // ===== DRAG LEAVE =====
+        module.addEventListener('dragleave', function() {
+            // Remove highlight
+            this.style.borderTop = '';
+        });
+        
+        // ===== DROP =====
         module.addEventListener('drop', function(e) {
+            // Prevent default browser handling
             e.preventDefault();
-            module.style.borderTop = '';
             
-            // Get the dragged module ID
-            const draggedModuleId = document.querySelector('.dragging')?.getAttribute('data-module-id');
-            if (!draggedModuleId) return;
+            // Remove highlight
+            this.style.borderTop = '';
             
-            // Get the target module ID
-            const targetModuleId = module.getAttribute('data-module-id');
-            if (!targetModuleId || targetModuleId === draggedModuleId) return;
+            // Get dragged module ID
+            const draggedId = e.dataTransfer.getData('text/plain') || 
+                             draggedModule?.getAttribute('data-module-id');
             
-            // Process the drop based on target and type
-            processModuleDrop(draggedModuleId, targetModuleId);
+            if (!draggedId) {
+                console.log('Drop ignored - no dragged ID found');
+                return;
+            }
+            
+            // Get target module ID
+            const targetId = this.getAttribute('data-module-id');
+            
+            // Skip if dropping onto self
+            if (draggedId === targetId) {
+                console.log('Drop ignored - same module');
+                return;
+            }
+            
+            console.log(`DROP: ${draggedId} onto ${targetId}`);
+            
+            // Handle the drop
+            handleModuleDrop(draggedId, targetId);
         });
     });
     
-    // Add observer for new modules
+    // Set up observer for dynamic modules
     setupObserver();
 }
 
-// Process module drop
-function processModuleDrop(draggedId, targetId) {
-    console.log(`Processing drop: ${draggedId} onto ${targetId}`);
-    
-    // Check if target is a parent module
-    const isTargetParent = moduleRelationships.hasOwnProperty(targetId);
-    
-    if (isTargetParent) {
-        // Target is a parent - add dragged module as a child
-        addChildToParent(targetId, draggedId);
-    } else {
-        // Target is not a parent - check if source is a child
-        const sourceParent = getParentModule(draggedId);
+// Handle module drop - main logic for parent-child relationships
+function handleModuleDrop(draggedId, targetId) {
+    // Case 1: Dropping onto a parent module
+    if (moduleRelationships.hasOwnProperty(targetId)) {
+        console.log(`Adding ${draggedId} as child of ${targetId}`);
         
-        if (sourceParent) {
-            // Dragged module is a child - remove it from parent
-            removeChildFromParent(draggedId);
-        }
+        // Add the dragged module as a child of the target
+        addModuleAsChild(targetId, draggedId);
+    }
+    // Case 2: Dropping onto a child module
+    else if (getParentModule(targetId)) {
+        const targetParent = getParentModule(targetId);
+        console.log(`Adding ${draggedId} as child of ${targetParent} (sibling of ${targetId})`);
+        
+        // Add the dragged module as a child of the same parent
+        addModuleAsChild(targetParent, draggedId);
+    }
+    // Case 3: Dropping onto a regular module
+    else {
+        console.log(`Removing ${draggedId} from parent (if any)`);
+        
+        // If the dragged module is a child, remove it from its parent
+        removeModuleFromParent(draggedId);
     }
     
     // Apply updated styling
     styleModules();
 }
 
-// Add a child to a parent
-function addChildToParent(parentId, childId) {
-    console.log(`Adding ${childId} as child of ${parentId}`);
-    
+// Add a module as a child of a parent
+function addModuleAsChild(parentId, childId) {
     // First remove from any existing parent
-    removeChildFromParent(childId);
+    removeModuleFromParent(childId);
     
-    // Add to new parent
+    // Make sure parent exists in relationships
     if (!moduleRelationships[parentId]) {
         moduleRelationships[parentId] = [];
     }
     
+    // Add child if not already present
     if (!moduleRelationships[parentId].includes(childId)) {
         moduleRelationships[parentId].push(childId);
-        console.log(`Added ${childId} to ${parentId}`);
     }
     
     // Save updated relationships
     saveModuleRelationships();
 }
 
-// Remove a child from its parent
-function removeChildFromParent(childId) {
+// Remove a module from its parent
+function removeModuleFromParent(childId) {
+    // Find current parent, if any
     for (const parentId in moduleRelationships) {
         const index = moduleRelationships[parentId].indexOf(childId);
         if (index !== -1) {
+            // Remove from parent
             moduleRelationships[parentId].splice(index, 1);
-            console.log(`Removed ${childId} from parent ${parentId}`);
             
             // Save updated relationships
             saveModuleRelationships();
-            return;
+            return true;
         }
     }
+    return false;
 }
 
-// Set up observer to detect new modules
+// Make a module a parent
+function makeModuleParent(moduleId) {
+    // Only if not already a parent
+    if (!moduleRelationships[moduleId]) {
+        moduleRelationships[moduleId] = [];
+        saveModuleRelationships();
+        return true;
+    }
+    return false;
+}
+
+// Set up observer for dynamic module changes
 function setupObserver() {
     const observer = new MutationObserver(function(mutations) {
         let modulesChanged = false;
         
         mutations.forEach(function(mutation) {
             if (mutation.type === 'childList') {
-                // Check if we added or removed modules
+                // Check if modules were added or removed
                 const addedModules = Array.from(mutation.addedNodes).filter(
                     node => node.nodeType === 1 && node.classList.contains('module-item')
                 );
@@ -289,16 +354,27 @@ function setupObserver() {
         });
         
         if (modulesChanged) {
-            console.log("Modules changed, reapplying styling and drag/drop");
+            console.log("Modules changed - updating relationships and styling");
             
-            // Handle removed modules
+            // Clean up relationships for removed modules
             cleanupRemovedModules();
+            
+            // Set up new modules
+            const newModules = document.querySelectorAll('.module-item:not([data-grouping-initialized])');
+            if (newModules.length > 0) {
+                console.log(`Setting up ${newModules.length} new modules`);
+                
+                newModules.forEach(module => {
+                    // Mark as initialized
+                    module.setAttribute('data-grouping-initialized', 'true');
+                    
+                    // Add drag and drop handlers
+                    setupModuleDragAndDrop(module);
+                });
+            }
             
             // Reapply styling
             styleModules();
-            
-            // Refresh drag and drop
-            setupDragAndDrop();
         }
     });
     
@@ -306,12 +382,68 @@ function setupObserver() {
     const modulesContainer = document.getElementById('modules-container');
     if (modulesContainer) {
         observer.observe(modulesContainer, { childList: true, subtree: true });
+        console.log("Module observer set up");
     }
 }
 
-// Clean up relationships for removed modules
+// Set up drag and drop for a single module
+function setupModuleDragAndDrop(module) {
+    // DRAG START
+    module.addEventListener('dragstart', function(e) {
+        console.log('Drag started (new)', this.getAttribute('data-module-id'));
+        draggedModule = this;
+        setTimeout(() => this.classList.add('dragging'), 0);
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
+        e.dataTransfer.effectAllowed = 'move';
+    });
+    
+    // DRAG END
+    module.addEventListener('dragend', function() {
+        console.log('Drag ended (new)');
+        this.classList.remove('dragging');
+        document.querySelectorAll('.module-item').forEach(item => {
+            item.style.borderTop = '';
+            item.style.backgroundColor = '';
+        });
+        draggedModule = null;
+    });
+    
+    // DRAG OVER
+    module.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (this !== draggedModule) {
+            this.style.borderTop = '2px solid #4eca8b';
+        }
+    });
+    
+    // DRAG LEAVE
+    module.addEventListener('dragleave', function() {
+        this.style.borderTop = '';
+    });
+    
+    // DROP
+    module.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderTop = '';
+        
+        const draggedId = e.dataTransfer.getData('text/plain') || 
+                         draggedModule?.getAttribute('data-module-id');
+        
+        if (!draggedId) return;
+        
+        const targetId = this.getAttribute('data-module-id');
+        
+        if (draggedId === targetId) return;
+        
+        console.log(`DROP (new): ${draggedId} onto ${targetId}`);
+        
+        handleModuleDrop(draggedId, targetId);
+    });
+}
+
+// Clean up relationships for modules that no longer exist
 function cleanupRemovedModules() {
-    // Get all existing module IDs
+    // Get all current module IDs
     const existingModuleIds = new Set();
     document.querySelectorAll('.module-item').forEach(function(module) {
         const id = module.getAttribute('data-module-id');
@@ -321,17 +453,32 @@ function cleanupRemovedModules() {
     // Clean up parents that no longer exist
     for (const parentId in moduleRelationships) {
         if (!existingModuleIds.has(parentId)) {
+            console.log(`Removing non-existent parent: ${parentId}`);
             delete moduleRelationships[parentId];
         }
     }
     
     // Clean up children that no longer exist
     for (const parentId in moduleRelationships) {
+        const originalLength = moduleRelationships[parentId].length;
         moduleRelationships[parentId] = moduleRelationships[parentId].filter(
             childId => existingModuleIds.has(childId)
         );
+        
+        if (originalLength !== moduleRelationships[parentId].length) {
+            console.log(`Removed ${originalLength - moduleRelationships[parentId].length} non-existent children from ${parentId}`);
+        }
     }
     
-    // Save updated relationships
+    // Save cleaned up relationships
     saveModuleRelationships();
 }
+
+// Mark all existing modules as initialized
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        document.querySelectorAll('.module-item').forEach(module => {
+            module.setAttribute('data-grouping-initialized', 'true');
+        });
+    }, 600);
+});
