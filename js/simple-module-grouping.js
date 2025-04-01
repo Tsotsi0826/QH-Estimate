@@ -3,6 +3,7 @@
  * - Makes category module text green
  * - Indents child modules
  * - Allows drag and drop to create sub-modules
+ * - Auto-detects existing module relationships
  */
 
 // Store parent-child relationships
@@ -11,15 +12,25 @@ let moduleRelationships = {
     // e.g. 'foundations': ['foundations-concrete', 'foundations-steel']
 };
 
+// Main parent categories
+const mainCategories = [
+    'foundations',
+    'brickwork',
+    'surfacebeds',
+    'plaster', 
+    'floor',
+    'carpentry'
+];
+
 // Run when page loads
 window.addEventListener('load', function() {
-    console.log("Module grouping script running - v2.0");
-    
-    // Load saved relationships
-    loadModuleRelationships();
+    console.log("Module grouping script running - v2.1");
     
     // Wait a moment for the DOM to be ready
     setTimeout(function() {
+        // Load or detect relationships
+        initializeRelationships();
+        
         // Apply initial styling
         styleModules();
         
@@ -28,28 +39,53 @@ window.addEventListener('load', function() {
     }, 500);
 });
 
-// Load relationships from storage
-function loadModuleRelationships() {
-    try {
-        const savedRelationships = sessionStorage.getItem('moduleRelationships');
-        if (savedRelationships) {
+// Initialize module relationships
+function initializeRelationships() {
+    // First try to load saved relationships
+    const savedRelationships = sessionStorage.getItem('moduleRelationships');
+    if (savedRelationships) {
+        try {
             moduleRelationships = JSON.parse(savedRelationships);
-            console.log("Loaded module relationships:", moduleRelationships);
-        } else {
-            // Initialize with default parent categories
-            moduleRelationships = {
-                'foundations': [],
-                'brickwork': [],
-                'surfacebeds': [],
-                'plaster': [], 
-                'floor': [],
-                'carpentry': []
-            };
+            console.log("Loaded saved module relationships:", moduleRelationships);
+            return;
+        } catch (error) {
+            console.error("Error loading saved relationships:", error);
         }
-    } catch (error) {
-        console.error("Error loading module relationships:", error);
-        moduleRelationships = {};
     }
+    
+    // If no saved relationships, detect them from module IDs
+    console.log("No saved relationships found, auto-detecting...");
+    moduleRelationships = {};
+    
+    // Initialize parent categories
+    mainCategories.forEach(category => {
+        moduleRelationships[category] = [];
+    });
+    
+    // Get all module elements
+    const modules = document.querySelectorAll('.module-item');
+    
+    // Detect child modules based on ID patterns
+    modules.forEach(function(module) {
+        const moduleId = module.getAttribute('data-module-id');
+        if (!moduleId) return;
+        
+        // Check if this is a child module of a main category
+        for (const category of mainCategories) {
+            if (moduleId !== category && moduleId.startsWith(category + '-')) {
+                // This module ID indicates it's a child (e.g., "foundations-concrete")
+                if (!moduleRelationships[category]) {
+                    moduleRelationships[category] = [];
+                }
+                moduleRelationships[category].push(moduleId);
+                console.log(`Auto-detected ${moduleId} as child of ${category}`);
+                break;
+            }
+        }
+    });
+    
+    // Save the initial relationships
+    saveModuleRelationships();
 }
 
 // Save relationships to storage
