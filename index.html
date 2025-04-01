@@ -14,6 +14,7 @@
     <script src="js/data-models.js"></script>
 
     <style>
+        /* General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -28,25 +29,14 @@
             background-color: #f5f5f5;
         }
 
+        /* Sidebar Styles */
         .sidebar {
             width: 25%; /* Adjusted width slightly */
             min-width: 250px; /* Minimum width */
             background-color: #1c2639;
             color: #fff;
             height: 100%;
-            overflow-y: auto;
             border-right: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .main-content {
-            width: 75%;
-            height: 100%;
-            overflow: hidden;
-            background-color: white;
-            color: #333;
-            position: relative;
             display: flex;
             flex-direction: column;
         }
@@ -86,7 +76,24 @@
             color: #4eca8b;
         }
 
-        /* Add New Module Button */
+        .search-container {
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #2d364a;
+            color: #fff;
+        }
+
+        .search-input::placeholder {
+            color: #aaa;
+        }
+
         .add-module-btn {
             display: flex;
             align-items: center;
@@ -109,128 +116,7 @@
             font-weight: bold;
         }
 
-        /* Client Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            width: 500px;
-            max-width: 90%;
-            color: #333;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .modal-close {
-            cursor: pointer;
-            font-size: 1.5em;
-            color: #888;
-        }
-
-        .modal-close:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .btn-cancel {
-            background-color: #ddd;
-            color: #333;
-            margin-right: 10px;
-        }
-
-        .client-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .client-list-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            cursor: pointer;
-        }
-
-        .client-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .client-list-item:hover {
-            background-color: #f5f5f5;
-        }
-
-        .client-list-item.active {
-            background-color: #e9e9e9;
-        }
-
-        .search-container {
-            padding: 20px;
-            flex-shrink: 0;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            background-color: #2d364a;
-            color: #fff;
-        }
-
-        .search-input::placeholder {
-            color: #aaa;
-        }
-
-        /* --- Module List Styles --- */
+        /* Module List Styles */
         .modules-list-container {
             flex-grow: 1; /* Allow container to grow */
             overflow-y: auto; /* Enable scrolling for the list */
@@ -270,7 +156,7 @@
             background-color: #2d364a;
         }
 
-        /* Indentation based on level */
+        /* Indentation based on level attribute */
         .module-item[data-level="1"] { padding-left: 35px; }
         .module-item[data-level="2"] { padding-left: 50px; }
         .module-item[data-level="3"] { padding-left: 65px; }
@@ -289,7 +175,7 @@
             border: 1px dashed #aaa;
         }
 
-        /* Drop target indicator */
+        /* Drop target indicator styles */
         .module-item.drag-over-top {
              border-top: 2px solid #4eca8b;
         }
@@ -302,7 +188,7 @@
              outline-offset: -2px;
         }
 
-
+        /* Module Item Icons/Handles */
         .module-icon {
             margin-right: 8px; /* Reduced margin */
             font-size: 0.8em;
@@ -336,7 +222,7 @@
             text-overflow: ellipsis;
         }
 
-        /* Dropdown styles */
+        /* Dropdown Menu Styles */
         .dropdown-menu {
             display: none;
             position: absolute;
@@ -365,6 +251,31 @@
             background-color: #f1f1f1;
         }
 
+         /* Style for non-client modules (gear icon) */
+        .module-item[data-requires-client="false"] {
+            position: relative;
+        }
+
+        .module-item[data-requires-client="false"]::after {
+            content: "⚙️";
+            position: absolute;
+            right: 10px;
+            font-size: 14px;
+            opacity: 0.7; /* Make it slightly less prominent */
+        }
+
+        /* Main Content Area Styles */
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            color: #333;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
         .dashboard-header {
             padding: 20px;
             display: flex;
@@ -387,9 +298,25 @@
             margin-right: 10px;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+
+         .btn-small { /* Logout button style */
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #6c757d;
+        }
+
+        .btn-small:hover {
+            background-color: #5a6268;
+        }
+
         .total-cost {
             font-size: 1.2em;
             color: #4eca8b;
+            font-weight: bold; /* Make total cost bold */
         }
 
         .dashboard-description {
@@ -397,6 +324,7 @@
             color: #aaa;
             background-color: #1c2639;
             flex-shrink: 0;
+            min-height: 38px; /* Ensure space even if empty */
         }
 
         .dashboard-content {
@@ -409,7 +337,7 @@
             overflow-x: hidden;
         }
 
-        /* Custom scrollbar styling */
+        /* Custom scrollbar styling for dashboard content */
         .dashboard-content::-webkit-scrollbar {
             width: 8px;
             background-color: #f5f5f5;
@@ -424,20 +352,55 @@
             background-color: #888;
         }
 
-        .dashboard-content-header {
-            margin-bottom: 20px;
+        /* Dashboard Tile Styles */
+         .module-tile {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
         }
 
-        .dashboard-content-title {
-            font-size: 1.5em;
+        .module-tile h5 { /* Module name in tile */
+             margin-bottom: 10px;
+             font-size: 1.1em;
+        }
+
+        .module-tile-cost {
+            font-size: 1.4em; /* Slightly larger cost */
+            margin: 10px 0;
+            color: #4eca8b;
             font-weight: bold;
-            margin-bottom: 10px;
         }
 
-        .dashboard-content-description {
-            color: #555;
+        .clear-module-btn { /* Clear button on tile */
+            position: absolute;
+            top: 8px; /* Adjusted position */
+            right: 8px;
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 18px; /* Slightly larger */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            padding: 0;
+            opacity: 0.5; /* Less prominent initially */
+            transition: opacity 0.2s;
+        }
+         .module-tile:hover .clear-module-btn {
+             opacity: 1; /* Show on hover */
+         }
+
+        .clear-module-btn:hover {
+            background-color: #f8d7da;
         }
 
+
+        /* General Table Styles (used within modules) */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -471,6 +434,7 @@
             background-color: #e9e9e9;
         }
 
+        /* General Button Styles */
         .btn {
             background-color: #4eca8b;
             color: white;
@@ -478,74 +442,212 @@
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
 
         .btn:hover {
             background-color: #3db97a;
         }
 
-        /* Style for non-client modules */
-        .module-item[data-requires-client="false"] {
-            position: relative;
+        .btn-cancel {
+            background-color: #aaa;
+            color: #fff;
+        }
+        .btn-cancel:hover {
+            background-color: #888;
         }
 
-        .module-item[data-requires-client="false"]::after {
-            content: "⚙️";
-            position: absolute;
-            right: 10px;
-            font-size: 14px;
-            opacity: 0.7; /* Make it slightly less prominent */
-        }
-
-        /* Styles for logout button */
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 0.9em;
-            background-color: #6c757d;
-        }
-
-        .btn-small:hover {
-            background-color: #5a6268;
-        }
-
-        .header-actions {
-            display: flex;
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+            display: none;
+            justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
 
-        /* Debug panel */
+        .modal {
+            background-color: white;
+            padding: 25px; /* More padding */
+            border-radius: 8px; /* More rounded */
+            width: 500px;
+            max-width: 95%;
+            color: #333;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px; /* Add padding below header */
+            border-bottom: 1px solid #eee; /* Separator line */
+        }
+
+        .modal-title {
+            font-size: 1.3em; /* Larger title */
+            font-weight: bold;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.8em; /* Larger close button */
+            color: #aaa;
+            line-height: 1;
+            padding: 0 5px;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555; /* Slightly softer label color */
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px; /* More padding */
+            border: 1px solid #ccc; /* Slightly darker border */
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        .form-control:focus {
+             border-color: #4eca8b;
+             outline: none;
+             box-shadow: 0 0 0 2px rgba(78, 202, 139, 0.2);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 15px; /* Add padding above footer */
+            border-top: 1px solid #eee; /* Separator line */
+        }
+
+        /* Client List specific styles */
+        .client-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px; /* Space above list */
+        }
+
+        .client-list-item {
+            padding: 12px 15px; /* More padding */
+            border-bottom: 1px solid #eee; /* Lighter separator */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .client-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-list-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .client-list-item.active { /* Style for currently selected client if needed */
+            background-color: #e0f2e9;
+            font-weight: bold;
+        }
+
+        /* Add Module Modal Specific Styles */
+        #add-module-modal .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+         #add-module-modal select, #add-module-modal input[type="text"] {
+             margin-top: 5px;
+         }
+         #add-module-modal input[type="checkbox"] {
+              margin-right: 8px;
+              vertical-align: middle;
+         }
+         #add-module-modal label small { /* Style for the hint text */
+              display: block;
+              color: #666;
+              margin-top: 3px;
+              font-weight: normal;
+         }
+
+
+        /* Debug Panel */
         .debug-panel {
             position: fixed;
             bottom: 10px;
             right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.8); /* Darker */
+            color: #0f0; /* Green text */
+            font-family: monospace; /* Monospace font */
+            padding: 15px;
             border-radius: 5px;
             font-size: 12px;
-            max-width: 300px;
+            max-width: 350px; /* Wider */
+            max-height: 50vh; /* Limit height */
+            overflow: auto; /* Scroll if needed */
             z-index: 9999;
-            display: none;
+            display: none; /* Hidden by default */
+            border: 1px solid #444;
         }
+         #debug-toggle-btn { /* Style the toggle button */
+             position: fixed;
+             bottom: 10px;
+             right: 10px;
+             z-index: 10000;
+             padding: 5px 10px;
+             background: #333;
+             color: white;
+             border: none;
+             border-radius: 3px;
+             cursor: pointer;
+             opacity: 0.8;
+         }
+         #debug-toggle-btn:hover {
+              opacity: 1;
+         }
 
-        /* No client selected notification */
+
+        /* No Client Notification */
         .no-client-notification {
             padding: 30px;
             background-color: #f8f9fa;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 8px; /* More rounded */
+            margin: 20px; /* Add margin */
             text-align: center;
             border: 2px dashed #ddd;
         }
 
         .no-client-notification h2 {
-            color: #dc3545;
-            margin-bottom: 20px;
+            color: #555; /* Softer color */
+            margin-bottom: 15px;
+            font-size: 1.4em;
         }
 
         .no-client-notification p {
-            font-size: 18px;
-            margin-bottom: 20px;
+            font-size: 1.1em; /* Slightly larger text */
+            margin-bottom: 25px;
+            color: #666;
         }
 
         .no-client-buttons {
@@ -556,56 +658,8 @@
 
         .no-client-button {
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 1em;
         }
-
-        /* Module card clear button */
-        .clear-module-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #dc3545;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            text-align: center;
-            padding: 0;
-        }
-
-        .clear-module-btn:hover {
-            background-color: #f8d7da;
-        }
-
-        /* Module tile styles */
-        .module-tile {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .module-tile-cost {
-            font-size: 20px;
-            margin: 10px 0;
-            color: #4eca8b;
-            font-weight: bold;
-        }
-
-        /* Add Module Modal Styles */
-        #add-module-modal .modal-body {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-         #add-module-modal select, #add-module-modal input {
-             margin-top: 5px;
-         }
 
     </style>
 </head>
@@ -615,10 +669,10 @@
 
         <div class="section-title">Clients</div>
         <div class="client-actions">
-            <div class="client-action" id="new-client-btn">
+            <div class="client-action" id="new-client-btn" title="Create a new client project">
                 <i>+</i> New Client
             </div>
-            <div class="client-action" id="open-client-btn">
+            <div class="client-action" id="open-client-btn" title="Open an existing client project">
                 <i>O</i> Open Client
             </div>
         </div>
@@ -627,13 +681,13 @@
             <input type="text" id="module-search-input" class="search-input" placeholder="Search modules...">
         </div>
 
-        <div class="add-module-btn" id="add-module-btn">
+        <div class="add-module-btn" id="add-module-btn" title="Add a new module or category header">
             <i>+</i> Add New Module
         </div>
 
         <div class="modules-list-container" id="modules-container">
             <div class="module-item" draggable="true" data-module-id="notes" data-requires-client="true" data-module-type="regular" data-parent-id="null" data-level="0">
-                 <div class="module-drag-handle">≡</div>
+                 <div class="module-drag-handle" title="Drag to reorder">≡</div>
                  <div class="module-icon">
                      ...
                      <div class="dropdown-menu">
@@ -643,7 +697,7 @@
                  </div>
                  <span class="module-name">Notes</span>
              </div>
-            </div>
+        </div>
     </div>
 
     <div class="main-content">
@@ -651,16 +705,16 @@
             <div class="dashboard-title">
                 <i>D</i> Dashboard
             </div>
-            <div id="client-name-display" style="margin-left: 20px;"></div>
+            <div id="client-name-display" style="margin-left: 20px; font-weight: bold;"></div>
             <div class="header-actions">
-                <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
+                <button id="logout-btn" class="btn btn-small" style="display: none;" title="Close the current client project">Logout Client</button>
             </div>
             <div class="total-cost" id="total-project-cost">
                 Total Project Cost: R0.00
             </div>
         </div>
 
-        <div class="dashboard-description">
+        <div class="dashboard-description" id="dashboard-description">
             Overview of project data.
         </div>
 
@@ -670,9 +724,10 @@
                     <h3>Getting Started</h3>
                     <p>To start using the Construction Estimator:</p>
                     <ol style="margin-left: 20px; margin-top: 10px;">
-                        <li>Create a new client or open an existing client</li>
-                        <li>Select a module from the sidebar to begin estimating</li>
-                        <li>Add new modules using the "Add New Module" button</li>
+                        <li>Create a new client or open an existing client using the buttons in the sidebar.</li>
+                        <li>Select a module from the sidebar list to begin estimating.</li>
+                        <li>Add new custom modules or category headers using the "Add New Module" button.</li>
+                        <li>Drag and drop modules in the sidebar to reorder them or place them under headers.</li>
                     </ol>
                 </div>
             </div>
@@ -680,6 +735,8 @@
     </div>
 
     <div class="debug-panel" id="debug-panel"></div>
+    <div class="modal-overlay" id="client-modal-overlay">
+        </div>
 
     <div class="modal-overlay" id="add-module-modal-overlay">
         <div class="modal" id="add-module-modal">
@@ -690,18 +747,18 @@
             <div class="modal-body">
                  <div class="form-group">
                      <label for="new-module-name">Module Name:</label>
-                     <input type="text" id="new-module-name" class="form-control" required>
+                     <input type="text" id="new-module-name" class="form-control" required placeholder="e.g., Roofing, Finishes, Site Prep">
                  </div>
                  <div class="form-group">
                      <label for="new-module-type">Module Type:</label>
                      <select id="new-module-type" class="form-control">
-                         <option value="regular" selected>Regular Module</option>
-                         <option value="header">Header (Category)</option>
+                         <option value="regular" selected>Regular Module (e.g., Concrete, Brickwork)</option>
+                         <option value="header">Header / Category (e.g., Foundations, Structure)</option>
                      </select>
                  </div>
-                 <div class="form-group" id="parent-header-group" style="display: none;"> <label for="parent-header-select">Place Under Header:</label>
+                 <div class="form-group" id="parent-header-group"> <label for="parent-header-select">Place Under Header:</label>
                      <select id="parent-header-select" class="form-control">
-                         <option value="null">(Top Level)</option>
+                         <option value="null">(Top Level / No Parent)</option>
                          </select>
                  </div>
                  <div class="form-group">
@@ -709,7 +766,7 @@
                          <input type="checkbox" id="new-module-requires-client" checked>
                          Requires Client Selection
                      </label>
-                     <small style="display: block; color: #666;">(Uncheck for setup/config modules)</small>
+                     <small>Check this if the module involves client-specific estimates (most modules). Uncheck for general setup/config modules.</small>
                  </div>
             </div>
             <div class="modal-footer">
@@ -719,1448 +776,7 @@
         </div>
     </div>
 
+    <script src="js/dashboard.js" defer></script>
 
-    <script>
-        // --- Global Variables ---
-        // Application data structure (will be populated from loaded modules)
-        let appData = {
-            modules: [] // Holds { id, name, requiresClient, type, parentId, renderTemplate, saveData }
-        };
-        let globalDraggedItem = null; // Reference to the item being dragged
-
-        // --- Initialization ---
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("[Dashboard] DOM loaded, initializing app");
-
-            // Enable debug panel during development
-            setupDebugPanel();
-
-            // Load modules with hierarchy and order preservation
-            loadAndRenderModules().then(() => {
-                // Initialize app state (client, etc.)
-                initApp();
-
-                // Setup UI elements after modules are loaded
-                setupDropdownMenus(); // Setup for existing static modules like Notes
-                setupClientManagement();
-                setupAddModuleButton(); // Setup button to open the modal
-                setupModuleSearch();
-
-                // Load clients using the shared client manager
-                window.ConstructionApp.ClientManager.loadClients().then(() => {
-                    console.log("[Dashboard] Clients loaded");
-                });
-
-                // Set up client change handler
-                window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
-
-                // Set up drag and drop for the loaded modules
-                setupDragAndDrop(); // Setup for dynamically loaded modules
-            });
-        });
-
-        // Initialize app state (client handling, etc.) - UPDATED VERSION
-        function initApp() {
-            console.log("[Dashboard] Initializing app state");
-
-            const navigationState = sessionStorage.getItem('navigationState');
-            console.log("[Dashboard] Navigation state:", navigationState);
-            const storedClientStr = sessionStorage.getItem('currentClient');
-            console.log("[Dashboard] Client in sessionStorage:", storedClientStr ? "Present" : "None");
-
-            let clientToSet = null;
-
-            // Restore client based on navigation state or session storage
-            if (navigationState === 'returningToDashboard' && storedClientStr) {
-                try {
-                    clientToSet = JSON.parse(storedClientStr);
-                    console.log("[Dashboard] Restoring client from sessionStorage:", clientToSet.name);
-                } catch (error) {
-                    console.error("[Dashboard] Error parsing stored client:", error);
-                    sessionStorage.removeItem('currentClient');
-                }
-            } else if (navigationState === 'manualLogout' || navigationState === 'invalidAccess') {
-                 console.log("[Dashboard] Manual logout or invalid access detected, clearing client");
-                 clientToSet = null; // Ensure client is cleared
-                 sessionStorage.removeItem('currentClient'); // Clear storage too
-            } else if (!navigationState && storedClientStr) { // Fresh load with stored client
-                try {
-                    clientToSet = JSON.parse(storedClientStr);
-                    console.log("[Dashboard] Fresh load with stored client:", clientToSet.name);
-                } catch (error) {
-                    console.error("[Dashboard] Error parsing stored client on fresh load:", error);
-                    sessionStorage.removeItem('currentClient');
-                }
-            } else { // Fresh load, no stored client
-                 console.log("[Dashboard] Fresh load with no client");
-            }
-
-            // Set the client in the manager (this triggers UI updates via onClientChanged)
-            window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
-
-            // Update total project cost explicitly after client is set
-            updateTotalProjectCost();
-
-            // Clear the navigation state after handling it
-            sessionStorage.removeItem('navigationState');
-
-            // Log final client state and update debug panel
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
-            updateDebugPanel();
-        }
-
-        // --- Module Loading and Rendering ---
-
-        /**
-         * Loads modules from Firebase (or backup) and renders them hierarchically.
-         */
-        async function loadAndRenderModules() {
-            console.log("[Dashboard] Loading and rendering modules");
-            let loadedModules = [];
-            try {
-                // Attempt to load from Firebase first
-                loadedModules = await window.ConstructionApp.Firebase.loadModules();
-                console.log("[Dashboard] Loaded modules from Firebase:", loadedModules.length);
-
-                if (!loadedModules || loadedModules.length === 0) {
-                     console.warn("[Dashboard] No modules found in Firebase, attempting backup restore.");
-                     loadedModules = restoreModuleOrderFromBackup(); // Try backup
-                     if (!loadedModules || loadedModules.length === 0) {
-                         console.warn("[Dashboard] Backup restore failed or empty. Using hardcoded defaults.");
-                         // Fallback to hardcoded default modules if both fail
-                         loadedModules = getDefaultModules();
-                         // Attempt to save these defaults back to Firebase
-                         await window.ConstructionApp.Firebase.saveModules(loadedModules);
-                     }
-                }
-            } catch (error) {
-                console.error("[Dashboard] Error loading modules from Firebase, trying backup:", error);
-                loadedModules = restoreModuleOrderFromBackup(); // Try backup
-                 if (!loadedModules || loadedModules.length === 0) {
-                     console.warn("[Dashboard] Backup restore failed or empty. Using hardcoded defaults.");
-                     loadedModules = getDefaultModules();
-                     // Attempt to save these defaults back to Firebase
-                     await window.ConstructionApp.Firebase.saveModules(loadedModules);
-                 }
-            }
-
-            // Ensure Notes module is always present and first (if possible)
-            const notesModuleIndex = loadedModules.findIndex(m => m.id === 'notes');
-            let notesModuleData;
-            if (notesModuleIndex > -1) {
-                notesModuleData = loadedModules.splice(notesModuleIndex, 1)[0];
-            } else {
-                // Create default Notes module if missing
-                notesModuleData = {
-                    id: 'notes', name: 'Notes', requiresClient: true, type: 'regular', parentId: null, order: -1 // Ensure it comes first
-                };
-            }
-            // Ensure essential fields are present
-            notesModuleData.type = notesModuleData.type || 'regular';
-            notesModuleData.parentId = notesModuleData.parentId !== undefined ? notesModuleData.parentId : null;
-            notesModuleData.order = notesModuleData.order !== undefined ? notesModuleData.order : -1;
-
-            // Add Notes module back at the beginning
-            loadedModules.unshift(notesModuleData);
-
-
-            // --- Populate appData.modules with loaded data and functions ---
-            appData.modules = loadedModules.map(mod => ({
-                ...mod, // Spread loaded data (id, name, requiresClient, type, parentId, order)
-                // Add default render/save functions (can be overridden later if needed)
-                renderTemplate: function(client) {
-                    // Default render for modules without specific logic
-                    const moduleData = client?.moduleData?.[mod.id]?.data || {};
-                    let content = `<h3>${mod.name}</h3>`;
-                    if (mod.id !== 'notes') { // Don't show placeholder for notes
-                         content += `<p>Data for this module:</p><pre>${JSON.stringify(moduleData, null, 2)}</pre>`;
-                         content += `<p><small>Create ${mod.id}.html for custom functionality.</small></p>`;
-                    } else {
-                         // Specific render for Notes
-                         const notesText = moduleData.notes || '';
-                         content = `
-                             <h3>Project Notes</h3>
-                             <textarea id="project-notes" rows="10" style="width: 100%; padding: 10px;" placeholder="Enter project notes here...">${notesText}</textarea>
-                             <button class="btn module-save-btn" data-module="notes" style="margin-top: 10px;">Save Notes</button>
-                         `;
-                    }
-                    return content;
-                },
-                saveData: function() {
-                     // Default save (empty) - Notes overrides this
-                     if (mod.id === 'notes') {
-                         const notes = document.getElementById('project-notes')?.value || '';
-                         return { notes: notes };
-                     }
-                    return {};
-                }
-            }));
-
-            // Render the hierarchical list
-            renderModuleList(appData.modules);
-
-            // Save the potentially updated list (with Notes added/defaulted) back to storage
-            saveModuleStructure(); // Save the structure to Firebase/backup
-        }
-
-        /**
-         * Gets default modules if loading fails.
-         */
-        function getDefaultModules() {
-             // Define default modules if loading fails completely
-             return [
-                 // Notes is handled separately now
-                 { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true, type: 'regular', parentId: null, order: 1 },
-                 { id: 'foundations', name: 'Foundations', requiresClient: false, type: 'header', parentId: null, order: 2 },
-                 { id: 'earthworks', name: 'Earthworks', requiresClient: true, type: 'regular', parentId: 'foundations', order: 0 },
-                 { id: 'concrete', name: 'Concrete', requiresClient: true, type: 'regular', parentId: 'foundations', order: 1 },
-                 { id: 'steel', name: 'Steel', requiresClient: true, type: 'regular', parentId: 'foundations', order: 2 },
-                 { id: 'structure', name: 'Structure', requiresClient: false, type: 'header', parentId: null, order: 3 },
-                 { id: 'brickwork', name: 'Brickwork', requiresClient: true, type: 'regular', parentId: 'structure', order: 0 },
-                 { id: 'demolish', name: 'Demolish', requiresClient: true, type: 'regular', parentId: null, order: 4 }, // Example standalone
-                 // Add other known modules here with type and parentId
-             ];
-        }
-
-
-        /**
-         * Renders the module list hierarchically.
-         * @param {Array} modules - The complete list of module objects.
-         */
-        function renderModuleList(modules) {
-            const container = document.getElementById('modules-container');
-            container.innerHTML = ''; // Clear existing list
-
-            // Sort modules primarily by order, then alphabetically for stability if order is missing
-            const sortedModules = [...modules].sort((a, b) => {
-                 const orderA = a.order ?? Infinity;
-                 const orderB = b.order ?? Infinity;
-                 if (orderA !== orderB) {
-                     return orderA - orderB;
-                 }
-                 return a.name.localeCompare(b.name);
-             });
-
-
-            // Function to recursively render modules
-            function renderLevel(parentId, level) {
-                sortedModules
-                    .filter(m => m.parentId === parentId)
-                    .forEach(module => {
-                        const moduleElement = createModuleElement(module, level);
-                        container.appendChild(moduleElement);
-                        // Recursively render children
-                        renderLevel(module.id, level + 1);
-                    });
-            }
-
-            // Start rendering top-level modules (parentId is null)
-            renderLevel(null, 0);
-
-            // Re-attach event listeners (dropdowns, clicks) to the new elements
-            setupModuleElementEventListeners();
-            // Re-setup drag and drop for the newly rendered elements
-            setupDragAndDrop();
-        }
-
-        /**
-         * Creates a DOM element for a single module.
-         * @param {object} moduleData - The module data object.
-         * @param {number} level - The hierarchy level (for indentation).
-         * @returns {HTMLElement} The created module element.
-         */
-        function createModuleElement(moduleData, level = 0) {
-            const moduleElement = document.createElement('div');
-            moduleElement.className = 'module-item';
-            moduleElement.draggable = true;
-            moduleElement.setAttribute('data-module-id', moduleData.id);
-            moduleElement.setAttribute('data-requires-client', moduleData.requiresClient ? 'true' : 'false');
-            moduleElement.setAttribute('data-module-type', moduleData.type || 'regular'); // Default to regular
-            moduleElement.setAttribute('data-parent-id', moduleData.parentId || 'null');
-            moduleElement.setAttribute('data-level', level); // Store level for styling/logic
-
-            // Add indentation dynamically (removed from CSS for flexibility)
-            moduleElement.style.paddingLeft = `${20 + level * 15}px`; // Base padding + indent
-
-            moduleElement.innerHTML = `
-                <div class="module-drag-handle">≡</div>
-                <div class="module-icon">
-                    ...
-                    <div class="dropdown-menu">
-                        <div class="dropdown-item edit-module">Edit</div>
-                        <div class="dropdown-item delete-module">Delete</div>
-                    </div>
-                </div>
-                <span class="module-name">${moduleData.name}</span>
-            `;
-
-            return moduleElement;
-        }
-
-        /**
-         * Attaches event listeners (click, dropdown) to all module items currently in the DOM.
-         */
-        function setupModuleElementEventListeners() {
-             document.querySelectorAll('.module-item').forEach(moduleElement => {
-                 // Prevent duplicate listeners if called multiple times
-                 if (moduleElement.dataset.listenersAttached === 'true') return;
-
-                 setupModuleClickHandler(moduleElement);
-                 setupDropdownForModule(moduleElement);
-                 moduleElement.dataset.listenersAttached = 'true'; // Mark as attached
-             });
-        }
-
-
-        // --- Module Creation ---
-
-        // Setup the "Add New Module" button to open the modal
-        function setupAddModuleButton() {
-            const addModuleBtn = document.getElementById('add-module-btn');
-            const modalOverlay = document.getElementById('add-module-modal-overlay');
-            const moduleTypeSelect = document.getElementById('new-module-type');
-            const parentHeaderGroup = document.getElementById('parent-header-group');
-            const parentHeaderSelect = document.getElementById('parent-header-select');
-            const saveNewModuleBtn = document.getElementById('save-new-module-btn');
-            const modalCloseBtns = document.querySelectorAll('.modal-close, .btn-cancel');
-
-            if (addModuleBtn) {
-                addModuleBtn.addEventListener('click', () => {
-                    // Populate parent header dropdown
-                    parentHeaderSelect.innerHTML = '<option value="null">(Top Level)</option>'; // Reset
-                    appData.modules
-                        .filter(m => m.type === 'header')
-                        .sort((a,b) => a.name.localeCompare(b.name)) // Sort headers alphabetically
-                        .forEach(header => {
-                            const option = document.createElement('option');
-                            option.value = header.id;
-                            option.textContent = header.name;
-                            parentHeaderSelect.appendChild(option);
-                        });
-
-                    // Reset form
-                    document.getElementById('new-module-name').value = '';
-                    moduleTypeSelect.value = 'regular';
-                    parentHeaderGroup.style.display = 'block'; // Show parent select by default for regular
-                    parentHeaderSelect.value = 'null';
-                    document.getElementById('new-module-requires-client').checked = true;
-
-
-                    modalOverlay.style.display = 'flex';
-                });
-            }
-
-             // Show/hide parent selection based on type
-             if (moduleTypeSelect) {
-                 moduleTypeSelect.addEventListener('change', function() {
-                     parentHeaderGroup.style.display = this.value === 'regular' ? 'block' : 'none';
-                 });
-             }
-
-            // Handle modal close/cancel
-            modalCloseBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const modalId = this.getAttribute('data-modal-id');
-                    if (modalId) {
-                        document.getElementById(modalId).style.display = 'none';
-                    }
-                });
-            });
-
-            // Handle saving the new module
-            if (saveNewModuleBtn) {
-                saveNewModuleBtn.addEventListener('click', addNewModule);
-            }
-        }
-
-        // Add a new module (called from modal save button)
-        function addNewModule() {
-            const moduleNameInput = document.getElementById('new-module-name');
-            const moduleTypeSelect = document.getElementById('new-module-type');
-            const parentHeaderSelect = document.getElementById('parent-header-select');
-            const requiresClientCheckbox = document.getElementById('new-module-requires-client');
-
-            const moduleName = moduleNameInput.value.trim();
-            const moduleType = moduleTypeSelect.value;
-            const parentId = moduleType === 'header' ? null : parentHeaderSelect.value; // Headers are always top-level
-            const requiresClient = requiresClientCheckbox.checked;
-
-            if (!moduleName) {
-                alert("Module name is required.");
-                moduleNameInput.focus();
-                return;
-            }
-
-            // Generate a module ID (simple version for now)
-            const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-            // Check if module ID already exists
-            if (appData.modules.some(m => m.id === moduleId)) {
-                alert(`A module with the ID "${moduleId}" already exists. Please choose a different name.`);
-                return;
-            }
-
-             // Determine the order - place new items at the end of their level/parent
-             let order = 0;
-             const siblings = appData.modules.filter(m => m.parentId === parentId);
-             if (siblings.length > 0) {
-                 order = Math.max(...siblings.map(m => m.order ?? 0)) + 1;
-             }
-
-
-            // Create the module data object
-            const newModuleData = {
-                id: moduleId,
-                name: moduleName,
-                requiresClient: requiresClient,
-                type: moduleType,
-                parentId: parentId === 'null' ? null : parentId, // Store null correctly
-                order: order,
-                // Add default render/save functions
-                renderTemplate: function(client) { /* ... default render ... */ return `<h3>${moduleName}</h3><p>Default content.</p>`; },
-                saveData: function() { /* ... default save ... */ return {}; }
-            };
-
-            console.log("Adding new module:", newModuleData);
-
-            // Add to appData array
-            appData.modules.push(newModuleData);
-
-            // Re-render the list
-            renderModuleList(appData.modules);
-
-            // Save the updated structure
-            saveModuleStructure();
-
-            // Close the modal
-            document.getElementById('add-module-modal-overlay').style.display = 'none';
-
-            // Notify user
-            alert(`Module "${moduleName}" created successfully.`);
-        }
-
-
-        // --- Module Structure Saving ---
-
-        /**
-         * Saves the current module structure (order, hierarchy) to Firebase and backup.
-         */
-        function saveModuleStructure() {
-            console.log("[Dashboard] Saving module structure");
-
-             // Generate the array of modules from appData to save
-             // Ensure we only save the necessary data, not functions
-             const modulesToSave = appData.modules.map(module => ({
-                 id: module.id,
-                 name: module.name,
-                 requiresClient: module.requiresClient,
-                 type: module.type || 'regular',
-                 parentId: module.parentId !== undefined ? module.parentId : null,
-                 order: module.order ?? 0 // Default order to 0 if missing
-             }));
-
-             // Sort before saving to ensure consistency if order is missing/equal
-             modulesToSave.sort((a, b) => {
-                 const orderA = a.order ?? Infinity;
-                 const orderB = b.order ?? Infinity;
-                 if (orderA !== orderB) return orderA - orderB;
-                 // Secondary sort by parent, then name for stability
-                 const parentA = a.parentId ?? '';
-                 const parentB = b.parentId ?? '';
-                 if (parentA !== parentB) return parentA.localeCompare(parentB);
-                 return a.name.localeCompare(b.name);
-             });
-
-            console.log("[Dashboard] Modules prepared for saving:", modulesToSave);
-
-            // Save to Firebase
-            if (window.ConstructionApp.Firebase) {
-                window.ConstructionApp.Firebase.saveModules(modulesToSave)
-                    .then(success => {
-                        if (success) {
-                            console.log("[Dashboard] Module structure saved to Firebase.");
-                            // Save to sessionStorage as backup ONLY on successful Firebase save
-                            sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-                            console.log("[Dashboard] Module structure saved to sessionStorage backup.");
-                        } else {
-                            console.warn("[Dashboard] Failed to save module structure to Firebase. Backup not updated.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("[Dashboard] Error saving module structure to Firebase:", error);
-                         // Fallback: Save to sessionStorage even if Firebase fails
-                         sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-                         console.warn("[Dashboard] Saved module structure to sessionStorage backup due to Firebase error.");
-                    });
-            } else {
-                console.warn("[Dashboard] Firebase not available, saving structure to sessionStorage only");
-                sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-            }
-        }
-
-        /**
-         * Restores module order/structure from sessionStorage backup.
-         * @returns {Array|null} The restored module array or null.
-         */
-        function restoreModuleOrderFromBackup() {
-            const savedOrder = sessionStorage.getItem('moduleOrder');
-            if (savedOrder) {
-                try {
-                    const orderData = JSON.parse(savedOrder);
-                    console.log("[Dashboard] Restoring module structure from backup:", orderData.length, "modules");
-                     // Add basic validation/defaults for hierarchy fields if missing from older backups
-                     return orderData.map(mod => ({
-                         ...mod,
-                         type: mod.type || 'regular',
-                         parentId: mod.parentId !== undefined ? mod.parentId : null,
-                         order: mod.order ?? 0
-                     }));
-                } catch (error) {
-                    console.error("[Dashboard] Error parsing saved module order backup:", error);
-                    sessionStorage.removeItem('moduleOrder'); // Clear corrupted data
-                }
-            } else {
-                console.warn("[Dashboard] No saved module order found in backup");
-            }
-            return null; // Indicate failure or no backup
-        }
-
-
-        // --- Drag and Drop (Hierarchy Aware - Initial Version) ---
-
-        let dragOverElement = null; // Track the element being dragged over
-        let dropIndicator = null; // 'top', 'bottom', or 'middle' (for dropping onto headers)
-
-        function setupDragAndDrop() {
-            const container = document.getElementById('modules-container');
-
-            // Use event delegation on the container
-            container.addEventListener('dragstart', handleDragStart);
-            container.addEventListener('dragover', handleDragOver);
-            container.addEventListener('dragleave', handleDragLeave);
-            container.addEventListener('drop', handleDrop);
-            container.addEventListener('dragend', handleDragEnd);
-        }
-
-        function handleDragStart(e) {
-             // Ensure the event target is a draggable module item
-             const target = e.target.closest('.module-item');
-             if (!target || !target.draggable) return;
-
-             globalDraggedItem = target;
-             // Use a minimal data transfer (module ID is enough)
-             e.dataTransfer.setData('text/plain', target.dataset.moduleId);
-             e.dataTransfer.effectAllowed = 'move';
-
-             // Add dragging class after a short delay
-             setTimeout(() => target.classList.add('dragging'), 0);
-             console.log("Drag Start:", target.dataset.moduleId);
-        }
-
-        function handleDragOver(e) {
-             e.preventDefault(); // Necessary to allow dropping
-             e.dataTransfer.dropEffect = 'move';
-
-             const targetElement = e.target.closest('.module-item');
-             if (!targetElement || targetElement === globalDraggedItem) {
-                 clearDropIndicators();
-                 dragOverElement = null;
-                 return;
-             }
-
-             if (targetElement !== dragOverElement) {
-                 clearDropIndicators(); // Clear previous indicators
-                 dragOverElement = targetElement;
-             }
-
-             // Determine drop position (top, bottom, or middle for headers)
-             const rect = targetElement.getBoundingClientRect();
-             const verticalMidpoint = rect.top + rect.height / 2;
-             const targetIsHeader = targetElement.dataset.moduleType === 'header';
-             const canDropOnHeader = targetIsHeader && globalDraggedItem.dataset.moduleType !== 'header'; // Prevent dropping headers onto headers for now
-
-             // Calculate vertical position relative to target height
-             const yOffset = e.clientY - rect.top;
-             const dropZoneHeight = rect.height;
-             const topThreshold = dropZoneHeight * 0.3; // Top 30%
-             const bottomThreshold = dropZoneHeight * 0.7; // Bottom 30%
-
-             // Reset indicator
-             dropIndicator = null;
-             targetElement.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-middle');
-
-             if (canDropOnHeader && yOffset > topThreshold && yOffset < bottomThreshold) {
-                 // Dropping ONTO the header (middle zone)
-                 dropIndicator = 'middle';
-                 targetElement.classList.add('drag-over-middle');
-             } else if (yOffset < verticalMidpoint) {
-                  // Dropping ABOVE the target
-                 dropIndicator = 'top';
-                 targetElement.classList.add('drag-over-top');
-             } else {
-                  // Dropping BELOW the target
-                 dropIndicator = 'bottom';
-                 targetElement.classList.add('drag-over-bottom');
-             }
-        }
-
-
-        function handleDragLeave(e) {
-             // Clear indicators if leaving the container or moving between items quickly
-             const relatedTarget = e.relatedTarget ? e.relatedTarget.closest('.module-item') : null;
-             if (!relatedTarget || relatedTarget !== dragOverElement) {
-                  clearDropIndicators();
-                  dragOverElement = null;
-             }
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            if (!globalDraggedItem || !dragOverElement || globalDraggedItem === dragOverElement) {
-                 clearDropIndicators();
-                 return;
-            }
-
-            console.log(`Drop ${globalDraggedItem.dataset.moduleId} onto ${dragOverElement.dataset.moduleId}, indicator: ${dropIndicator}`);
-
-            const draggedId = globalDraggedItem.dataset.moduleId;
-            const targetId = dragOverElement.dataset.moduleId;
-
-            // Find module data in appData
-            const draggedModuleIndex = appData.modules.findIndex(m => m.id === draggedId);
-            const targetModuleIndex = appData.modules.findIndex(m => m.id === targetId);
-
-            if (draggedModuleIndex === -1 || targetModuleIndex === -1) {
-                 console.error("Could not find dragged or target module in appData");
-                 clearDropIndicators();
-                 return;
-            }
-
-            const draggedModule = appData.modules[draggedModuleIndex];
-            const targetModule = appData.modules[targetModuleIndex];
-
-            let newParentId = targetModule.parentId;
-            let insertBeforeTarget = true; // Default to inserting before
-
-            if (dropIndicator === 'middle' && targetModule.type === 'header') {
-                 // Dropping onto a header - make it a child
-                 newParentId = targetModule.id;
-                 // Place as the first child for simplicity (order recalculation needed)
-                 insertBeforeTarget = false; // We handle child placement separately
-                 console.log(`Setting parent of ${draggedId} to ${newParentId}`);
-            } else if (dropIndicator === 'bottom') {
-                 // Dropping below the target
-                 newParentId = targetModule.parentId; // Same parent as target
-                 insertBeforeTarget = false; // Insert after target
-                 console.log(`Inserting ${draggedId} after ${targetId} (parent: ${newParentId})`);
-            } else { // dropIndicator === 'top' or null (default to top)
-                 // Dropping above the target
-                 newParentId = targetModule.parentId; // Same parent as target
-                 insertBeforeTarget = true; // Insert before target
-                 console.log(`Inserting ${draggedId} before ${targetId} (parent: ${newParentId})`);
-            }
-
-            // --- Update appData ---
-            // 1. Remove the dragged module from its current position
-            appData.modules.splice(draggedModuleIndex, 1);
-
-            // 2. Update its parentId
-            draggedModule.parentId = newParentId;
-
-            // 3. Find the new target index in the modified array
-            const newTargetIndex = appData.modules.findIndex(m => m.id === targetId);
-             if (newTargetIndex === -1) {
-                 console.error("Target module disappeared after removing dragged module?");
-                 // Failsafe: add dragged module back at the end
-                 appData.modules.push(draggedModule);
-             } else {
-                 // 4. Insert the dragged module at the correct position
-                 let insertAtIndex;
-                 if (dropIndicator === 'middle') {
-                      // Find the position after the header and before its first child (or just after header if no children)
-                      let headerIndex = appData.modules.findIndex(m => m.id === newParentId);
-                      insertAtIndex = headerIndex + 1; // Insert right after the header
-                 } else if (insertBeforeTarget) {
-                     insertAtIndex = newTargetIndex;
-                 } else { // Insert after
-                     insertAtIndex = newTargetIndex + 1;
-                 }
-                 appData.modules.splice(insertAtIndex, 0, draggedModule);
-             }
-
-
-            // 5. Recalculate order for all modules based on the new structure
-            recalculateModuleOrder();
-
-            // --- Update DOM ---
-            // Re-render the entire list based on the updated appData
-            renderModuleList(appData.modules);
-
-            // --- Save ---
-            saveModuleStructure(); // Save the new structure
-
-            clearDropIndicators();
-            globalDraggedItem = null; // Reset dragged item
-        }
-
-        function handleDragEnd(e) {
-             // Clean up dragging styles regardless of drop success
-             if (globalDraggedItem) {
-                 globalDraggedItem.classList.remove('dragging');
-             }
-             clearDropIndicators();
-             globalDraggedItem = null;
-             dragOverElement = null;
-             dropIndicator = null;
-             console.log("Drag End");
-        }
-
-        function clearDropIndicators() {
-            document.querySelectorAll('.module-item.drag-over-top, .module-item.drag-over-bottom, .module-item.drag-over-middle')
-                .forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-middle'));
-        }
-
-        /**
-         * Recalculates the 'order' property for all modules based on their
-         * current position in the appData.modules array and their parentId.
-         */
-        function recalculateModuleOrder() {
-            console.log("Recalculating module order...");
-            const orderCounters = {}; // { parentId: currentOrder }
-
-            appData.modules.forEach(module => {
-                const parentKey = module.parentId === null ? 'null' : module.parentId;
-                if (orderCounters[parentKey] === undefined) {
-                    orderCounters[parentKey] = 0;
-                }
-                module.order = orderCounters[parentKey];
-                orderCounters[parentKey]++;
-            });
-             console.log("Order recalculation complete.");
-        }
-
-
-        // --- Other UI Functions ---
-
-        // Setup dropdown menus for dynamically added modules
-        function setupDropdownMenus() {
-             // Use event delegation on the container for dropdown actions
-             const container = document.getElementById('modules-container');
-
-             container.addEventListener('click', function(e) {
-                 const icon = e.target.closest('.module-icon');
-                 const editBtn = e.target.closest('.edit-module');
-                 const deleteBtn = e.target.closest('.delete-module');
-
-                 // Handle icon click to toggle dropdown
-                 if (icon) {
-                     e.stopPropagation();
-                     const dropdown = icon.querySelector('.dropdown-menu');
-                     if (dropdown) {
-                         // Close other open dropdowns
-                         document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                             if (menu !== dropdown && menu.style.display === 'block') {
-                                 menu.style.display = 'none';
-                             }
-                         });
-                         // Toggle this dropdown
-                         dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                     }
-                 }
-                 // Handle edit button click
-                 else if (editBtn) {
-                     e.stopPropagation();
-                     const moduleItem = editBtn.closest('.module-item');
-                     editModule(moduleItem);
-                     closeAllDropdowns();
-                 }
-                 // Handle delete button click
-                 else if (deleteBtn) {
-                     e.stopPropagation();
-                     const moduleItem = deleteBtn.closest('.module-item');
-                     deleteModule(moduleItem);
-                     closeAllDropdowns();
-                 }
-                 // If clicking outside a dropdown, close all
-                 else if (!e.target.closest('.dropdown-menu')) {
-                      closeAllDropdowns();
-                 }
-             });
-
-             // Global click listener to close dropdowns
-             document.addEventListener('click', function(e) {
-                  if (!e.target.closest('.module-icon')) {
-                       closeAllDropdowns();
-                  }
-             });
-        }
-
-        function closeAllDropdowns() {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.style.display = 'none';
-            });
-        }
-
-        // Edit a module (updated to work with event delegation)
-        function editModule(moduleElement) {
-             const moduleId = moduleElement.dataset.moduleId;
-             const moduleIndex = appData.modules.findIndex(m => m.id === moduleId);
-             if (moduleIndex === -1) return;
-
-             const currentModule = appData.modules[moduleIndex];
-             const currentName = currentModule.name;
-
-            const newName = prompt(`Edit module name:`, currentName);
-
-            if (newName && newName.trim() !== '' && newName !== currentName) {
-                // Update name in appData
-                currentModule.name = newName;
-
-                 // Update name in the DOM element
-                 const nameSpan = moduleElement.querySelector('.module-name');
-                 if (nameSpan) nameSpan.textContent = newName;
-
-                // Save the updated structure
-                saveModuleStructure();
-                alert(`Module renamed to "${newName}"`);
-            }
-        }
-
-        // Delete a module (updated to work with event delegation)
-        function deleteModule(moduleElement) {
-             const moduleId = moduleElement.dataset.moduleId;
-             const moduleIndex = appData.modules.findIndex(m => m.id === moduleId);
-             if (moduleIndex === -1) return;
-
-             const moduleToDelete = appData.modules[moduleIndex];
-             const moduleName = moduleToDelete.name;
-
-             // Prevent deleting Notes module
-             if (moduleId === 'notes') {
-                 alert('The Notes module cannot be deleted.');
-                 return;
-             }
-
-             // Check if it's a header with children
-             const children = appData.modules.filter(m => m.parentId === moduleId);
-             let confirmMessage = `Are you sure you want to delete the "${moduleName}" module?`;
-             if (moduleToDelete.type === 'header' && children.length > 0) {
-                  confirmMessage += `\n\nWARNING: This is a header containing ${children.length} sub-module(s). Deleting it will also delete its sub-modules.`;
-             }
-
-
-            if (confirm(confirmMessage)) {
-                 // Find indices of module and all its descendants
-                 const indicesToDelete = [moduleIndex];
-                 let queue = [moduleId];
-
-                 while(queue.length > 0) {
-                      const currentParentId = queue.shift();
-                      for(let i = appData.modules.length - 1; i >= 0; i--) {
-                           if(appData.modules[i].parentId === currentParentId) {
-                                indicesToDelete.push(i);
-                                queue.push(appData.modules[i].id); // Add child ID to queue
-                           }
-                      }
-                 }
-
-                 // Remove elements from appData in reverse index order to avoid shifting issues
-                 indicesToDelete.sort((a, b) => b - a).forEach(index => {
-                      console.log("Removing module from appData:", appData.modules[index].name);
-                      appData.modules.splice(index, 1);
-                 });
-
-                 // Re-render the list
-                 renderModuleList(appData.modules);
-
-                // Save the updated structure
-                saveModuleStructure();
-                alert(`Module "${moduleName}" ${children.length > 0 ? 'and its sub-modules ' : ''}deleted successfully.`);
-            }
-        }
-
-        // Setup module search/filter
-        function setupModuleSearch() {
-             const searchInput = document.getElementById('module-search-input');
-             const container = document.getElementById('modules-container');
-
-             searchInput.addEventListener('input', function() {
-                 const searchTerm = this.value.toLowerCase().trim();
-                 const allModules = container.querySelectorAll('.module-item');
-                 const visibleModuleIds = new Set(); // Track IDs that should be visible
-
-                 allModules.forEach(moduleEl => {
-                     const moduleName = moduleEl.querySelector('.module-name')?.textContent.toLowerCase() || '';
-                     const moduleId = moduleEl.dataset.moduleId;
-                     const isMatch = moduleName.includes(searchTerm);
-
-                     if (isMatch) {
-                          // If a module matches, it and all its ancestors should be visible
-                          visibleModuleIds.add(moduleId);
-                          let currentParentId = moduleEl.dataset.parentId;
-                          while (currentParentId && currentParentId !== 'null') {
-                               visibleModuleIds.add(currentParentId);
-                               // Find the parent element to get its parentId
-                               const parentEl = container.querySelector(`.module-item[data-module-id="${currentParentId}"]`);
-                               currentParentId = parentEl ? parentEl.dataset.parentId : null;
-                          }
-                     }
-                 });
-
-                 // Set visibility based on the collected IDs
-                 allModules.forEach(moduleEl => {
-                      const moduleId = moduleEl.dataset.moduleId;
-                      if (searchTerm === '' || visibleModuleIds.has(moduleId)) {
-                           moduleEl.style.display = 'flex'; // Show matching items and their ancestors
-                      } else {
-                           moduleEl.style.display = 'none'; // Hide non-matching items
-                      }
-                 });
-             });
-        }
-
-
-        // --- Client Management & Dashboard Update ---
-
-        // Setup client management UI (modals, etc.)
-        function setupClientManagement() { /* ... (Keep existing modal logic from original file) ... */
-            console.log("[Dashboard] Setting up client management");
-            const newClientBtn = document.getElementById('new-client-btn');
-            const openClientBtn = document.getElementById('open-client-btn');
-
-            // Create modal overlay if it doesn't exist
-            let modalOverlay = document.querySelector('.modal-overlay:not(#add-module-modal-overlay)'); // Exclude add module modal
-            if (!modalOverlay) {
-                modalOverlay = document.createElement('div');
-                modalOverlay.className = 'modal-overlay'; // Generic overlay class
-                modalOverlay.id = 'client-modal-overlay'; // Specific ID for client modals
-                document.body.appendChild(modalOverlay);
-
-                 // Close modal when clicking outside
-                 modalOverlay.addEventListener('click', (event) => {
-                     if (event.target === modalOverlay) {
-                         modalOverlay.style.display = 'none';
-                     }
-                 });
-            }
-
-
-            // New client button event listener
-            newClientBtn.addEventListener('click', () => {
-                const clientModal = createClientModal('new');
-                modalOverlay.innerHTML = ''; // Clear previous modal content
-                modalOverlay.appendChild(clientModal);
-                modalOverlay.style.display = 'flex';
-            });
-
-            // Open client button event listener
-            openClientBtn.addEventListener('click', () => {
-                const clientModal = createClientModal('open');
-                 modalOverlay.innerHTML = ''; // Clear previous modal content
-                modalOverlay.appendChild(clientModal);
-                modalOverlay.style.display = 'flex';
-            });
-        }
-
-         // Create client modal dialog (copied from original, ensure it uses the correct overlay)
-         function createClientModal(type) {
-             const modal = document.createElement('div');
-             modal.className = 'modal'; // Use the standard modal class
-
-             if (type === 'new') {
-                 // New client modal content
-                 modal.innerHTML = `
-                     <div class="modal-header">
-                         <h2 class="modal-title">New Client</h2>
-                         <span class="modal-close" data-modal-id="client-modal-overlay">&times;</span>
-                     </div>
-                     <div class="modal-body">
-                         <div class="form-group">
-                             <label for="client-name">Client Name:</label>
-                             <input type="text" id="client-name" class="form-control">
-                         </div>
-                         <div class="form-group">
-                             <label for="client-address">Client Address:</label>
-                             <input type="text" id="client-address" class="form-control">
-                         </div>
-                     </div>
-                     <div class="modal-footer">
-                         <button class="btn btn-cancel" data-modal-id="client-modal-overlay">Cancel</button>
-                         <button class="btn btn-save">Save</button>
-                     </div>
-                 `;
-
-                 // Set up event handlers
-                 setTimeout(() => {
-                     setupModalCloseButtons(modal, 'client-modal-overlay'); // Pass overlay ID
-
-                     const saveBtn = modal.querySelector('.btn-save');
-                     saveBtn.addEventListener('click', () => {
-                         const name = document.getElementById('client-name').value;
-                         const address = document.getElementById('client-address').value;
-
-                         if (name.trim() === '') {
-                             alert('Client name is required');
-                             return;
-                         }
-
-                         const newClient = { name: name, address: address, moduleData: {} };
-                         console.log("[Dashboard] Creating new client:", name);
-
-                         const client = window.ConstructionApp.ClientManager.addClient(newClient);
-                         window.ConstructionApp.ClientManager.setCurrentClient(client);
-                         updateDebugPanel();
-
-                         alert(`Client "${name}" created and selected.`);
-                         document.getElementById('client-modal-overlay').style.display = 'none';
-                     });
-                 }, 0);
-             } else if (type === 'open') {
-                 const clients = window.ConstructionApp.ClientManager.getAllClients();
-                 let clientListHTML = '';
-                 if (clients.length > 0) {
-                     clientListHTML = clients.map((client, index) =>
-                         `<div class="client-list-item" data-client-index="${index}">${client.name}</div>`
-                     ).join('');
-                 } else {
-                     clientListHTML = '<div class="client-list-item">No clients found</div>';
-                 }
-
-                 // Open client modal content
-                 modal.innerHTML = `
-                     <div class="modal-header">
-                         <h2 class="modal-title">Open Client</h2>
-                         <span class="modal-close" data-modal-id="client-modal-overlay">&times;</span>
-                     </div>
-                     <div class="modal-body">
-                         <div class="form-group">
-                             <label for="client-search">Search Clients:</label>
-                             <input type="text" id="client-search" class="form-control">
-                         </div>
-                         <div class="client-list">
-                             ${clientListHTML}
-                         </div>
-                     </div>
-                     <div class="modal-footer">
-                         <button class="btn btn-cancel" data-modal-id="client-modal-overlay">Cancel</button>
-                     </div>
-                 `;
-
-                 // Set up event handlers
-                 setTimeout(() => {
-                     setupModalCloseButtons(modal, 'client-modal-overlay'); // Pass overlay ID
-                     setupClientListSelection(modal);
-                     setupClientSearch(modal);
-                 }, 0);
-             }
-
-             return modal;
-         }
-
-        // Set up modal close buttons (updated to accept overlay ID)
-        function setupModalCloseButtons(modal, overlayId) {
-            const closeBtns = modal.querySelectorAll('.modal-close, .btn-cancel');
-            closeBtns.forEach(btn => {
-                 // Remove existing listeners first to prevent duplicates
-                 const newBtn = btn.cloneNode(true);
-                 btn.parentNode.replaceChild(newBtn, btn);
-
-                 newBtn.addEventListener('click', () => {
-                     document.getElementById(overlayId).style.display = 'none';
-                 });
-            });
-        }
-
-        // Set up client search filtering (copied from original)
-        function setupClientSearch(modal) {
-            const searchInput = modal.querySelector('#client-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', () => {
-                    const searchTerm = searchInput.value.toLowerCase();
-                    const clientItems = modal.querySelectorAll('.client-list-item');
-                    clientItems.forEach(item => {
-                        const clientName = item.textContent.toLowerCase();
-                        item.style.display = clientName.includes(searchTerm) ? 'block' : 'none';
-                    });
-                });
-            }
-        }
-
-        // Set up client list selection (copied from original)
-        function setupClientListSelection(modal) {
-            const clientListItems = modal.querySelectorAll('.client-list-item');
-            const clients = window.ConstructionApp.ClientManager.getAllClients();
-
-            clientListItems.forEach(item => {
-                if (item.getAttribute('data-client-index') === null) return; // Skip "No clients" message
-
-                 // Remove existing listeners first
-                 const newItem = item.cloneNode(true);
-                 item.parentNode.replaceChild(newItem, item);
-
-                newItem.addEventListener('click', () => {
-                    const clientIndex = parseInt(newItem.getAttribute('data-client-index'));
-                    if (!isNaN(clientIndex) && clients[clientIndex]) {
-                        console.log("[Dashboard] Selecting client:", clients[clientIndex].name);
-                        window.ConstructionApp.ClientManager.setCurrentClient(clients[clientIndex]);
-                        updateDebugPanel();
-                        document.getElementById('client-modal-overlay').style.display = 'none';
-                        alert(`Client "${clients[clientIndex].name}" selected.`);
-                    }
-                });
-            });
-        }
-
-
-        // Update the dashboard UI based on the current client - UPDATED VERSION
-        function updateDashboard(client) {
-            console.log("[Dashboard] Updating dashboard for client:", client?.name);
-
-            const logoutBtn = document.getElementById('logout-btn');
-            const dashboardContent = document.getElementById('module-content');
-            const clientNameDisplay = document.getElementById('client-name-display');
-            const dashboardDesc = document.querySelector('.dashboard-description');
-
-            if (client) {
-                // Update client display and show logout button
-                clientNameDisplay.textContent = `Client: ${client.name}`;
-                dashboardDesc.textContent = `${client.address || 'No address provided'}`;
-                logoutBtn.style.display = 'block';
-                // Ensure logout listener is attached correctly
-                 const newLogoutBtn = logoutBtn.cloneNode(true); // Clone to remove old listeners
-                 logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-                 newLogoutBtn.addEventListener('click', () => window.ConstructionApp.ModuleUtils.logoutClient());
-
-
-                // Update total cost
-                updateTotalProjectCost();
-
-                // Render the dashboard content (module tiles)
-                renderDashboardContent(client);
-
-                // Update debug panel
-                updateDebugPanel();
-            } else {
-                // Clear client display and hide logout button
-                clientNameDisplay.textContent = '';
-                document.getElementById('total-project-cost').textContent = 'Total Project Cost: R0.00';
-                dashboardDesc.textContent = 'Overview of project data.'; // Reset description
-                logoutBtn.style.display = 'none';
-
-                // Show a more prominent message when no client is selected
-                dashboardContent.innerHTML = `
-                    <div class="no-client-notification">
-                        <h2>No Client Selected</h2>
-                        <p>Please select an existing client or create a new client to start working.</p>
-                        <div class="no-client-buttons">
-                            <button id="prompt-new-client" class="btn no-client-button">Create New Client</button>
-                            <button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button>
-                        </div>
-                    </div>
-                `;
-
-                // Add event listeners to the prompt buttons
-                setTimeout(() => {
-                    const newClientBtn = document.getElementById('prompt-new-client');
-                    const openClientBtn = document.getElementById('prompt-open-client');
-                    if (newClientBtn) newClientBtn.addEventListener('click', () => document.getElementById('new-client-btn').click());
-                    if (openClientBtn) openClientBtn.addEventListener('click', () => document.getElementById('open-client-btn').click());
-                }, 0);
-
-                // Update debug panel
-                updateDebugPanel();
-            }
-        }
-
-        // Render dashboard content (module tiles) - UPDATED VERSION
-        function renderDashboardContent(client) {
-            const contentElement = document.getElementById('module-content');
-            contentElement.innerHTML = ''; // Clear existing content
-
-            let content = `
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
-                    <h4 style="margin-bottom: 15px;">Module Summaries</h4>
-                    <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">
-            `;
-
-            let hasModuleData = false;
-            const moduleDataEntries = client.moduleData ? Object.entries(client.moduleData) : [];
-
-            if (moduleDataEntries.length > 0) {
-                 console.log("[Dashboard] Rendering tiles for client modules:", Object.keys(client.moduleData));
-
-                 moduleDataEntries.forEach(([moduleId, moduleVersionedData]) => {
-                      // Extract the actual data, handling potential null or older formats
-                      const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {}; // Get data field, fallback to root, fallback to empty obj
-
-                      if (!moduleData || Object.keys(moduleData).length === 0) {
-                           console.log(`[Dashboard] Skipping tile for ${moduleId} - no data found.`);
-                           return; // Skip if no actual data
-                      }
-
-                      // Find module info from appData for name
-                      const moduleInfo = appData.modules.find(m => m.id === moduleId);
-                      const moduleName = moduleInfo ? moduleInfo.name : moduleId; // Fallback to ID if not found
-
-                      // Calculate module cost (handle different structures)
-                      let moduleCost = 0;
-                      if (moduleData.totalCost !== undefined) {
-                          moduleCost = parseFloat(moduleData.totalCost) || 0;
-                      } else if (moduleData.items && Array.isArray(moduleData.items)) {
-                          // Use utility function for calculation based on 'allow' or 'quantity'
-                          moduleCost = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
-                      } else if (moduleId === 'notes') {
-                           // Notes module doesn't have a cost
-                           moduleCost = 0;
-                      } else {
-                           console.log(`[Dashboard] Module ${moduleId} has no recognized cost structure (totalCost or items array).`);
-                      }
-
-                      // Only display tiles with cost > 0 OR the notes module
-                      if (moduleCost > 0 || moduleId === 'notes') {
-                          hasModuleData = true; // Mark that we have at least one tile to show
-                          const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-
-                          content += `
-                              <div class="module-tile" data-module-id="${moduleId}">
-                                  ${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}
-                                  <h5>${moduleName}</h5>
-                                   ${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666;">(No cost associated)</p>'}
-                                  <button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button>
-                              </div>
-                          `;
-                      } else {
-                           console.log(`[Dashboard] Skipping tile for ${moduleId} - cost is zero or structure unknown.`);
-                      }
-                 });
-            }
-
-            if (!hasModuleData) {
-                content += `
-                    <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1;">
-                        <p>No module data entered yet for this client. Click a module in the sidebar to begin.</p>
-                    </div>
-                `;
-            }
-
-            content += `
-                    </div>
-                </div>
-            `;
-
-            contentElement.innerHTML = content;
-
-            // Add event listeners after rendering
-            setupDashboardTileListeners();
-        }
-
-        // Setup listeners for dashboard tiles (Open, Clear)
-        function setupDashboardTileListeners() {
-             const tilesContainer = document.getElementById('module-tiles');
-             if (!tilesContainer) return;
-
-             tilesContainer.addEventListener('click', function(e) {
-                  const openBtn = e.target.closest('.module-open-btn');
-                  const clearBtn = e.target.closest('.clear-module-btn');
-                  const tile = e.target.closest('.module-tile');
-
-                  if (!tile) return;
-                  const moduleId = tile.dataset.moduleId;
-
-                  if (openBtn) {
-                       // Use navigateToModule utility
-                       window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
-                  } else if (clearBtn) {
-                       const moduleInfo = appData.modules.find(m => m.id === moduleId);
-                       const moduleName = moduleInfo ? moduleInfo.name : moduleId;
-                       if (confirm(`Are you sure you want to clear all data for the "${moduleName}" module? This cannot be undone.`)) {
-                           clearModuleData(moduleId);
-                       }
-                  }
-             });
-        }
-
-
-        // Clear module data for the current client
-        function clearModuleData(moduleId) {
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (client && client.moduleData && client.moduleData[moduleId]) {
-                console.log(`[Dashboard] Clearing module data for: ${moduleId}`);
-
-                // Save null to effectively delete the module data entry via merge
-                window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => {
-                    if (success) {
-                         // Need to manually update the local client object as saveModuleData might not return the updated client
-                         if (client.moduleData) {
-                              delete client.moduleData[moduleId]; // Remove from local object
-                              // Update sessionStorage immediately
-                              sessionStorage.setItem('currentClient', JSON.stringify(client));
-                              console.log("[Dashboard] Updated client in sessionStorage after clearing module.");
-                         }
-                         window.ConstructionApp.ModuleUtils.showSuccessMessage(`Module data cleared successfully`);
-                         // Re-render the dashboard to remove the tile
-                         renderDashboardContent(client);
-                         // Update total project cost
-                         updateTotalProjectCost();
-                    } else {
-                        window.ConstructionApp.ModuleUtils.showErrorMessage(`Error clearing module data: ${error || 'Unknown error'}`);
-                    }
-                });
-            } else {
-                 console.warn(`[Dashboard] No data found for module ${moduleId} to clear.`);
-            }
-        }
-
-
-        // Update total project cost - UPDATED VERSION
-        function updateTotalProjectCost() {
-            let totalCost = 0;
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-
-            if (client && client.moduleData) {
-                console.log("[Dashboard] Calculating total cost for client:", client.name);
-                Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => {
-                     const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {}; // Get data field or root
-
-                     if (!moduleData) return; // Skip if no data
-
-                     if (moduleData.totalCost !== undefined) {
-                         totalCost += parseFloat(moduleData.totalCost) || 0;
-                     } else if (moduleData.items && Array.isArray(moduleData.items)) {
-                          totalCost += window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
-                     }
-                     // Add other potential cost structures here if needed
-                });
-            }
-
-            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
-            document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
-            console.log("[Dashboard] Updated total project cost:", formattedTotal);
-        }
-
-        // --- Debug Panel ---
-        function setupDebugPanel() { /* ... (Keep existing logic) ... */
-             const debugPanel = document.getElementById('debug-panel');
-             const toggleBtn = document.createElement('button');
-             toggleBtn.textContent = 'Debug';
-             toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer;';
-             document.body.appendChild(toggleBtn);
-
-             toggleBtn.addEventListener('click', function() {
-                 const isVisible = debugPanel.style.display === 'block';
-                 debugPanel.style.display = isVisible ? 'none' : 'block';
-                 if (!isVisible) updateDebugPanel();
-             });
-        }
-
-        function updateDebugPanel() { /* ... (Keep existing logic, maybe add module structure info) ... */
-             const debugPanel = document.getElementById('debug-panel');
-             const navigationState = sessionStorage.getItem('navigationState');
-             const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-             const storedClientStr = sessionStorage.getItem('currentClient');
-             const moduleOrderStr = sessionStorage.getItem('moduleOrder');
-
-             let debugInfo = `
-                 <strong>Nav State:</strong> ${navigationState || 'None'}<br>
-                 <strong>Current Client:</strong> ${currentClient ? currentClient.name : 'None'}<br>
-                 <strong>Client in sessionStorage:</strong> ${storedClientStr ? 'Present' : 'None'}<br>
-                 <strong>Modules in appData:</strong> ${appData.modules.length}<br>
-                 <strong>Module Order in Backup:</strong> ${moduleOrderStr ? 'Present' : 'None'}<br>
-                 <hr>
-             `;
-
-             if (currentClient && currentClient.moduleData) {
-                 debugInfo += '<strong>Client Module Data:</strong><br>';
-                 let totalCost = 0;
-                 for (const moduleId in currentClient.moduleData) {
-                     const moduleVData = currentClient.moduleData[moduleId];
-                     const moduleData = moduleVData?.data ?? moduleVData ?? {};
-                     const moduleCost = moduleData?.totalCost ?? window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData?.items) ?? 0;
-                     totalCost += parseFloat(moduleCost) || 0;
-                     debugInfo += `- ${moduleId}: Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost)}<br>`;
-                 }
-                 debugInfo += `<strong>Total Project Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}<br><hr>`;
-             }
-
-             debugInfo += '<strong>Module Structure (appData):</strong><br><pre style="max-height: 150px; overflow-y: auto; border: 1px solid #555; padding: 5px;">';
-             debugInfo += JSON.stringify(appData.modules.map(m => ({id: m.id, name: m.name, type: m.type, parentId: m.parentId, order: m.order})), null, 2);
-             debugInfo += '</pre>';
-
-             debugPanel.innerHTML = debugInfo;
-        }
-
-         // --- Helper Functions ---
-         // Helper function to attach event listeners to a specific module element
-         function setupModuleClickHandler(moduleElement) {
-             // Click event for navigating to the module (only on the name span)
-             const moduleText = moduleElement.querySelector('.module-name');
-             if (moduleText) {
-                 // Remove existing listener before adding new one
-                 const newModuleText = moduleText.cloneNode(true);
-                 moduleText.parentNode.replaceChild(newModuleText, moduleText);
-
-                 newModuleText.addEventListener('click', function() {
-                     const moduleId = moduleElement.getAttribute('data-module-id');
-                     // Use navigateToModule utility which handles client checks etc.
-                     window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
-                 });
-             }
-         }
-
-         // Setup dropdown for a single module (used during initial render and potentially after edits)
-         function setupDropdownForModule(moduleElement) {
-             // Dropdown logic is now handled by event delegation in setupDropdownMenus
-             // This function might still be useful if specific setup per module is needed later
-         }
-
-    </script>
 </body>
 </html>
-```
-
-**Key Changes Made:**
-
-1.  **Data Structure:**
-    * `appData.modules` now expects objects with `id`, `name`, `requiresClient`, `type`, `parentId`, `order`, `renderTemplate`, `saveData`.
-    * Firebase (`saveModules`/`loadModules`) and SessionStorage backup (`moduleOrder`) now handle these richer objects (ensuring `type`, `parentId`, `order` are saved/loaded).
-2.  **Module Loading (`loadAndRenderModules`):**
-    * Loads modules from Firebase or backup.
-    * Falls back to `getDefaultModules` if loading fails (includes basic hierarchy).
-    * Ensures the 'Notes' module is always present and first.
-    * Populates `appData.modules` correctly.
-    * Calls `renderModuleList` to display the hierarchy.
-    * Calls `saveModuleStructure` to potentially save defaults if loaded for the first time.
-3.  **Rendering (`renderModuleList`, `createModuleElement`):**
-    * `renderModuleList` clears the container and uses a recursive function (`renderLevel`) to render modules based on `parentId` and `order`.
-    * `createModuleElement` now sets `data-module-type`, `data-parent-id`, and `data-level` attributes. It applies indentation dynamically via `style.paddingLeft`.
-    * CSS updated for header styling (`.module-item[data-module-type="header"] .module-name`) and indentation (`data-level` attributes).
-4.  **Module Creation (`setupAddModuleButton`, `addNewModule`):**
-    * Added a modal (`#add-module-modal-overlay`) for creating modules.
-    * Prompts for Name, Type (Regular/Header), Parent Header (if Regular), and Requires Client.
-    * Parent Header dropdown is populated with existing headers.
-    * `addNewModule` creates the new module object with `type`, `parentId`, and calculates its `order`.
-    * Adds the new module to `appData.modules`, re-renders the list, and saves the structure.
-5.  **Saving Structure (`saveModuleStructure`, `recalculateModuleOrder`):**
-    * `saveModuleStructure` now takes the structure directly from `appData.modules`, extracts relevant fields, sorts consistently, and saves to Firebase/backup.
-    * `recalculateModuleOrder` (called after DnD) iterates through `appData.modules` and assigns sequential `order` values based on `parentId`.
-6.  **Drag and Drop (`setupDragAndDrop`, handlers):**
-    * Rewritten using event delegation on the container.
-    * `handleDragOver` now detects drop position relative to the target (top, bottom, or middle for headers) and applies corresponding CSS classes (`drag-over-top`, `drag-over-bottom`, `drag-over-middle`).
-    * `handleDrop` determines the `newParentId` based on the drop indicator ('middle' means dropping *onto* a header). It updates `appData.modules` by moving the item and setting the new `parentId`, calls `recalculateModuleOrder`, re-renders the list, and saves the structure.
-7.  **Module Deletion (`deleteModule`):**
-    * Updated to handle hierarchy: If a header is deleted, it warns the user and deletes all descendant modules as well.
-8.  **Module Search (`setupModuleSearch`):**
-    * Updated to work with the hierarchy. If a child module matches, its parent headers are also kept visible.
-9.  **Event Listeners:** Refactored some event listener setups (like dropdowns, module clicks) to use event delegation or ensure listeners are correctly attached/re-attached after re-rendering.
-10. **CSS:** Adjusted styles for indentation, header highlighting, and drag-over indicators. Made sidebar module list scrollable.
-
-**Next Steps & Considerations:**
-
-* **Testing:** Thoroughly test module creation (headers, regular, placement), drag-and-drop (moving within levels, between levels, into headers), deletion (including headers with children), and search.
-* **DnD Refinement:** The drag-and-drop logic, especially recalculating order and updating the array correctly, can be complex. Test edge cases carefully. If it remains problematic, consider integrating a library like `SortableJS`.
-* **Visuals:** Further refine the visual distinction between headers and regular modules, and the drag-and-drop indicators.
-* **Error Handling:** Add more robust error handling, especially around Firebase operations and data parsing.
-* **Module Content:** Ensure individual module pages (`notes.html`, etc.) still load and save data correctly via `client-manager.js`.
-
-This updated `index.html` provides the foundation for the hierarchical module system. Please review and test it. Let me know if you encounter issues or want further refinemen
