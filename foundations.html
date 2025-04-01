@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foundations - Construction Estimator</title>
+    
+    <!-- Firebase Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    
+    <!-- Shared JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background-color: #1c2639;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+        }
+
+        .header .client-info {
+            font-size: 1em;
+            color: #ddd;
+        }
+
+        .header .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: #4eca8b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #3db97a;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .module-card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .module-card h2 {
+            margin-bottom: 15px;
+            color: #1c2639;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .summary-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .total-row {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .total-row td {
+            padding-top: 15px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Foundations</h1>
+        <div class="client-info" id="client-info">Client: </div>
+        <div class="actions">
+            <button class="btn btn-secondary" id="back-btn">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="module-card">
+            <h2>
+                Foundations Summary
+                <span id="total-cost" style="color: #4eca8b; font-size: 0.9em;">Total: R0.00</span>
+            </h2>
+            
+            <div id="foundations-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Description</th>
+                            <th>Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foundations-table-body">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the module
+            initModule();
+            
+            // Set up navigation
+            document.getElementById('back-btn').addEventListener('click', function() {
+                window.ConstructionApp.ModuleUtils.returnToDashboard();
+            });
+        });
+        
+        // Initialize module
+        function initModule() {
+            // Check for proper access
+            if (!window.ConstructionApp.ModuleUtils.checkModuleAccess()) {
+                return;
+            }
+            
+            // Get current client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            // Update client info
+            if (client) {
+                document.getElementById('client-info').textContent = `Client: ${client.name}`;
+            }
+            
+            // Load foundation module data
+            loadFoundationData(client);
+        }
+        
+        // Load foundation module data
+        function loadFoundationData(client) {
+            if (!client) return;
+            
+            const foundationModules = [
+                { id: 'foundations-excavation', name: 'Excavation' },
+                { id: 'foundations-concrete', name: 'Concrete' },
+                { id: 'foundations-steel', name: 'Steel' }
+            ];
+            
+            const tableBody = document.getElementById('foundations-table-body');
+            tableBody.innerHTML = '';
+            
+            let totalCost = 0;
+            let hasData = false;
+            
+            // Process each foundation module
+            foundationModules.forEach(module => {
+                if (client.moduleData && client.moduleData[module.id]) {
+                    const moduleData = client.moduleData[module.id];
+                    
+                    // Calculate module cost
+                    let moduleCost = 0;
+                    if (moduleData.totalCost !== undefined) {
+                        moduleCost = parseFloat(moduleData.totalCost) || 0;
+                    } else if (moduleData.items && Array.isArray(moduleData.items)) {
+                        moduleData.items.forEach(item => {
+                            if (item.qty > 0) {
+                                moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
+                            }
+                        });
+                    }
+                    
+                    // Only display modules with cost > 0
+                    if (moduleCost > 0) {
+                        hasData = true;
+                        totalCost += moduleCost;
+                        
+                        // Format cost
+                        const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
+                        
+                        // Create table row
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${module.name}</td>
+                            <td>Foundation ${module.name}</td>
+                            <td>${formattedCost}</td>
+                            <td>
+                                <button class="btn" style="padding: 4px 8px; font-size: 0.8em;" 
+                                        onclick="window.location.href='${module.id}.html'">
+                                    Open
+                                </button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    }
+                }
+            });
+            
+            // Add total row if we have data
+            if (hasData) {
+                const totalRow = document.createElement('tr');
+                totalRow.className = 'total-row';
+                totalRow.innerHTML = `
+                    <td colspan="2">Total Foundations Cost</td>
+                    <td>${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}</td>
+                    <td></td>
+                `;
+                
+                tableBody.appendChild(totalRow);
+                
+                // Update total in header
+                document.getElementById('total-cost').textContent = 
+                    `Total: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+            } else {
+                // Show message if no data
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="no-data">
+                            No foundation data available. Please add data to foundation modules.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
