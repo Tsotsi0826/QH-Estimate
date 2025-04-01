@@ -2,6 +2,7 @@
  * Module Hierarchy System
  * 
  * A complete implementation for organizing modules into headers and submodules
+ * with support for drag and drop reordering
  */
 
 // Declare in global scope so it's accessible throughout the application
@@ -30,7 +31,10 @@ window.ModuleHierarchy = {};
         enhanceAddModuleButton();
         
         // Apply initial styling to existing modules
-        setTimeout(applyHierarchyStyling, 500);
+        setTimeout(function() {
+            applyHierarchyStyling();
+            enhanceDragAndDrop();
+        }, 500);
     });
     
     // Load hierarchy from storage
@@ -101,6 +105,254 @@ window.ModuleHierarchy = {};
                 }
             });
         });
+    }
+    
+    // Enhance drag and drop functionality
+    function enhanceDragAndDrop() {
+        console.log("Enhancing drag and drop functionality");
+        
+        const modules = document.querySelectorAll('.module-item');
+        
+        // First, ensure all modules have proper drag attributes
+        modules.forEach(module => {
+            module.setAttribute('draggable', 'true');
+            
+            // Ensure drag handle is visible and working
+            const dragHandle = module.querySelector('.module-drag-handle');
+            if (dragHandle) {
+                dragHandle.style.cursor = 'move';
+                dragHandle.style.opacity = '0.7';
+            }
+        });
+        
+        // Setup our improved drag events
+        setupDragHandlers();
+        
+        // Set up observer to handle dynamically added modules
+        setupObserver();
+    }
+    
+    // Set up drag handlers for all modules
+    function setupDragHandlers() {
+        const modulesContainer = document.getElementById('modules-container');
+        if (!modulesContainer) return;
+        
+        // Global reference for dragged item
+        let draggedItem = null;
+        
+        // Add container-level event delegation
+        modulesContainer.addEventListener('dragstart', function(e) {
+            const moduleItem = e.target.closest('.module-item');
+            if (!moduleItem) return;
+            
+            console.log("Drag started:", moduleItem.getAttribute('data-module-id'));
+            
+            // Store reference to dragged item
+            draggedItem = moduleItem;
+            setTimeout(() => moduleItem.classList.add('dragging'), 0);
+            
+            // Store data about the dragged item
+            e.dataTransfer.setData('text/plain', moduleItem.getAttribute('data-module-id'));
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        modulesContainer.addEventListener('dragend', function(e) {
+            const moduleItem = e.target.closest('.module-item');
+            if (!moduleItem) return;
+            
+            console.log("Drag ended");
+            
+            // Remove dragging class
+            moduleItem.classList.remove('dragging');
+            
+            // Remove drag-over highlights from all modules
+            document.querySelectorAll('.module-item').forEach(item => item.classList.remove('drag-over'));
+            
+            // Reset global variable
+            draggedItem = null;
+            
+            // Update module order if needed
+            if (typeof updateModuleOrder === 'function') {
+                updateModuleOrder();
+            }
+        });
+        
+        modulesContainer.addEventListener('dragover', function(e) {
+            e.preventDefault(); // Required to allow drop
+            
+            const moduleItem = e.target.closest('.module-item');
+            if (!moduleItem || moduleItem === draggedItem) return;
+            
+            moduleItem.classList.add('drag-over');
+        });
+        
+        modulesContainer.addEventListener('dragleave', function(e) {
+            const moduleItem = e.target.closest('.module-item');
+            if (!moduleItem) return;
+            
+            moduleItem.classList.remove('drag-over');
+        });
+        
+        modulesContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            
+            const dropTarget = e.target.closest('.module-item');
+            if (!dropTarget || !draggedItem) return;
+            
+            // Remove drag-over class
+            dropTarget.classList.remove('drag-over');
+            
+            // Get element IDs
+            const draggedId = draggedItem.getAttribute('data-module-id');
+            const targetId = dropTarget.getAttribute('data-module-id');
+            
+            console.log(`DROP: ${draggedId} onto ${targetId}`);
+            
+            // Skip if dropping onto itself
+            if (draggedId === targetId) return;
+            
+            // Determine drop action based on element types
+            const draggedType = draggedItem.getAttribute('data-module-type');
+            const targetType = dropTarget.getAttribute('data-module-type');
+            
+            if (draggedType === MODULE_TYPES.HEADER) {
+                // For headers: just reposition
+                handleHeaderReposition(draggedItem, dropTarget);
+            } else if (draggedType === MODULE_TYPES.MODULE) {
+                if (targetType === MODULE_TYPES.HEADER) {
+                    // When dropping a module onto a header
+                    handleModuleToHeaderDrop(draggedId, targetId);
+                } else {
+                    // When dropping a module onto another module
+                    handleModuleToModuleDrop(draggedId, targetId);
+                }
+            }
+            
+            // Refresh styling after drop
+            applyHierarchyStyling();
+            
+            // Update module order if that function exists in the main app
+            if (typeof updateModuleOrder === 'function') {
+                updateModuleOrder();
+            }
+        });
+    }
+    
+    // Handle header repositioning
+    function handleHeaderReposition(draggedHeader, dropTarget) {
+        // Get all modules
+        const modulesContainer = document.getElementById('modules-container');
+        const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
+        
+        // Find indices
+        const draggedIndex = allItems.indexOf(draggedHeader);
+        const targetIndex = allItems.indexOf(dropTarget);
+        
+        // If dragging downwards, insert after the target, otherwise insert before
+        if (draggedIndex < targetIndex) {
+            dropTarget.parentNode.insertBefore(draggedHeader, dropTarget.nextSibling);
+        } else {
+            dropTarget.parentNode.insertBefore(draggedHeader, dropTarget);
+        }
+        
+        // Reposition all child modules of the dragged header to follow it
+        const headerId = draggedHeader.getAttribute('data-module-id');
+        if (moduleHierarchy[headerId]) {
+            // Find new position for the header
+            const newHeaderPos = Array.from(modulesContainer.querySelectorAll('.module-item')).indexOf(draggedHeader);
+            
+            // Get all the child modules that need to move
+            const childModules = moduleHierarchy[headerId].map(id => 
+                document.querySelector(`.module-item[data-module-id="${id}"]`)
+            ).filter(Boolean);
+            
+            // Insert them after the header
+            let insertPosition = draggedHeader;
+            childModules.forEach(childModule => {
+                // Move the child to be after the insert position
+                insertPosition.parentNode.insertBefore(childModule, insertPosition.nextSibling);
+                // Update insert position for next child
+                insertPosition = childModule;
+            });
+        }
+    }
+    
+    // Handle dropping a module onto a header
+    function handleModuleToHeaderDrop(moduleId, headerId) {
+        console.log(`Adding module ${moduleId} to header ${headerId}`);
+        
+        // Remove from current header if any
+        Object.keys(moduleHierarchy).forEach(currentHeaderId => {
+            const index = moduleHierarchy[currentHeaderId].indexOf(moduleId);
+            if (index !== -1) {
+                moduleHierarchy[currentHeaderId].splice(index, 1);
+            }
+        });
+        
+        // Add to new header
+        if (!moduleHierarchy[headerId]) {
+            moduleHierarchy[headerId] = [];
+        }
+        
+        if (!moduleHierarchy[headerId].includes(moduleId)) {
+            moduleHierarchy[headerId].push(moduleId);
+        }
+        
+        // Save changes
+        saveHierarchy();
+        
+        // Move the module element to be visually under the header
+        const headerElement = document.querySelector(`.module-item[data-module-id="${headerId}"]`);
+        const moduleElement = document.querySelector(`.module-item[data-module-id="${moduleId}"]`);
+        
+        if (headerElement && moduleElement) {
+            // Insert right after the header element
+            headerElement.parentNode.insertBefore(moduleElement, headerElement.nextSibling);
+        }
+    }
+    
+    // Handle dropping a module onto another module
+    function handleModuleToModuleDrop(draggedId, targetId) {
+        // Check if target module is part of a header
+        let targetHeaderId = null;
+        
+        Object.keys(moduleHierarchy).forEach(headerId => {
+            if (moduleHierarchy[headerId].includes(targetId)) {
+                targetHeaderId = headerId;
+            }
+        });
+        
+        if (targetHeaderId) {
+            // Target module is part of a header, add dragged module to same header
+            handleModuleToHeaderDrop(draggedId, targetHeaderId);
+        } else {
+            // Target is not part of a header, just perform a normal reposition
+            const draggedModule = document.querySelector(`.module-item[data-module-id="${draggedId}"]`);
+            const targetModule = document.querySelector(`.module-item[data-module-id="${targetId}"]`);
+            
+            if (draggedModule && targetModule) {
+                // Reposition the dragged module
+                const allModules = Array.from(document.querySelectorAll('.module-item'));
+                const draggedIndex = allModules.indexOf(draggedModule);
+                const targetIndex = allModules.indexOf(targetModule);
+                
+                // Remove from any header since it's now standalone
+                Object.keys(moduleHierarchy).forEach(headerId => {
+                    const index = moduleHierarchy[headerId].indexOf(draggedId);
+                    if (index !== -1) {
+                        moduleHierarchy[headerId].splice(index, 1);
+                        saveHierarchy();
+                    }
+                });
+                
+                // Reposition in the DOM
+                if (draggedIndex < targetIndex) {
+                    targetModule.parentNode.insertBefore(draggedModule, targetModule.nextSibling);
+                } else {
+                    targetModule.parentNode.insertBefore(draggedModule, targetModule);
+                }
+            }
+        }
     }
     
     // Replace the Add Module button with enhanced version
@@ -203,6 +455,9 @@ window.ModuleHierarchy = {};
         
         // Apply styling
         applyHierarchyStyling();
+        
+        // Notify
+        console.log(`Created new header: ${headerName} (${headerId})`);
     }
     
     // Add a new module
@@ -308,10 +563,16 @@ window.ModuleHierarchy = {};
                 modalOverlay.style.display = 'none';
                 
                 // Create the module
-                createNewModule(moduleId, moduleName, true, false);
+                const moduleElement = createNewModule(moduleId, moduleName, true, false);
                 
                 // Add to header
                 addModuleToHeader(moduleId, headerId);
+                
+                // Move it visually under the header
+                const headerElement = document.querySelector(`.module-item[data-module-id="${headerId}"]`);
+                if (headerElement && moduleElement) {
+                    headerElement.parentNode.insertBefore(moduleElement, headerElement.nextSibling);
+                }
             });
         });
     }
@@ -362,44 +623,13 @@ window.ModuleHierarchy = {};
             });
         }
         
-        // Reattach event handlers if functions exist
-        if (typeof setupModuleEventListeners === 'function') {
-            setupModuleEventListeners(moduleElement);
-        } else {
-            // Add basic functionality
-            const moduleText = moduleElement.querySelector('span');
-            if (moduleText) {
-                moduleText.addEventListener('click', function() {
-                    const moduleId = moduleElement.getAttribute('data-module-id');
-                    const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
-                    
-                    // Don't navigate for headers
-                    if (moduleElement.getAttribute('data-module-type') === MODULE_TYPES.HEADER) {
-                        toggleHeaderChildren(moduleId);
-                        return;
-                    }
-                    
-                    if (requiresClient) {
-                        // Verify client is selected
-                        const client = window.ConstructionApp?.ClientManager?.getCurrentClient();
-                        if (!client) {
-                            alert("Please select or create a client first to access this module.");
-                            return;
-                        }
-                        
-                        // Set navigation state
-                        sessionStorage.setItem('navigationState', 'fromDashboard');
-                        
-                        // Save client
-                        sessionStorage.setItem('currentClient', JSON.stringify(client));
-                        
-                        // Navigate
-                        window.location.href = moduleId + '.html';
-                    } else {
-                        window.location.href = moduleId + '.html';
-                    }
-                });
-            }
+        // Reattach event handlers to maintain functionality
+        if (typeof setupModuleClickHandler === 'function') {
+            setupModuleClickHandler(moduleElement);
+        }
+        
+        if (typeof setupDropdownForModule === 'function') {
+            setupDropdownForModule(moduleElement);
         }
         
         // Save to Firebase if available
@@ -459,6 +689,83 @@ window.ModuleHierarchy = {};
                 childElement.style.display = isCollapsed ? 'flex' : 'none';
             }
         });
+    }
+    
+    // Set up observer to handle dynamic module changes
+    function setupObserver() {
+        const observer = new MutationObserver(function(mutations) {
+            let modulesChanged = false;
+            
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    // Check for added/removed modules
+                    const addedModules = Array.from(mutation.addedNodes).filter(
+                        node => node.nodeType === 1 && node.classList.contains('module-item')
+                    );
+                    
+                    const removedModules = Array.from(mutation.removedNodes).filter(
+                        node => node.nodeType === 1 && node.classList.contains('module-item')
+                    );
+                    
+                    if (addedModules.length > 0) {
+                        // Set up drag for new modules
+                        addedModules.forEach(module => {
+                            if (!module.hasAttribute('data-hierarchy-initialized')) {
+                                module.setAttribute('data-hierarchy-initialized', 'true');
+                                module.setAttribute('draggable', 'true');
+                            }
+                        });
+                        
+                        modulesChanged = true;
+                    }
+                    
+                    if (removedModules.length > 0) {
+                        // Clean up deleted modules
+                        removedModules.forEach(module => {
+                            const moduleId = module.getAttribute('data-module-id');
+                            if (moduleId) {
+                                cleanupDeletedModule(moduleId);
+                            }
+                        });
+                        
+                        modulesChanged = true;
+                    }
+                }
+            });
+            
+            if (modulesChanged) {
+                console.log("Modules changed, updating hierarchy");
+                applyHierarchyStyling();
+            }
+        });
+        
+        // Start observing
+        const modulesContainer = document.getElementById('modules-container');
+        if (modulesContainer) {
+            observer.observe(modulesContainer, { childList: true, subtree: true });
+        }
+    }
+    
+    // Clean up deleted module
+    function cleanupDeletedModule(moduleId) {
+        console.log(`Cleaning up deleted module: ${moduleId}`);
+        
+        // Check if it was a header
+        if (moduleHierarchy[moduleId]) {
+            // It was a header, delete it and its children references
+            delete moduleHierarchy[moduleId];
+        }
+        
+        // Check if it was a child of any header
+        for (const headerId in moduleHierarchy) {
+            const index = moduleHierarchy[headerId].indexOf(moduleId);
+            if (index !== -1) {
+                moduleHierarchy[headerId].splice(index, 1);
+            }
+        }
+        
+        // Save changes
+        saveHierarchy();
     }
     
     // Export public functions
