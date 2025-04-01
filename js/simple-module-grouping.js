@@ -1,17 +1,16 @@
 /**
  * Very Simple Module Grouping
+ * - Makes category module text green
+ * - Indents child modules
+ * - No cell highlighting or backgrounds
  */
 
 // Run when page loads
 window.addEventListener('load', function() {
-    console.log("MODULE GROUPING SCRIPT IS RUNNING - VERSION 1.0");
-    alert("Module grouping script is active!");
+    console.log("Module grouping script running - v1.1");
     
-    // Apply initial styling with delay to ensure modules are loaded
-    setTimeout(styleModules, 1000);
-    
-    // Also set up an interval to apply styling every 2 seconds
-    setInterval(styleModules, 2000);
+    // Apply styling with delay to ensure modules are loaded
+    setTimeout(styleModules, 500);
 });
 
 // Main styling function
@@ -22,6 +21,12 @@ function styleModules() {
     const modules = document.querySelectorAll('.module-item');
     console.log("Found " + modules.length + " modules");
     
+    // Reset any existing styling first
+    modules.forEach(function(module) {
+        // Clear any background color that might have been applied
+        module.style.backgroundColor = '';
+    });
+    
     // Process each module
     modules.forEach(function(module) {
         const moduleId = module.getAttribute('data-module-id');
@@ -31,8 +36,8 @@ function styleModules() {
         
         // Style foundations module and its children
         if (moduleId === 'foundations') {
-            // Main foundations module - green text
-            moduleText.style.color = 'lime';
+            // Main foundations module - green text only
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('foundations-')) {
@@ -42,7 +47,7 @@ function styleModules() {
         
         // Style brickwork module and its children
         if (moduleId === 'brickwork') {
-            moduleText.style.color = 'lime';
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('brickwork-')) {
@@ -51,7 +56,7 @@ function styleModules() {
         
         // Style surfacebeds module and its children
         if (moduleId === 'surfacebeds') {
-            moduleText.style.color = 'lime';
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('surfacebeds-')) {
@@ -60,7 +65,7 @@ function styleModules() {
         
         // Style plaster module and its children
         if (moduleId === 'plaster') {
-            moduleText.style.color = 'lime';
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('plaster-')) {
@@ -69,7 +74,7 @@ function styleModules() {
         
         // Style floor module and its children
         if (moduleId === 'floor') {
-            moduleText.style.color = 'lime';
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('floor-')) {
@@ -78,7 +83,7 @@ function styleModules() {
         
         // Style carpentry module and its children
         if (moduleId === 'carpentry') {
-            moduleText.style.color = 'lime';
+            moduleText.style.color = '#4eca8b';
             moduleText.style.fontWeight = 'bold';
         }
         else if (moduleId.startsWith('carpentry-')) {
