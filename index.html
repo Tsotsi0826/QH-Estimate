@@ -564,7 +564,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: relative;
             border-left: 4px solid #1c87c9;
-            grid-column: span 2; /* Take 2 columns in the grid */
         }
 
         #foundations-tile h5 {
@@ -621,13 +620,6 @@
 
         #foundations-tile .foundation-module-btn:hover {
             background-color: #0e6fa5;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            #foundations-tile {
-                grid-column: span 1; /* Only take 1 column on smaller screens */
-            }
         }
     </style>
 </head>
@@ -739,11 +731,11 @@
             // Define all known modules in your application
             const knownModules = [
                 { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true },
-                { id: 'steel', name: 'Steel', requiresClient: true },
+                { id: 'foundations-steel', name: 'Foundations Steel', requiresClient: true },
                 { id: 'demolish', name: 'Demolish', requiresClient: true },
-                { id: 'concrete', name: 'Concrete', requiresClient: true },
+                { id: 'foundations-concrete', name: 'Foundations Concrete', requiresClient: true },
                 { id: 'brickwork', name: 'Brickwork', requiresClient: true },
-                { id: 'excavation', name: 'Excavation', requiresClient: true }
+                { id: 'foundations-excavation', name: 'Foundations Excavation', requiresClient: true }
                 // Add other modules as needed
             ];
             
