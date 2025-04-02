@@ -1,5 +1,5 @@
 // js/dashboard.js
-// Added delayed log check after setting innerHTML in renderDashboardContent.
+// Added visually obvious temporary styles to dashboard tiles for debugging.
 
 // --- Global Variables ---
 let appData = {
@@ -58,13 +58,20 @@ function updateDashboard(client) {
     const clientNameDisplay = document.getElementById('client-name-display');
     const dashboardDesc = document.querySelector('.dashboard-description');
 
+    if (!dashboardContent) {
+        console.error("CRITICAL ERROR: #module-content element not found!");
+        return; // Stop if main content area doesn't exist
+    }
+
     if (client) {
         console.log("DEBUG: updateDashboard - Client is present. Updating UI elements."); // Log client presence
-        clientNameDisplay.textContent = `Client: ${client.name}`;
-        dashboardDesc.textContent = `${client.address || 'No address provided'}`;
-        logoutBtn.style.display = 'inline-block';
-        const newLogoutBtn = logoutBtn.cloneNode(true); logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-        newLogoutBtn.addEventListener('click', () => window.ConstructionApp.ModuleUtils.logoutClient());
+        if(clientNameDisplay) clientNameDisplay.textContent = `Client: ${client.name}`;
+        if(dashboardDesc) dashboardDesc.textContent = `${client.address || 'No address provided'}`;
+        if(logoutBtn) {
+            logoutBtn.style.display = 'inline-block';
+            const newLogoutBtn = logoutBtn.cloneNode(true); logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+            newLogoutBtn.addEventListener('click', () => window.ConstructionApp.ModuleUtils.logoutClient());
+        }
 
         console.log("DEBUG: updateDashboard - Calling updateTotalProjectCost..."); // Log before call
         updateTotalProjectCost();
@@ -72,32 +79,28 @@ function updateDashboard(client) {
         renderDashboardContent(client);
 
     } else {
-        // ** NEW LOG **
         console.log("DEBUG: updateDashboard - No client present. Clearing UI and showing 'No Client' message.");
-        clientNameDisplay.textContent = '';
-        // Ensure total cost is also reset visually when no client
+        if(clientNameDisplay) clientNameDisplay.textContent = '';
         const costElement = document.getElementById('total-project-cost');
         if(costElement) costElement.textContent = 'Total Project Cost: R0.00';
-        dashboardDesc.textContent = 'Overview of project data.';
-        logoutBtn.style.display = 'none';
-        // Ensure dashboard content is cleared and shows the correct message
-        if(dashboardContent) {
-            dashboardContent.innerHTML = `<div class="no-client-notification"><h2>No Client Selected</h2><p>Please select an existing client or create a new client to start working.</p><div class="no-client-buttons"><button id="prompt-new-client" class="btn no-client-button">Create New Client</button><button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button></div></div>`;
-            setTimeout(() => { const newClientBtn = document.getElementById('prompt-new-client'); const openClientBtn = document.getElementById('prompt-open-client'); if (newClientBtn) newClientBtn.addEventListener('click', () => document.getElementById('new-client-btn')?.click()); if (openClientBtn) openClientBtn.addEventListener('click', () => document.getElementById('open-client-btn')?.click()); }, 0);
-        } else {
-            console.error("DEBUG: Cannot find #module-content element to clear UI.");
-        }
+        if(dashboardDesc) dashboardDesc.textContent = 'Overview of project data.';
+        if(logoutBtn) logoutBtn.style.display = 'none';
+
+        // Set the "No Client Selected" message
+        dashboardContent.innerHTML = `<div class="no-client-notification"><h2>No Client Selected</h2><p>Please select an existing client or create a new client to start working.</p><div class="no-client-buttons"><button id="prompt-new-client" class="btn no-client-button">Create New Client</button><button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button></div></div>`;
+        // Add listeners to buttons inside the message
+        setTimeout(() => { const newClientBtn = document.getElementById('prompt-new-client'); const openClientBtn = document.getElementById('prompt-open-client'); if (newClientBtn) newClientBtn.addEventListener('click', () => document.getElementById('new-client-btn')?.click()); if (openClientBtn) openClientBtn.addEventListener('click', () => document.getElementById('open-client-btn')?.click()); }, 0);
     }
     console.log("DEBUG: updateDashboard - Calling updateDebugPanel."); // Log before call
     updateDebugPanel();
 }
 
-// Render dashboard content - ADDED LOGGING + Verification Log
+// Render dashboard content - ADDED LOGGING + Verification Log + Delayed Check
 function renderDashboardContent(client) {
     const contentElement = document.getElementById('module-content');
     if (!contentElement) {
         console.error("DEBUG: Cannot find #module-content element to render tiles!");
-        return; // Exit if container not found
+        return;
     }
     contentElement.innerHTML = ''; // Clear first
     let tilesHTML = '';
@@ -121,7 +124,8 @@ function renderDashboardContent(client) {
                   console.log(`DEBUG: >>> Rendering tile HTML for ${moduleId}`);
                   hasModuleDataToShow = true;
                   const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-                  tilesHTML += `<div class="module-tile" data-module-id="${moduleId}">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
+                  // ** ADDING TEMPORARY VISUAL STYLE **
+                  tilesHTML += `<div class="module-tile" data-module-id="${moduleId}" style="background-color: #ffdddd; border: 2px solid red; color: black;">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
               }
          });
     }
@@ -138,16 +142,21 @@ function renderDashboardContent(client) {
 
     console.log("DEBUG: Attempting to set contentElement.innerHTML");
     contentElement.innerHTML = finalContent;
-    // ** NEW Verification Log **
     console.log("DEBUG: Verifying contentElement.innerHTML (first 500 chars):", contentElement.innerHTML.substring(0, 500));
 
-    // ** NEW Delayed Verification Log **
+    // Delayed check
     setTimeout(() => {
-        console.log("DEBUG: Verifying contentElement.innerHTML after 0ms delay:", contentElement.innerHTML.substring(0, 500));
+        const currentContent = contentElement.innerHTML;
+        console.log("DEBUG: Verifying contentElement.innerHTML after 0ms delay:", currentContent.substring(0, 500));
+        // ** NEW CHECK: Does it still contain the tile structure? **
+        if (hasModuleDataToShow && !currentContent.includes('module-tile')) {
+            console.error("ERROR: Tiles seem to have disappeared immediately after setting innerHTML!");
+        } else if (!hasModuleDataToShow && currentContent.includes('module-tile')) {
+             console.error("ERROR: Tiles appeared unexpectedly after setting 'No data' message!");
+        }
     }, 0);
 
     console.log("DEBUG: contentElement.innerHTML update complete. Attaching tile listeners.");
-
     setupDashboardTileListeners();
 }
 
@@ -156,42 +165,7 @@ function handleTileClick(e) { /* ... (no changes) ... */ const openBtn = e.targe
 function clearModuleData(moduleId) { /* ... (no changes) ... */ const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client && client.moduleData && client.moduleData.hasOwnProperty(moduleId)) { console.log(`[Dashboard] Clearing module data for: ${moduleId}`); window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => { if (success) { if (client.moduleData) { delete client.moduleData[moduleId]; sessionStorage.setItem('currentClient', JSON.stringify(client)); console.log("[Dashboard] Updated client session after clearing module."); } window.ConstructionApp.ModuleUtils.showSuccessMessage(`Module data cleared.`); renderDashboardContent(client); updateTotalProjectCost(); } else { window.ConstructionApp.ModuleUtils.showErrorMessage(`Error clearing data: ${error || 'Unknown'}`); } }); } else { console.warn(`[Dashboard] No data found for module ${moduleId} to clear.`); } }
 
 // Update total project cost - ADDED LOGGING
-function updateTotalProjectCost() {
-    let totalCost = 0;
-    const client = window.ConstructionApp.ClientManager.getCurrentClient();
-    const costElement = document.getElementById('total-project-cost'); // Get element reference
-
-    console.log(`DEBUG: updateTotalProjectCost called. Client: ${client ? client.name : 'None'}`);
-
-    if (client && client.moduleData) {
-        console.log("DEBUG: Calculating total cost. Module data keys:", Object.keys(client.moduleData));
-        Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => {
-             const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {};
-             if (!moduleData) return;
-             let costForThisModule = 0;
-             if (moduleData.totalCost !== undefined) costForThisModule = parseFloat(moduleData.totalCost) || 0;
-             else if (moduleData.items && Array.isArray(moduleData.items)) costForThisModule = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
-             console.log(`DEBUG: Cost for ${moduleId}: ${costForThisModule}`);
-             totalCost += costForThisModule;
-        });
-    } else {
-         console.log("DEBUG: No client or moduleData for cost calculation.");
-    }
-
-    const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
-    console.log(`DEBUG: Final calculated total: ${totalCost}, Formatted: ${formattedTotal}`);
-
-    if (costElement) {
-        console.log(`DEBUG: Attempting to update #total-project-cost textContent to: Total Project Cost: ${formattedTotal}`);
-        costElement.textContent = `Total Project Cost: ${formattedTotal}`;
-        // ** NEW Verification Log **
-        console.log("DEBUG: Verifying #total-project-cost textContent:", costElement.textContent);
-        console.log("DEBUG: #total-project-cost textContent update complete.");
-    } else {
-        console.error("DEBUG: Could not find #total-project-cost element to update!");
-    }
-}
-
+function updateTotalProjectCost() { /* ... (no changes needed in function body) ... */ let totalCost = 0; const client = window.ConstructionApp.ClientManager.getCurrentClient(); const costElement = document.getElementById('total-project-cost'); console.log(`DEBUG: updateTotalProjectCost called. Client: ${client ? client.name : 'None'}`); if (client && client.moduleData) { console.log("DEBUG: Calculating total cost. Module data keys:", Object.keys(client.moduleData)); Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => { const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {}; if (!moduleData) return; let costForThisModule = 0; if (moduleData.totalCost !== undefined) costForThisModule = parseFloat(moduleData.totalCost) || 0; else if (moduleData.items && Array.isArray(moduleData.items)) costForThisModule = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items); console.log(`DEBUG: Cost for ${moduleId}: ${costForThisModule}`); totalCost += costForThisModule; }); } else { console.log("DEBUG: No client or moduleData for cost calculation."); } const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost); console.log(`DEBUG: Final calculated total: ${totalCost}, Formatted: ${formattedTotal}`); if (costElement) { console.log(`DEBUG: Attempting to update #total-project-cost textContent to: Total Project Cost: ${formattedTotal}`); costElement.textContent = `Total Project Cost: ${formattedTotal}`; console.log("DEBUG: Verifying #total-project-cost textContent:", costElement.textContent); console.log("DEBUG: #total-project-cost textContent update complete."); } else { console.error("DEBUG: Could not find #total-project-cost element to update!"); } }
 
 // --- Debug Panel --- (No changes needed here)
 function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); if (document.getElementById('debug-toggle-btn')) return; const toggleBtn = document.createElement('button'); toggleBtn.textContent = 'Debug'; toggleBtn.id = 'debug-toggle-btn'; toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; opacity: 0.8;'; document.body.appendChild(toggleBtn); toggleBtn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; if (!isVisible) updateDebugPanel(); }); }
