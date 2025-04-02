@@ -270,8 +270,6 @@
         /* Indicator for non-client-required modules */
         .module-item[data-requires-client="false"] .module-name::after {
             content: " ⚙️"; /* Gear emoji */
-            /* position: absolute; */ /* Removed absolute positioning */
-            /* right: 10px; */
             font-size: 14px;
             opacity: 0.7;
             display: inline-block; /* Keep it inline */
@@ -338,7 +336,7 @@
         }
         .dashboard-content { /* Main scrolling area */
             padding: 20px;
-            background-color: #fff;
+            background-color: #fff; /* White background for content area */
             margin: 0;
             color: #333;
             flex: 1; /* Take remaining vertical space */
@@ -370,6 +368,7 @@
             justify-content: space-between; /* Space out content */
             min-height: 150px; /* Minimum height for consistency */
             transition: all 0.2s ease-in-out; /* Smooth transitions */
+            border: 1px solid #e5e7eb; /* --- ADDED: Subtle border --- */
         }
          .module-tile:hover {
               transform: translateY(-2px); /* Slight lift on hover */
@@ -442,8 +441,9 @@
         .btn:hover:not(:disabled) { /* Add :not(:disabled) */
             background-color: #3db97a; /* Darker green */
         }
-         .btn:disabled { /* Style for disabled buttons */
-              background-color: #a0d8bd; /* Lighter green */
+         .btn:disabled { /* --- UPDATED: Style for disabled buttons --- */
+              background-color: #d1d5db; /* Light Gray (Tailwind gray-300) */
+              color: #6b7280; /* Darker Gray text (Tailwind gray-500) */
               cursor: not-allowed;
               opacity: 0.7;
          }
@@ -615,43 +615,39 @@
             opacity: 1;
         }
 
-        /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */ /* Added comments for clarity */
+        /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */
 
         /* Style for the container holding the module tiles on the dashboard */
-        /* Using .dashboard-content prefix for potentially higher specificity */
         .dashboard-content #module-tiles {
             display: grid;
-            /* Responsive columns: fill space, min 240px wide, auto-wrap */
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 15px; /* Space between tiles */
-            padding-top: 10px; /* Space above the tiles grid */
+            gap: 15px;
+            padding-top: 10px;
         }
 
         /* Style for tiles representing modules with no data for the current client */
         .module-tile.no-client-data {
-            opacity: 0.65; /* Make them slightly faded */
-            background-color: #f0f0f0; /* Slightly different background */
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Less prominent shadow */
+            opacity: 0.75; /* Slightly less faded */
+            background-color: #f8f9fa; /* Match summary wrapper background */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        /* Optional: Adjust cost text style within empty tiles */
+        /* Adjust cost text style within empty tiles */
         .module-tile.no-client-data .module-tile-cost {
             color: #6c757d; /* Grey color for cost text */
         }
          /* Ensure the small annotation within cost is styled */
          .module-tile.no-client-data .module-tile-cost small {
-              color: #6c757d; /* Match cost color or adjust */
+              color: #6c757d;
          }
 
 
         /* Style for the notification when no client is selected */
-        /* This replaces the previous .no-client-notification styles if any existed */
         .no-client-notification {
             padding: 30px;
-            background-color: #e9ecef; /* Lighter background */
+            background-color: #e9ecef;
             border-radius: 8px;
-            /* margin: 20px; */ /* Remove margin if placed directly before tiles */
-            margin-bottom: 20px; /* Add margin below notification */
+            margin-bottom: 20px;
             text-align: center;
             border: 1px solid #ced4da;
         }
@@ -662,10 +658,9 @@
         }
         .no-client-notification p {
             font-size: 1.1em;
-            margin-bottom: 0; /* Remove bottom margin */
+            margin-bottom: 0;
             color: #6c757d;
         }
-        /* .no-client-buttons styles are removed as buttons are no longer in this notification */
 
         /* --- END ADDED/UPDATED CSS RULES --- */
 
