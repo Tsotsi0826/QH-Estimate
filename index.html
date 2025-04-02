@@ -13,50 +13,45 @@
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
     <style>
-        /* --- DARK THEME UPDATE --- */
-
         /* General Styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif; /* Consider a more modern font later if desired */
+            font-family: Arial, sans-serif;
         }
 
         body {
             display: flex;
             height: 100vh;
-            overflow: hidden;
-            background-color: #111827; /* --- Dark background for body --- */
+            overflow: hidden; /* Prevent body scroll */
+            background-color: #f5f5f5;
         }
 
-        /* Sidebar Styles (Mostly unchanged, already dark) */
+        /* Sidebar Styles */
         .sidebar {
-            width: 25%;
-            min-width: 250px;
-            background-color: #1f2937; /* --- Slightly lighter dark blue/gray --- */
-            color: #d1d5db; /* --- Light gray text --- */
+            width: 25%; /* Adjusted width slightly */
+            min-width: 250px; /* Minimum width */
+            background-color: #1c2639; /* Dark blue */
+            color: #fff;
             height: 100%;
-            border-right: 1px solid #374151; /* --- Darker border --- */
+            border-right: 1px solid #333;
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Stack elements vertically */
         }
 
         .sidebar-header {
             padding: 20px;
             font-size: 1.4em;
-            font-weight: 600; /* Slightly bolder */
-            border-bottom: 1px solid #374151; /* --- Darker border --- */
-            flex-shrink: 0;
-            color: #f9fafb; /* --- White header text --- */
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .section-title {
-            padding: 15px 20px 10px 20px; /* Adjust padding */
-            font-size: 0.9em; /* Smaller section title */
-            font-weight: 600;
-            text-transform: uppercase; /* Uppercase */
-            color: #9ca3af; /* --- Medium gray --- */
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
             flex-shrink: 0;
         }
 
@@ -68,33 +63,23 @@
         .client-action {
             display: flex;
             align-items: center;
-            padding: 10px; /* Consistent padding */
+            padding: 10px 0;
             cursor: pointer;
-            border-radius: 4px;
-            margin-bottom: 5px; /* Space between actions */
-            transition: background-color 0.2s, color 0.2s;
-            color: #d1d5db; /* Default light gray */
         }
 
-        .client-action i {
+        .client-action i { /* Simple icon placeholder styling */
             margin-right: 10px;
-            font-style: normal;
-            width: 1.2em; /* Slightly wider */
+            font-style: normal; /* If using text as icons */
+            width: 1em;
             text-align: center;
-            color: #9ca3af; /* Icon color */
         }
 
         .client-action:hover {
-            background-color: #374151; /* --- Darker hover --- */
-            color: #ffffff; /* --- White text on hover --- */
+            color: #4eca8b; /* Green hover */
         }
-         .client-action:hover i {
-             color: #4eca8b; /* Accent color on hover */
-         }
-
 
         .search-container {
-            padding: 15px 20px;
+            padding: 20px;
             flex-shrink: 0;
         }
 
@@ -102,348 +87,499 @@
             width: 100%;
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #374151; /* --- Dark border --- */
-            background-color: #1f2937; /* --- Match sidebar --- */
-            color: #f9fafb; /* --- Light text --- */
+            border: none;
+            background-color: #2d364a; /* Slightly lighter blue */
+            color: #fff;
         }
-        .search-input::placeholder {
-            color: #6b7280; /* --- Darker gray placeholder --- */
-        }
-         .search-input:focus {
-              outline: none;
-              border-color: #4eca8b; /* Accent border on focus */
-              box-shadow: 0 0 0 2px rgba(78, 202, 139, 0.3);
-         }
 
+        .search-input::placeholder {
+            color: #aaa;
+        }
 
         .add-module-btn {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center content */
             padding: 10px 20px;
-            background-color: #4eca8b; /* --- Accent green --- */
-            color: #ffffff; /* --- White text --- */
+            background-color: #2d364a;
+            color: #fff;
             cursor: pointer;
-            margin: 15px 20px;
+            margin: 10px 20px; /* Add margin */
             border-radius: 4px;
             transition: background-color 0.2s;
-            flex-shrink: 0;
-            font-weight: 500;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .add-module-btn:hover {
-            background-color: #3db97a; /* Darker green */
+            background-color: #4eca8b; /* Green hover */
         }
 
         .add-module-btn i {
-            margin-right: 8px;
+            margin-right: 10px;
             font-weight: bold;
             font-style: normal;
         }
 
         /* Module List Styles (Sidebar) */
         .modules-list-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 0 10px 10px 10px; /* Adjust padding */
+            flex-grow: 1; /* Allow container to grow and fill space */
+            overflow-y: auto; /* Enable scrolling for the list */
+            padding: 10px 0;
         }
 
-        .modules-list-container::-webkit-scrollbar { width: 6px; background-color: transparent; }
-        .modules-list-container::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 3px; } /* Darker thumb */
-        .modules-list-container::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+        /* Custom scrollbar for module list */
+        .modules-list-container::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent;
+        }
+        .modules-list-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        .modules-list-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
 
         .module-item {
-            padding: 8px 10px 8px 20px;
-            cursor: pointer; display: flex; align-items: center; position: relative;
-            transition: background-color 0.2s; white-space: nowrap; text-overflow: ellipsis;
-            border-radius: 4px; /* Slightly more rounded */
-            margin: 1px 0; /* Tighter spacing */
-            color: #d1d5db; /* Light gray text */
+            padding: 8px 10px 8px 20px; /* Base padding */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: background-color 0.2s;
+            white-space: nowrap; /* Prevent wrapping */
+            text-overflow: ellipsis; /* Add ellipsis if too long */
+            border-radius: 3px;
+            margin: 2px 10px 2px 0; /* Adjust margins */
+            color: #fff; /* Ensure text is white */
         }
         .module-item:hover {
-            background-color: #374151; /* Darker gray hover */
-            color: #ffffff; /* White text on hover */
+            background-color: #2d364a; /* Hover background */
         }
 
-        .module-item[data-level="1"] { padding-left: 30px; } /* Adjust indentation */
-        .module-item[data-level="2"] { padding-left: 45px; }
-        .module-item[data-level="3"] { padding-left: 60px; }
+        /* Indentation based on data-level attribute (set by JS) */
+        .module-item[data-level="1"] { padding-left: 35px; }
+        .module-item[data-level="2"] { padding-left: 50px; }
+        .module-item[data-level="3"] { padding-left: 65px; }
+        /* Add more levels if needed */
 
+        /* Styles for Collapse/Expand Icon */
         .collapse-icon {
-            display: inline-block; width: 16px; margin-right: 8px; /* More space */
-            text-align: center; transition: transform 0.2s ease-in-out;
-            color: #9ca3af; flex-shrink: 0;
+            display: inline-block;
+            width: 16px; /* Ensure space for icon */
+            margin-right: 5px; /* Space between icon and text */
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+            color: #aaa; /* Subtler color for icon */
+            flex-shrink: 0; /* Prevent icon shrinking */
         }
-        .module-item.collapsed .collapse-icon { transform: rotate(-90deg); }
-        .module-item:hover .collapse-icon { color: #fff; }
+        /* Rotate icon when header is collapsed */
+        .module-item.collapsed .collapse-icon {
+            transform: rotate(-90deg); /* Point right when collapsed */
+        }
 
-        .module-item[data-module-type="header"] {
-             /* Headers could have slightly different style */
-             margin-top: 8px;
-        }
+        /* Style for header module names */
         .module-item[data-module-type="header"] .module-name {
-            font-weight: 600;
-            color: #a7f3d0; /* Lighter accent green for headers */
-            text-transform: uppercase;
-            font-size: 0.9em;
+            font-weight: bold;
+            color: #4eca8b; /* Green color for headers */
         }
-         .module-item[data-module-type="header"]:hover .module-name {
-              color: #ffffff;
-         }
 
-
-        .module-item.dragging { opacity: 0.6; background-color: #4b5563; border: 1px dashed #6b7280; }
+        /* Drag and Drop Visual Feedback */
+        .module-item.dragging {
+            opacity: 0.5;
+            background-color: #3a4967;
+            border: 1px dashed #aaa;
+        }
         .module-item.drag-over-top { border-top: 2px solid #4eca8b; }
         .module-item.drag-over-bottom { border-bottom: 2px solid #4eca8b; }
-        .module-item.drag-over-middle { background-color: #4b5563; outline: 2px dashed #4eca8b; outline-offset: -2px; }
-
-        .module-icon {
-            margin-right: 8px; font-size: 1em; /* Larger icon placeholder */ cursor: pointer;
-            width: 18px; text-align: center; position: relative; display: inline-block;
-            flex-shrink: 0; color: #9ca3af; line-height: 1; /* Align dots better */
+        .module-item.drag-over-middle {
+            background-color: #3a4967;
+            outline: 2px dashed #4eca8b;
+            outline-offset: -2px;
         }
-         .module-icon:hover { color: #fff; }
+
+        /* Module Action Icon and Drag Handle */
+        .module-icon {
+            margin-right: 8px;
+            font-size: 0.8em; /* Adjust size if needed */
+            cursor: pointer;
+            width: 16px; /* Icon width */
+            text-align: center;
+            position: relative; /* For dropdown positioning */
+            display: inline-block;
+            flex-shrink: 0;
+            color: #aaa; /* Icon color */
+        }
+         .module-icon:hover {
+             color: #fff;
+         }
 
         .module-drag-handle {
-            cursor: move; position: absolute; left: 8px; /* Adjust position */ top: 50%;
-            transform: translateY(-50%); opacity: 0; transition: opacity 0.2s;
-            padding: 0 5px; flex-shrink: 0; color: #9ca3af;
+            cursor: move;
+            position: absolute;
+            left: 5px; /* Position handle to the left */
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s;
+            padding: 0 5px;
+            flex-shrink: 0;
+            color: #aaa; /* Handle color */
         }
-        .module-item:hover .module-drag-handle { opacity: 0.7; }
-        .module-drag-handle:hover { opacity: 1; color: #fff; }
+        .module-item:hover .module-drag-handle {
+            opacity: 0.7; /* Show handle on hover */
+        }
+        .module-drag-handle:hover {
+             opacity: 1;
+             color: #fff;
+        }
+
 
         .module-name {
-            flex-grow: 1; overflow: hidden; text-overflow: ellipsis;
-            margin-left: 5px;
+            flex-grow: 1; /* Allow name to take available space */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Show ellipsis */
+            margin-left: 5px; /* Space after icon/handle */
         }
 
+        /* Dropdown Menu for Module Actions */
         .dropdown-menu {
-            display: none; position: absolute;
-            background-color: #374151; /* Dark background */
-            min-width: 120px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4); /* Darker shadow */
-            z-index: 10; border-radius: 4px; left: 0; top: 100%;
-            border: 1px solid #4b5563; /* Border */
+            display: none; /* Hidden by default */
+            position: absolute;
+            background-color: #fff; /* White background */
+            min-width: 120px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10; /* Ensure it's above other items */
+            border-radius: 4px;
+            left: 0; /* Align with icon */
+            top: 100%; /* Position below icon */
+            color: #333; /* Text color for dropdown items */
         }
         .dropdown-item {
-            padding: 8px 12px; /* Adjust padding */ text-decoration: none; display: block;
-            font-size: 14px; white-space: nowrap;
-            color: #d1d5db; /* Light text */ cursor: pointer;
-             transition: background-color 0.2s, color 0.2s;
+            padding: 10px 12px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+            white-space: nowrap;
+            color: #333; /* Ensure text color */
+            cursor: pointer;
         }
         .dropdown-item:hover {
-            background-color: #4b5563; /* Slightly lighter dark */
-            color: #ffffff; /* White text */
+            background-color: #f1f1f1; /* Hover background */
         }
 
+        /* Indicator for non-client-required modules */
         .module-item[data-requires-client="false"] .module-name::after {
-            content: " ⚙️"; font-size: 14px; opacity: 0.7;
-            display: inline-block; margin-left: 5px;
+            content: " ⚙️"; /* Gear emoji */
+            font-size: 14px;
+            opacity: 0.7;
+            display: inline-block; /* Keep it inline */
+            margin-left: 5px;
         }
 
 
         /* Main Content Area Styles */
         .main-content {
-            width: 75%; height: 100%; overflow: hidden;
-            background-color: #111827; /* --- Dark background --- */
-            color: #d1d5db; /* --- Default light text --- */
-            position: relative; display: flex; flex-direction: column;
+            width: 75%;
+            height: 100%;
+            overflow: hidden; /* Prevent overflow */
+            background-color: white;
+            color: #333;
+            position: relative;
+            display: flex;
+            flex-direction: column; /* Stack header, description, content */
         }
         .dashboard-header {
-            padding: 20px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #374151; /* Darker border */
-            background-color: #1f2937; /* Match sidebar */
-            color: #f9fafb; /* White text */
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333; /* Darker border */
+            background-color: #1c2639; /* Match sidebar */
+            color: #fff;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .dashboard-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        .dashboard-title i { /* Icon placeholder */
+            margin-right: 10px;
+            font-style: normal;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Space between actions */
+        }
+        .btn-small { /* Small button style */
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #6c757d; /* Gray */
+        }
+        .btn-small:hover {
+            background-color: #5a6268; /* Darker gray */
+        }
+        .total-cost { /* Total project cost display */
+            font-size: 1.2em;
+            color: #4eca8b; /* Green */
+            font-weight: bold;
+        }
+        .dashboard-description { /* Area below header */
+            padding: 10px 20px;
+            color: #aaa;
+            background-color: #1c2639; /* Match header */
             flex-shrink: 0;
-        }
-        .dashboard-title { font-size: 1.5em; font-weight: 600; display: flex; align-items: center; }
-        .dashboard-title i { margin-right: 10px; font-style: normal; }
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .btn-small {
-            padding: 5px 10px; font-size: 0.9em;
-            background-color: #4b5563; /* Darker Gray */
-            color: #e5e7eb; /* Lighter text */
-             border: 1px solid #6b7280;
-        }
-        .btn-small:hover { background-color: #6b7280; } /* Hover */
-
-        .total-cost { font-size: 1.2em; color: #34d399; font-weight: 600; } /* Tailwind emerald-400 */
-
-        .dashboard-description {
-            padding: 10px 20px; color: #9ca3af; /* Lighter gray text */
-            background-color: #1f2937; /* Match header */ flex-shrink: 0;
-            min-height: 38px; border-bottom: 1px solid #374151;
+            min-height: 38px; /* Ensure consistent height */
+            border-bottom: 1px solid #333; /* Separator */
         }
         .dashboard-content { /* Main scrolling area */
             padding: 20px;
-            background-color: #111827; /* --- Dark background --- */
-            margin: 0; color: #d1d5db; /* Light text */
-            flex: 1; overflow-y: auto; overflow-x: hidden;
+            background-color: #f8f9fa; /* --- CHANGED: Light gray background for content area --- */
+            margin: 0;
+            color: #333;
+            flex: 1; /* Take remaining vertical space */
+            overflow-y: auto; /* Enable vertical scroll */
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
-        .dashboard-content::-webkit-scrollbar { width: 8px; background-color: #1f2937; } /* Dark track */
-        .dashboard-content::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; } /* Darker thumb */
-        .dashboard-content::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+        /* Custom scrollbar for main content */
+        .dashboard-content::-webkit-scrollbar {
+            width: 8px;
+            background-color: #e9ecef; /* Slightly darker gray for scrollbar track */
+        }
+        .dashboard-content::-webkit-scrollbar-thumb {
+            background-color: #adb5bd; /* Mid-gray for scrollbar thumb */
+            border-radius: 4px;
+        }
+        .dashboard-content::-webkit-scrollbar-thumb:hover {
+            background-color: #6c757d; /* Darker gray on hover */
+        }
 
-        /* --- DARK THEME TILE STYLES --- */
+        /* Module Tile Styles (Dashboard) */
         .module-tile {
-            background-color: #1f2937; /* --- Dark Tile Background (e.g., gray-800) --- */
-            padding: 20px; /* More padding */
-            border-radius: 6px; /* Slightly more rounded */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.3); /* Adjusted shadow for dark */
-            position: relative; display: flex; flex-direction: column;
-            justify-content: space-between; min-height: 160px; /* Increased height */
+            background-color: white; /* Active tiles are white */
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); /* Subtle shadow */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px;
             transition: all 0.2s ease-in-out;
-            border: 1px solid #374151; /* --- Dark Border (e.g., gray-700) --- */
-            color: #d1d5db; /* Default light text for tile */
+            border: 1px solid #e5e7eb; /* Default border */
         }
          .module-tile:hover {
               transform: translateY(-3px);
-              box-shadow: 0 6px 12px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.2); /* Enhanced shadow */
-              border-color: #4b5563; /* Slightly lighter border on hover */
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06); /* Enhanced shadow on hover */
          }
 
-        .module-tile h5 { /* Tile title */
-            margin-bottom: 10px; font-size: 1.0em; /* Slightly smaller title */
-            color: #f9fafb; /* --- White Title --- */
-            font-weight: 500; /* Medium weight */
-            text-transform: uppercase; /* Uppercase title */
-            letter-spacing: 0.5px; /* Spacing */
+        .module-tile h5 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #111827; /* Darker text (Tailwind gray-900) */
+            font-weight: 600; /* Slightly bolder */
             flex-grow: 1;
         }
-        .module-tile-cost { /* Cost display */
-            font-size: 1.6em; /* Larger cost */
+        .module-tile-cost {
+            font-size: 1.4em;
             margin: 10px 0;
-            color: #ffffff; /* --- White Cost --- */
-            font-weight: 600;
+            color: #10b981; /* Slightly different Green (Tailwind emerald-500) */
+            font-weight: bold;
         }
-         .module-tile-cost small { /* Annotation */
-              font-size: 0.6em; font-weight: normal;
-              opacity: 0.8;
-              color: #9ca3af; /* --- Medium Gray annotation --- */
-              display: block; /* Put annotation on new line */
-              margin-top: -5px; /* Adjust spacing */
+         .module-tile-cost small {
+              font-size: 0.6em;
+              font-weight: normal;
+              opacity: 0.8; /* Slightly more opaque */
+              color: #6b7280; /* Tailwind gray-500 */
          }
 
-        .clear-module-btn { /* Clear button 'X' */
-            position: absolute; top: 10px; right: 10px; /* Adjust position */
-            background: none; border: none;
-            color: #9ca3af; /* --- Medium Gray icon --- */
-            cursor: pointer; font-size: 18px; border-radius: 50%;
-            width: 28px; height: 28px; line-height: 28px; /* Slightly larger */
-            text-align: center; padding: 0; opacity: 0.6;
-            transition: all 0.2s;
+        .clear-module-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #ef4444; /* Tailwind red-500 */
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            padding: 0;
+            opacity: 0.4; /* More faded initially */
+            transition: opacity 0.2s, background-color 0.2s;
         }
-        .module-tile:hover .clear-module-btn { opacity: 1; }
+        .module-tile:hover .clear-module-btn {
+            opacity: 1;
+        }
         .clear-module-btn:hover {
-            background-color: #374151; /* Dark gray background */
-            color: #ef4444; /* Red color */
+            background-color: #fee2e2; /* Tailwind red-100 */
+            color: #b91c1c; /* Tailwind red-700 */
         }
 
-        /* General Button Styles (Adjusted for Dark Theme) */
+        /* General Table Styles (If needed on dashboard, unlikely) */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        input[type="number"] { width: 100%; padding: 5px; }
+        .total-row { font-weight: bold; background-color: #e9e9e9; }
+
+        /* General Button Styles */
         .btn {
-            background-color: #3b82f6; /* --- ACCENT BLUE --- */
+            background-color: #10b981; /* Tailwind emerald-500 */
             color: white;
-            border: none; padding: 8px 16px; border-radius: 4px;
-            cursor: pointer; transition: background-color 0.2s;
-            text-align: center; font-weight: 500;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+            font-weight: 500; /* Medium weight */
         }
         .btn:hover:not(:disabled) {
-            background-color: #2563eb; /* Darker Blue */
+            background-color: #059669; /* Tailwind emerald-600 */
         }
-         .btn:disabled { /* Disabled button style for dark theme */
-              background-color: #374151; /* --- Dark Gray Background --- */
-              color: #6b7280; /* --- Darker Gray text --- */
+         .btn:disabled { /* --- UPDATED: Style for disabled buttons --- */
+              background-color: #e5e7eb; /* Light Gray (Tailwind gray-200) */
+              color: #9ca3af; /* Medium Gray text (Tailwind gray-400) */
               cursor: not-allowed;
-              opacity: 0.7;
+              opacity: 0.8; /* Slightly less opaque */
          }
 
         .btn-cancel {
-            background-color: #4b5563; /* Darker Gray */
-            color: #d1d5db; /* Light Gray text */
-             border: 1px solid #6b7280;
+            background-color: #9ca3af; /* Tailwind gray-400 */
+            color: #fff;
         }
         .btn-cancel:hover {
-            background-color: #6b7280;
-             color: #f9fafb;
+            background-color: #6b7280; /* Tailwind gray-500 */
         }
 
-        /* Modal Styles (Keep light for contrast, or make dark too?) */
-        /* Keeping modals light for now */
-        .modal-overlay { /* Unchanged */ }
-        .modal { /* Unchanged */ }
-        .modal-header { /* Unchanged */ }
-        .modal-title { /* Unchanged */ }
-        .modal-close { /* Unchanged */ }
-        .modal-close:hover { /* Unchanged */ }
-        .modal-body { /* Unchanged */ }
-        .form-group { /* Unchanged */ }
-        .form-group label { /* Unchanged */ }
-        .form-control { /* Unchanged */ }
-        .form-control:focus { /* Unchanged */ }
-        .modal-footer { /* Unchanged */ }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: white; padding: 25px; border-radius: 8px;
+            width: 500px; max-width: 95%; color: #333;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;
+        }
+        .modal-title { font-size: 1.3em; font-weight: bold; }
+        .modal-close {
+            cursor: pointer; font-size: 1.8em; color: #aaa;
+            line-height: 1; padding: 0 5px;
+        }
+        .modal-close:hover { color: #333; }
+        .modal-body { margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .form-control {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 1em;
+        }
+        .form-control:focus {
+            border-color: #10b981; outline: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); /* Emerald focus ring */
+        }
+        .modal-footer {
+            display: flex; justify-content: flex-end; padding-top: 15px;
+            border-top: 1px solid #eee; gap: 10px;
+        }
 
         /* Client List in Modal */
-        .client-list { /* Unchanged */ }
-        .client-list-item { /* Unchanged */ }
-        .client-list-item:last-child { /* Unchanged */ }
-        .client-list-item:hover { /* Unchanged */ }
-        .client-list-item.active { /* Unchanged */ }
+        .client-list {
+            max-height: 300px; overflow-y: auto; border: 1px solid #ddd;
+            border-radius: 4px; margin-top: 10px;
+        }
+        .client-list-item {
+            padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .client-list-item:last-child { border-bottom: none; }
+        .client-list-item:hover { background-color: #f0f0f0; }
+        .client-list-item.active { background-color: #a7f3d0; font-weight: bold; } /* Tailwind emerald-100 */
 
         /* Add Module Modal Specific Styles */
-        #add-module-modal .modal-body { /* Unchanged */ }
-        #add-module-modal select, #add-module-modal input[type="text"] { /* Unchanged */ }
-        #add-module-modal input[type="checkbox"] { /* Unchanged */ }
-        #add-module-modal label small { /* Unchanged */ }
+        #add-module-modal .modal-body { display: flex; flex-direction: column; gap: 15px; }
+        #add-module-modal select, #add-module-modal input[type="text"] { margin-top: 5px; }
+        #add-module-modal input[type="checkbox"] { margin-right: 8px; vertical-align: middle; }
+        #add-module-modal label small { display: block; color: #666; margin-top: 3px; font-weight: normal; }
 
-        /* Debug Panel (Keep as is) */
-        .debug-panel { /* Unchanged */ }
-        #debug-toggle-btn { /* Unchanged */ }
-        #debug-toggle-btn:hover { /* Unchanged */ }
+        /* Debug Panel */
+        .debug-panel {
+            position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.8);
+            color: #0f0; font-family: monospace; padding: 15px; border-radius: 5px;
+            font-size: 12px; max-width: 350px; max-height: 50vh; overflow: auto;
+            z-index: 9999; display: none; border: 1px solid #444;
+        }
+        #debug-toggle-btn {
+            position: fixed; bottom: 10px; right: 10px; z-index: 10000;
+            padding: 5px 10px; background: #333; color: white; border: none;
+            border-radius: 3px; cursor: pointer; opacity: 0.8; font-size: 12px;
+            display: none;
+        }
+        #debug-toggle-btn:hover { opacity: 1; }
 
-        /* --- Grid container and No Data tile styles --- */
+        /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */
+
+        /* Style for the container holding the module tiles on the dashboard */
         .dashboard-content #module-tiles {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 20px; /* Increased gap */
+            gap: 15px;
             padding-top: 10px;
         }
 
+        /* Style for tiles representing modules with no data for the current client */
         .module-tile.no-client-data {
-            opacity: 0.85;
-            background-color: #1f2937; /* Match active tile background */
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Less shadow */
-            border-color: #374151; /* Match active tile border */
+            opacity: 0.85; /* --- ADJUSTED: Slightly less faded --- */
+            background-color: #f8f9fa; /* --- ADJUSTED: Match content background --- */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-color: #d1d5db; /* --- ADDED: Slightly darker border for definition --- */
         }
-        .module-tile.no-client-data h5 {
-             color: #9ca3af; /* Dim title */
-        }
+
+        /* Adjust cost text style within empty tiles */
         .module-tile.no-client-data .module-tile-cost {
-            color: #6b7280; /* Dim cost */
+            color: #6b7280; /* Tailwind gray-500 */
         }
          .module-tile.no-client-data .module-tile-cost small {
               color: #6b7280;
          }
 
-        /* Notification Style for Dark Theme */
+
+        /* Style for the notification when no client is selected */
         .no-client-notification {
             padding: 30px;
-            background-color: #1f2937; /* Match tile background */
+            background-color: #e9ecef;
             border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
-            border: 1px solid #374151; /* Match tile border */
+            border: 1px solid #ced4da;
         }
         .no-client-notification h2 {
-            color: #e5e7eb; /* Lighter text */
+            color: #495057;
             margin-bottom: 15px;
             font-size: 1.4em;
         }
         .no-client-notification p {
             font-size: 1.1em;
             margin-bottom: 0;
-            color: #9ca3af; /* Lighter gray text */
+            color: #6c757d;
         }
 
-        /* --- END DARK THEME UPDATE --- */
+        /* --- END ADDED/UPDATED CSS RULES --- */
 
     </style>
 </head>
@@ -481,7 +617,7 @@
 
         <div class="dashboard-content">
             <div id="module-content">
-                <div style="padding: 20px; background-color: #1f2937; color: #d1d5db; border-radius: 5px; margin-bottom: 20px;">
+                <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
                     <h3>Loading Dashboard...</h3>
                     <p>Please wait while the application initializes.</p>
                 </div>
