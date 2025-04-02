@@ -1,6 +1,6 @@
 // js/dashboard.js
 // Contains the primary JavaScript logic for the Construction Estimator dashboard (index.html)
-// Added collapse/expand functionality for header modules.
+// Fixed stray comment appearing in module list. Added collapse/expand.
 
 // --- Global Variables ---
 let appData = {
@@ -123,7 +123,7 @@ function renderModuleList(modules) {
                 const moduleElement = createModuleElement(module, level);
                 container.appendChild(moduleElement);
 
-                // *** MODIFICATION: Check collapse state before rendering children ***
+                // Check collapse state before rendering children
                 const isHeader = module.type === 'header';
                 const isCollapsed = headerCollapseState[module.id] === true; // Check state
 
@@ -155,21 +155,20 @@ function createModuleElement(moduleData, level = 0) {
     moduleElement.setAttribute('data-level', level);
     moduleElement.style.paddingLeft = `${20 + level * 15}px`;
 
-    // *** MODIFICATION: Add collapse icon for headers ***
     let collapseIconHTML = '';
     if (moduleData.type === 'header') {
-        moduleElement.classList.add('header-item'); // Add class for styling/targeting
+        moduleElement.classList.add('header-item');
         const isCollapsed = headerCollapseState[moduleData.id] === true;
         if (isCollapsed) {
-            moduleElement.classList.add('collapsed'); // Add class if collapsed
+            moduleElement.classList.add('collapsed');
         }
-        // Use ▼ for expanded (default), CSS transform rotates it for collapsed state
         collapseIconHTML = `<span class="collapse-icon" title="Expand/Collapse">▼</span>`;
     }
 
+    // *** FIXED: Removed the stray JS comment from the template literal ***
     moduleElement.innerHTML = `
         <div class="module-drag-handle" title="Drag to reorder">≡</div>
-        ${collapseIconHTML} {/* Insert the collapse icon */}
+        ${collapseIconHTML}
         <div class="module-icon">
             ...
             <div class="dropdown-menu">
@@ -185,8 +184,6 @@ function createModuleElement(moduleData, level = 0) {
     const deleteBtn = moduleElement.querySelector('.delete-module');
     const icon = moduleElement.querySelector('.module-icon');
     const nameSpan = moduleElement.querySelector('.module-name');
-    // ** Get collapse icon if it exists **
-    const collapseIcon = moduleElement.querySelector('.collapse-icon');
 
     if (editBtn) { editBtn.addEventListener('click', (e) => { e.stopPropagation(); console.log("DEBUG: Direct Edit listener fired for:", moduleElement.dataset.moduleId); editModule(moduleElement); closeAllDropdowns(); }); }
     else { console.warn("Could not find edit button for module:", moduleData.id); }
@@ -197,9 +194,6 @@ function createModuleElement(moduleData, level = 0) {
     if (icon) { icon.addEventListener('click', (e) => { e.stopPropagation(); const dropdown = icon.querySelector('.dropdown-menu'); if (dropdown) { const isVisible = dropdown.style.display === 'block'; closeAllDropdowns(); if (!isVisible) dropdown.style.display = 'block'; } }); }
 
     if (nameSpan) { nameSpan.addEventListener('click', () => { const moduleId = moduleElement.getAttribute('data-module-id'); window.ConstructionApp.ModuleUtils.navigateToModule(moduleId); }); }
-
-    // ** Listener for the collapse icon is now handled by delegation in setupDropdownMenus **
-    // ** Listener for the header item itself is now handled by delegation in setupDropdownMenus **
 
     return moduleElement;
 }
