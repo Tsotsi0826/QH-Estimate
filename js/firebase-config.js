@@ -1,434 +1,273 @@
 // firebase-config.js - Enhanced Firebase configuration with better error handling and batch operations
 
-// Firebase Configuration
+// Firebase Configuration (Replace with your actual config)
 const firebaseConfig = {
-  apiKey: "AIzaSyB489SUeC5XAbvzIM_Vh6TJpnbEaoz4KuQ",
-  authDomain: "qh-dashboard-d67cf.firebaseapp.com",
-  projectId: "qh-dashboard-d67cf",
-  storageBucket: "qh-dashboard-d67cf.firebasestorage.app",
-  messagingSenderId: "939838453148",
-  appId: "1:939838453148:web:2bf49c6ec240343b934459"
+  apiKey: "AIzaSyB489SUeC5XAbvzIM_Vh6TJpnbEaoz4KuQ", // Replace with your API key
+  authDomain: "qh-dashboard-d67cf.firebaseapp.com", // Replace with your auth domain
+  projectId: "qh-dashboard-d67cf", // Replace with your project ID
+  storageBucket: "qh-dashboard-d67cf.firebasestorage.app", // Replace with your storage bucket
+  messagingSenderId: "939838453148", // Replace with your sender ID
+  appId: "1:939838453148:web:2bf49c6ec240343b934459" // Replace with your app ID
 };
 
-// Initialize Firestore DB and export it
-let db;
-let batch;
-let pendingBatchOperations = 0;
-const MAX_BATCH_OPERATIONS = 400; // Firestore limit is 500, using 400 for safety
 
-// Initialize Firebase
+// --- Global Firebase Variables ---
+let db; // Firestore database instance
+let batch; // Current write batch
+let pendingBatchOperations = 0;
+const MAX_BATCH_OPERATIONS = 400; // Firestore limit is 500, using 400 for safety buffer
+let autoCommitTimer = null; // Timer for automatic batch commits
+
+
+// --- Initialization ---
+/**
+ * Initializes the Firebase app and Firestore database.
+ * Includes fallback to a mock database if initialization fails.
+ * @returns {firebase.firestore.Firestore} Firestore instance or mock object.
+ */
 function initializeFirebase() {
     try {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        
+        // Check if Firebase is already initialized
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully.");
+        } else {
+            firebase.app(); // if already initialized, use that app
+            console.log("Firebase already initialized.");
+        }
+
+        db = firebase.firestore(); // Get Firestore instance
+
+        // Optional: Configure Firestore settings (e.g., persistence)
+        // db.enablePersistence().catch(err => console.error("Firestore persistence error:", err));
+
         // Create initial batch
         batch = db.batch();
-        
-        console.log("Firebase initialized successfully");
+        pendingBatchOperations = 0;
+
         return db;
     } catch (error) {
         console.error("Firebase initialization error:", error);
-        // Create a mock database for testing
+        // Fallback to mock database for offline/testing
         db = createMockDatabase();
-        console.log("Using mock database for testing");
+        console.warn("Using mock database due to initialization error.");
         return db;
     }
 }
 
-// Create new batch when needed
+// --- Batching Logic ---
+/**
+ * Gets the current batch or creates a new one if needed.
+ * Commits the old batch automatically if it's full.
+ * @returns {firebase.firestore.WriteBatch} The current batch object.
+ */
 function getOrCreateBatch() {
+    if (!db || typeof db.batch !== 'function') {
+         console.error("Firestore not initialized properly, cannot create batch.");
+         // Return a dummy batch object to prevent further errors downstream
+         return { set: ()=>{}, update: ()=>{}, delete: ()=>{}, commit: ()=>Promise.resolve() };
+    }
     if (!batch || pendingBatchOperations >= MAX_BATCH_OPERATIONS) {
         // Commit current batch if it exists and has operations
         if (batch && pendingBatchOperations > 0) {
-            commitBatch();
+            console.log(`Max batch operations reached (${pendingBatchOperations}). Committing previous batch.`);
+            commitBatch(); // Commit the full batch
         }
-        
         // Create new batch
+        console.log("Creating new Firestore batch.");
         batch = db.batch();
         pendingBatchOperations = 0;
     }
     return batch;
 }
 
-// Commit the current batch
+/**
+ * Commits the current Firestore write batch if it has pending operations.
+ * Resets the batch and counter.
+ * @returns {Promise<boolean>} Promise resolving to true on success, rejecting on error.
+ */
 function commitBatch() {
-    if (!batch || pendingBatchOperations === 0) return Promise.resolve();
-    
-    console.log(`Committing batch with ${pendingBatchOperations} operations`);
+    if (!batch || pendingBatchOperations === 0) {
+        // console.log("No pending operations in batch, commit skipped.");
+        return Promise.resolve(true); // Resolve immediately if nothing to commit
+    }
+
+    console.log(`Committing Firestore batch with ${pendingBatchOperations} operations...`);
     const currentBatch = batch;
-    batch = db.batch(); // Create new batch
-    
-    const currentOps = pendingBatchOperations;
+    const currentOpsCount = pendingBatchOperations;
+
+    // Reset global batch and counter *before* async commit
+    batch = db.batch();
     pendingBatchOperations = 0;
-    
+    clearTimeout(autoCommitTimer); // Cancel any pending auto-commit timer
+    autoCommitTimer = null;
+
     return currentBatch.commit()
         .then(() => {
-            console.log(`Batch with ${currentOps} operations committed successfully`);
+            console.log(`Batch with ${currentOpsCount} operations committed successfully.`);
             return true;
         })
         .catch(error => {
-            console.error("Error committing batch:", error);
-            throw error;
+            console.error(`Error committing batch with ${currentOpsCount} operations:`, error);
+            // Consider error handling: retry? notify user?
+            throw error; // Re-throw error for upstream handling
         });
 }
 
-// Schedule auto-commit if not running
-let autoCommitTimer = null;
-function scheduleAutoCommit(delayMs = 5000) {
-    if (!autoCommitTimer && pendingBatchOperations > 0) {
-        autoCommitTimer = setTimeout(() => {
-            commitBatch().finally(() => { autoCommitTimer = null; });
-        }, delayMs);
-    }
+/**
+ * Schedules the current batch to be committed after a delay if there are pending operations.
+ * Resets the timer if called again before it fires.
+ * @param {number} [delayMs=3000] - Delay in milliseconds (default: 3 seconds).
+ */
+function scheduleAutoCommit(delayMs = 3000) { // Shorter delay
+    if (pendingBatchOperations === 0) return; // No need to schedule if nothing pending
+
+    clearTimeout(autoCommitTimer); // Clear existing timer
+    autoCommitTimer = setTimeout(() => {
+        console.log(`Auto-commit timer fired after ${delayMs}ms.`);
+        commitBatch().finally(() => { autoCommitTimer = null; }); // Commit and clear timer variable
+    }, delayMs);
+    // console.log(`Auto-commit scheduled in ${delayMs}ms`);
 }
 
-// Mock database for testing
+// --- Mock Database (for offline/testing) ---
+/**
+ * Creates a mock Firestore object for testing or offline use.
+ * Logs operations instead of performing them.
+ */
 function createMockDatabase() {
+    const mockStore = {}; // Simulate data storage
+    console.warn("--- MOCK DATABASE ACTIVE ---");
     return {
         collection: function(name) {
+             mockStore[name] = mockStore[name] || {};
             return {
                 doc: function(id) {
+                     mockStore[name][id] = mockStore[name][id] || null; // Simulate doc existence
                     return {
                         set: function(data, options) {
-                            console.log(`Mock DB: saving ${name} document ${id}:`, data, options);
+                            console.log(`[Mock DB] SET: ${name}/${id}`, options || '', data);
+                            mockStore[name][id] = JSON.parse(JSON.stringify(data)); // Simulate save (deep copy)
                             return Promise.resolve();
                         },
                         get: function() {
+                            console.log(`[Mock DB] GET: ${name}/${id}`);
+                            const data = mockStore[name][id];
                             return Promise.resolve({
-                                exists: false,
-                                data: function() { return null; }
+                                exists: !!data,
+                                data: function() { return data ? JSON.parse(JSON.stringify(data)) : null; }, // Return copy
+                                id: id
                             });
                         },
                         update: function(data) {
-                            console.log(`Mock DB: updating ${name} document ${id}:`, data);
+                            console.log(`[Mock DB] UPDATE: ${name}/${id}`, data);
+                             if (mockStore[name][id]) {
+                                 mockStore[name][id] = { ...mockStore[name][id], ...JSON.parse(JSON.stringify(data)) }; // Simulate merge
+                             }
                             return Promise.resolve();
                         },
-                        delete: function(){
-                            console.log(`Mock delete ${name}/${id}`);
+                        delete: function() {
+                            console.log(`[Mock DB] DELETE: ${name}/${id}`);
+                            delete mockStore[name][id];
                             return Promise.resolve();
                         }
                     };
                 },
-                get: function(){
+                get: function() {
+                     console.log(`[Mock DB] GET Collection: ${name}`);
+                     const docs = Object.keys(mockStore[name] || {}).map(id => ({
+                          exists: true,
+                          data: () => JSON.parse(JSON.stringify(mockStore[name][id])),
+                          id: id
+                     }));
                     return Promise.resolve({
-                        empty: true,
-                        forEach: function(){}
+                        empty: docs.length === 0,
+                        docs: docs,
+                        forEach: function(callback) { docs.forEach(callback); }
                     });
                 }
             };
         },
         batch: function() {
+             console.log("[Mock DB] Create Batch");
+             // Mock batch doesn't really batch, just logs
             return {
-                set: function() { return this; },
-                update: function() { return this; },
-                delete: function() { return this; },
-                commit: function() { return Promise.resolve(); }
+                set: function(docRef, data, options) { console.log(`[Mock Batch] SET:`, docRef.id, options || '', data); return this; },
+                update: function(docRef, data) { console.log(`[Mock Batch] UPDATE:`, docRef.id, data); return this; },
+                delete: function(docRef) { console.log(`[Mock Batch] DELETE:`, docRef.id); return this; },
+                commit: function() { console.log("[Mock Batch] COMMIT"); return Promise.resolve(); }
             };
         }
     };
 }
 
-// Enhanced database functions
+// --- Enhanced Database Functions ---
 
-// Save client data to Firestore with retry logic
+/**
+ * Saves client data to Firestore using batching.
+ * Includes basic validation and retry logic.
+ * @param {object} client - The client object to save.
+ * @returns {Promise<boolean>} True on success, false on failure.
+ */
 async function saveClientToFirestore(client) {
-    // Validate client object
+    if (!db) { console.error("Firestore DB not initialized."); return Promise.resolve(false); }
     if (!client || !client.id) {
-        console.error("Invalid client object:", client);
-        return Promise.reject(new Error("Invalid client object"));
+        console.error("saveClientToFirestore: Invalid client object provided:", client);
+        return Promise.reject(new Error("Invalid client object")); // Reject promise for invalid input
     }
-    
+
+    console.log(`[Firestore] Preparing to save client: ${client.id}`);
+    const clientRef = db.collection('clients').doc(client.id);
+    // Ensure lastModified is updated
+    const dataToSave = { ...client, lastModified: new Date().toISOString() };
+
     try {
-        console.log("Saving client to Firestore:", client.id);
-        const clientRef = db.collection('clients').doc(client.id);
-        
         // Add to batch
         const currentBatch = getOrCreateBatch();
-        currentBatch.set(clientRef, client);
+        currentBatch.set(clientRef, dataToSave); // Use set to overwrite completely
         pendingBatchOperations++;
-        
-        // Schedule auto-commit
+        console.log(`[Firestore] Added client ${client.id} SET to batch. Pending ops: ${pendingBatchOperations}`);
+
+        // Schedule auto-commit (will reset timer if called frequently)
         scheduleAutoCommit();
-        
-        // For immediate feedback, do a direct save too
-        await clientRef.set(client);
-        
-        console.log("Client saved successfully");
+
+        // Optionally, return true immediately after adding to batch for faster UI feedback
+        // The actual commit happens later via scheduleAutoCommit or commitBatch
         return true;
+
+        // OR: Await direct save for immediate confirmation (less batching benefit)
+        // await clientRef.set(dataToSave);
+        // console.log(`[Firestore] Client ${client.id} saved directly.`);
+        // return true;
+
     } catch (error) {
-        console.error("Error saving client:", error);
-        
-        // Retry logic
-        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.log("Retrying client save due to temporary error...");
-            try {
-                const clientRef = db.collection('clients').doc(client.id);
-                await clientRef.set(client);
-                console.log("Retry successful");
-                return true;
-            } catch (retryError) {
-                console.error("Retry failed:", retryError);
-                return false;
-            }
-        }
-        
-        return false;
+        console.error(`[Firestore] Error adding client ${client.id} to batch:`, error);
+        // Attempt immediate save as fallback? Or just report error?
+        // For now, just report error.
+        _logFirebaseError(error, 'saveClientToFirestore_batch'); // Log error details
+        return false; // Indicate failure
     }
+
+    // Note: Retry logic might be better handled within commitBatch or globally
 }
 
-// Save module data to Firestore with optimized structure
+/**
+ * Saves specific module data for a client to Firestore using batching and merge.
+ * @param {string} clientId - The ID of the client.
+ * @param {string} moduleId - The ID of the module.
+ * @param {object | null} data - The data to save for the module (or null to delete).
+ * @returns {Promise<boolean>} True on success, false on failure.
+ */
 async function saveModuleDataToFirestore(clientId, moduleId, data) {
+     if (!db) { console.error("Firestore DB not initialized."); return Promise.resolve(false); }
     if (!clientId || !moduleId) {
-        console.error("Invalid client or module ID");
+        console.error("saveModuleDataToFirestore: Invalid client or module ID provided.");
         return Promise.reject(new Error("Invalid client or module ID"));
     }
-    
-    try {
-        console.log(`Saving ${moduleId} data for client ${clientId}`);
-        const clientRef = db.collection('clients').doc(clientId);
-        
-        // Add versioning info
-        const moduleData = {
-            data: data,
-            lastModified: new Date().toISOString(),
-            version: Date.now()
-        };
-        
-        // Add to batch
-        const currentBatch = getOrCreateBatch();
-        currentBatch.set(clientRef, {
-            moduleData: {
-                [moduleId]: moduleData
-            },
-            lastModified: new Date().toISOString()
-        }, { merge: true });
-        pendingBatchOperations++;
-        
-        // Schedule auto-commit
-        scheduleAutoCommit();
-        
-        // For immediate feedback, do a direct save too
-        await clientRef.set({
-            moduleData: {
-                [moduleId]: moduleData
-            },
-            lastModified: new Date().toISOString()
-        }, { merge: true });
-        
-        console.log(`Module ${moduleId} data saved successfully`);
-        return true;
-    } catch (error) {
-        console.error(`Error saving module ${moduleId} data:`, error);
-        
-        // Retry logic
-        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.log("Retrying module save due to temporary error...");
-            try {
-                const clientRef = db.collection('clients').doc(clientId);
-                await clientRef.set({
-                    moduleData: {
-                        [moduleId]: {
-                            data: data,
-                            lastModified: new Date().toISOString(),
-                            version: Date.now()
-                        }
-                    },
-                    lastModified: new Date().toISOString()
-                }, { merge: true });
-                console.log("Retry successful");
-                return true;
-            } catch (retryError) {
-                console.error("Retry failed:", retryError);
-                return false;
-            }
-        }
-        
-        return false;
-    }
-}
 
-// Load clients from Firestore with data validation
-async function loadClientsFromFirestore() {
-    try {
-        console.log("Loading clients from Firestore");
-        const clients = [];
-        const clientsSnapshot = await db.collection('clients').get();
-        
-        if (!clientsSnapshot.empty) {
-            clientsSnapshot.forEach(doc => {
-                try {
-                    const clientData = doc.data();
-                    
-                    // Basic validation
-                    if (!clientData.id) {
-                        clientData.id = doc.id;
-                    }
-                    
-                    if (!clientData.moduleData) {
-                        clientData.moduleData = {};
-                    }
-                    
-                    // Extract actual module data from versioned storage
-                    const moduleIds = Object.keys(clientData.moduleData);
-                    moduleIds.forEach(moduleId => {
-                        const moduleData = clientData.moduleData[moduleId];
-                        if (moduleData && moduleData.data) {
-                            clientData.moduleData[moduleId] = moduleData.data;
-                        }
-                    });
-                    
-                    clients.push(clientData);
-                } catch (parseError) {
-                    console.error("Error parsing client document:", parseError);
-                }
-            });
-            console.log(`Loaded ${clients.length} clients`);
-        } else {
-            console.log("No clients found");
-        }
-        return clients;
-    } catch (error) {
-        console.error("Error loading clients:", error);
-        return [];
-    }
-}
+    console.log(`[Firestore] Preparing to save module [${moduleId}] data for client [${clientId}]`);
+    const clientRef = db.collection('clients').doc(clientId);
 
-// Save modules to Firestore
-async function saveModulesToFirestore(modules) {
-    try {
-        console.log("Saving modules to Firestore");
-        const modulesRef = db.collection('settings').doc('modules');
-        
-        // Add timestamps and versioning
-        const moduleData = {
-            modules: modules,
-            lastModified: new Date().toISOString(),
-            version: Date.now()
-        };
-        
-        await modulesRef.set(moduleData);
-        console.log("Modules saved successfully");
-        return true;
-    } catch (error) {
-        console.error("Error saving modules:", error);
-        
-        // Retry logic
-        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.log("Retrying modules save due to temporary error...");
-            try {
-                const modulesRef = db.collection('settings').doc('modules');
-                await modulesRef.set({
-                    modules: modules,
-                    lastModified: new Date().toISOString(),
-                    version: Date.now()
-                });
-                console.log("Retry successful");
-                return true;
-            } catch (retryError) {
-                console.error("Retry failed:", retryError);
-                return false;
-            }
-        }
-        
-        return false;
-    }
-}
-
-// Load modules from Firestore
-async function loadModulesFromFirestore() {
-    try {
-        console.log("Loading modules from Firestore");
-        const modulesDoc = await db.collection('settings').doc('modules').get();
-        
-        if (modulesDoc.exists) {
-            const data = modulesDoc.data();
-            console.log("Loaded modules:", data.modules ? data.modules.length : 0);
-            return data.modules || [];
-        } else {
-            console.log("No modules found in Firestore");
-            return [];
-        }
-    } catch (error) {
-        console.error("Error loading modules:", error);
-        return [];
-    }
-}
-
-// Archive client data (for history/versioning)
-async function archiveClientData(clientId, reason = "manual") {
-    try {
-        if (!clientId) {
-            console.error("Invalid client ID for archiving");
-            return false;
-        }
-        
-        // Get the current client data
-        const clientDoc = await db.collection('clients').doc(clientId).get();
-        if (!clientDoc.exists) {
-            console.error("Client not found for archiving:", clientId);
-            return false;
-        }
-        
-        const clientData = clientDoc.data();
-        
-        // Create archive record
-        const archiveRef = db.collection('client_archives').doc(`${clientId}_${Date.now()}`);
-        await archiveRef.set({
-            clientData: clientData,
-            archivedAt: new Date().toISOString(),
-            reason: reason
-        });
-        
-        console.log("Client data archived successfully:", clientId);
-        return true;
-    } catch (error) {
-        console.error("Error archiving client data:", error);
-        return false;
-    }
-}
-
-// Initialize Firebase on script load
-const firestore = initializeFirebase();
-
-// Make sure any pending operations are committed before page unload
-window.addEventListener('beforeunload', function() {
-    if (pendingBatchOperations > 0) {
-        try {
-            // Try to commit synchronously (might not always work)
-            commitBatch();
-        } catch (e) {
-            console.error("Error committing batch on page unload:", e);
-        }
-    }
-});
-
-// Export functions and objects
-window.ConstructionApp = window.ConstructionApp || {};
-window.ConstructionApp.Firebase = {
-    db: db,
-    saveClient: saveClientToFirestore,
-    saveModuleData: saveModuleDataToFirestore,
-    loadClients: loadClientsFromFirestore,
-    saveModules: saveModulesToFirestore,
-    loadModules: loadModulesFromFirestore,
-    archiveClient: archiveClientData,
-    
-    // Add direct access to batch operations
-    commitBatch: commitBatch,
-    
-    // Add error tracking/reporting
-    getLastError: function() {
-        return this._lastError;
-    },
-    
-    // Internal error tracking
-    _lastError: null,
-    _setError: function(error) {
-        this._lastError = {
-            message: error.message,
-            code: error.code,
-            timestamp: new Date().toISOString()
-        };
-    }
-};
+    // Structure for updating nested field using dot notation
+    const updateData = {};
+    const fieldPath = `moduleData.${moduleId}`; // Path to the specific modu
