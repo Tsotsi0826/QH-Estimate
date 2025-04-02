@@ -336,7 +336,7 @@
         }
         .dashboard-content { /* Main scrolling area */
             padding: 20px;
-            background-color: #fff; /* White background for content area */
+            background-color: #f8f9fa; /* --- CHANGED: Light gray background for content area --- */
             margin: 0;
             color: #333;
             flex: 1; /* Take remaining vertical space */
@@ -346,60 +346,62 @@
         /* Custom scrollbar for main content */
         .dashboard-content::-webkit-scrollbar {
             width: 8px;
-            background-color: #f5f5f5;
+            background-color: #e9ecef; /* Slightly darker gray for scrollbar track */
         }
         .dashboard-content::-webkit-scrollbar-thumb {
-            background-color: #aaa;
+            background-color: #adb5bd; /* Mid-gray for scrollbar thumb */
             border-radius: 4px;
         }
         .dashboard-content::-webkit-scrollbar-thumb:hover {
-            background-color: #888;
+            background-color: #6c757d; /* Darker gray on hover */
         }
 
         /* Module Tile Styles (Dashboard) */
         .module-tile {
-            background-color: white;
+            background-color: white; /* Active tiles are white */
             padding: 15px;
             border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative; /* For absolute positioning of clear button */
-            display: flex; /* Use flexbox for layout */
-            flex-direction: column; /* Stack content vertically */
-            justify-content: space-between; /* Space out content */
-            min-height: 150px; /* Minimum height for consistency */
-            transition: all 0.2s ease-in-out; /* Smooth transitions */
-            border: 1px solid #e5e7eb; /* --- ADDED: Subtle border --- */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); /* Subtle shadow */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e5e7eb; /* Default border */
         }
          .module-tile:hover {
-              transform: translateY(-2px); /* Slight lift on hover */
-              box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+              transform: translateY(-3px);
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06); /* Enhanced shadow on hover */
          }
 
-        .module-tile h5 { /* Tile title */
+        .module-tile h5 {
             margin-bottom: 10px;
             font-size: 1.1em;
-            color: #1c2639; /* Dark blue title */
-            flex-grow: 1; /* Allow title to push button down */
+            color: #111827; /* Darker text (Tailwind gray-900) */
+            font-weight: 600; /* Slightly bolder */
+            flex-grow: 1;
         }
-        .module-tile-cost { /* Cost display */
+        .module-tile-cost {
             font-size: 1.4em;
             margin: 10px 0;
-            color: #4eca8b; /* Green */
+            color: #10b981; /* Slightly different Green (Tailwind emerald-500) */
             font-weight: bold;
         }
-         .module-tile-cost small { /* Annotation for "(No data)" */
+         .module-tile-cost small {
               font-size: 0.6em;
               font-weight: normal;
-              opacity: 0.7;
+              opacity: 0.8; /* Slightly more opaque */
+              color: #6b7280; /* Tailwind gray-500 */
          }
 
-        .clear-module-btn { /* Clear button (X) */
+        .clear-module-btn {
             position: absolute;
             top: 8px;
             right: 8px;
             background: none;
             border: none;
-            color: #dc3545; /* Red */
+            color: #ef4444; /* Tailwind red-500 */
             cursor: pointer;
             font-size: 18px;
             border-radius: 50%;
@@ -408,14 +410,15 @@
             line-height: 24px;
             text-align: center;
             padding: 0;
-            opacity: 0.5; /* Fade out */
+            opacity: 0.4; /* More faded initially */
             transition: opacity 0.2s, background-color 0.2s;
         }
         .module-tile:hover .clear-module-btn {
-            opacity: 1; /* Show on hover */
+            opacity: 1;
         }
         .clear-module-btn:hover {
-            background-color: #f8d7da; /* Light red background on hover */
+            background-color: #fee2e2; /* Tailwind red-100 */
+            color: #b91c1c; /* Tailwind red-700 */
         }
 
         /* General Table Styles (If needed on dashboard, unlikely) */
@@ -429,7 +432,7 @@
 
         /* General Button Styles */
         .btn {
-            background-color: #4eca8b; /* Green */
+            background-color: #10b981; /* Tailwind emerald-500 */
             color: white;
             border: none;
             padding: 8px 16px;
@@ -437,183 +440,97 @@
             cursor: pointer;
             transition: background-color 0.2s;
             text-align: center;
+            font-weight: 500; /* Medium weight */
         }
-        .btn:hover:not(:disabled) { /* Add :not(:disabled) */
-            background-color: #3db97a; /* Darker green */
+        .btn:hover:not(:disabled) {
+            background-color: #059669; /* Tailwind emerald-600 */
         }
          .btn:disabled { /* --- UPDATED: Style for disabled buttons --- */
-              background-color: #d1d5db; /* Light Gray (Tailwind gray-300) */
-              color: #6b7280; /* Darker Gray text (Tailwind gray-500) */
+              background-color: #e5e7eb; /* Light Gray (Tailwind gray-200) */
+              color: #9ca3af; /* Medium Gray text (Tailwind gray-400) */
               cursor: not-allowed;
-              opacity: 0.7;
+              opacity: 0.8; /* Slightly less opaque */
          }
 
-        .btn-cancel { /* Cancel button style */
-            background-color: #aaa;
+        .btn-cancel {
+            background-color: #9ca3af; /* Tailwind gray-400 */
             color: #fff;
         }
         .btn-cancel:hover {
-            background-color: #888;
+            background-color: #6b7280; /* Tailwind gray-500 */
         }
 
         /* Modal Styles */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black */
-            display: none; /* Hidden by default */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000; /* Ensure modals are on top */
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
         }
         .modal {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            width: 500px; /* Default width */
-            max-width: 95%; /* Max width for smaller screens */
-            color: #333;
+            background-color: white; padding: 25px; border-radius: 8px;
+            width: 500px; max-width: 95%; color: #333;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;
         }
-        .modal-title {
-            font-size: 1.3em;
-            font-weight: bold;
-        }
+        .modal-title { font-size: 1.3em; font-weight: bold; }
         .modal-close {
-            cursor: pointer;
-            font-size: 1.8em;
-            color: #aaa;
-            line-height: 1;
-            padding: 0 5px;
+            cursor: pointer; font-size: 1.8em; color: #aaa;
+            line-height: 1; padding: 0 5px;
         }
-        .modal-close:hover {
-            color: #333;
-        }
-        .modal-body {
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        .form-control { /* Input/Select style */
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1em;
+        .modal-close:hover { color: #333; }
+        .modal-body { margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .form-control {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 1em;
         }
         .form-control:focus {
-            border-color: #4eca8b; /* Green border on focus */
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(78, 202, 139, 0.2); /* Subtle glow */
+            border-color: #10b981; outline: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); /* Emerald focus ring */
         }
         .modal-footer {
-            display: flex;
-            justify-content: flex-end; /* Align buttons to right */
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-            gap: 10px; /* Space between footer buttons */
+            display: flex; justify-content: flex-end; padding-top: 15px;
+            border-top: 1px solid #eee; gap: 10px;
         }
 
         /* Client List in Modal */
         .client-list {
-            max-height: 300px; /* Limit height */
-            overflow-y: auto; /* Enable scrolling */
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-top: 10px;
+            max-height: 300px; overflow-y: auto; border: 1px solid #ddd;
+            border-radius: 4px; margin-top: 10px;
         }
         .client-list-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
+            padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer;
             transition: background-color 0.2s;
         }
-        .client-list-item:last-child {
-            border-bottom: none;
-        }
-        .client-list-item:hover {
-            background-color: #f0f0f0; /* Hover background */
-        }
-        .client-list-item.active { /* Style for potentially active item (if needed) */
-            background-color: #e0f2e9; /* Light green */
-            font-weight: bold;
-        }
+        .client-list-item:last-child { border-bottom: none; }
+        .client-list-item:hover { background-color: #f0f0f0; }
+        .client-list-item.active { background-color: #a7f3d0; font-weight: bold; } /* Tailwind emerald-100 */
 
         /* Add Module Modal Specific Styles */
-        #add-module-modal .modal-body {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        #add-module-modal select,
-        #add-module-modal input[type="text"] {
-            margin-top: 5px; /* Space above inputs/selects */
-        }
-        #add-module-modal input[type="checkbox"] {
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        #add-module-modal label small { /* Help text below checkbox */
-            display: block;
-            color: #666;
-            margin-top: 3px;
-            font-weight: normal;
-        }
+        #add-module-modal .modal-body { display: flex; flex-direction: column; gap: 15px; }
+        #add-module-modal select, #add-module-modal input[type="text"] { margin-top: 5px; }
+        #add-module-modal input[type="checkbox"] { margin-right: 8px; vertical-align: middle; }
+        #add-module-modal label small { display: block; color: #666; margin-top: 3px; font-weight: normal; }
 
         /* Debug Panel */
         .debug-panel {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.8); /* Darker background */
-            color: #0f0; /* Green text */
-            font-family: monospace;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 12px;
-            max-width: 350px;
-            max-height: 50vh; /* Limit height relative to viewport */
-            overflow: auto; /* Enable scrolling */
-            z-index: 9999; /* High z-index */
-            display: none; /* Hidden by default */
-            border: 1px solid #444;
+            position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.8);
+            color: #0f0; font-family: monospace; padding: 15px; border-radius: 5px;
+            font-size: 12px; max-width: 350px; max-height: 50vh; overflow: auto;
+            z-index: 9999; display: none; border: 1px solid #444;
         }
-        #debug-toggle-btn { /* Toggle button for debug panel */
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            z-index: 10000; /* Above debug panel */
-            padding: 5px 10px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            opacity: 0.8;
-            font-size: 12px;
-            display: none; /* Hidden by default, shown by JS if debug enabled */
+        #debug-toggle-btn {
+            position: fixed; bottom: 10px; right: 10px; z-index: 10000;
+            padding: 5px 10px; background: #333; color: white; border: none;
+            border-radius: 3px; cursor: pointer; opacity: 0.8; font-size: 12px;
+            display: none;
         }
-        #debug-toggle-btn:hover {
-            opacity: 1;
-        }
+        #debug-toggle-btn:hover { opacity: 1; }
 
         /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */
 
@@ -627,18 +544,18 @@
 
         /* Style for tiles representing modules with no data for the current client */
         .module-tile.no-client-data {
-            opacity: 0.75; /* Slightly less faded */
-            background-color: #f8f9fa; /* Match summary wrapper background */
+            opacity: 0.85; /* --- ADJUSTED: Slightly less faded --- */
+            background-color: #f8f9fa; /* --- ADJUSTED: Match content background --- */
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-color: #d1d5db; /* --- ADDED: Slightly darker border for definition --- */
         }
 
         /* Adjust cost text style within empty tiles */
         .module-tile.no-client-data .module-tile-cost {
-            color: #6c757d; /* Grey color for cost text */
+            color: #6b7280; /* Tailwind gray-500 */
         }
-         /* Ensure the small annotation within cost is styled */
          .module-tile.no-client-data .module-tile-cost small {
-              color: #6c757d;
+              color: #6b7280;
          }
 
 
