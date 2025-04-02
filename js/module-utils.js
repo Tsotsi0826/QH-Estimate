@@ -1,3 +1,5 @@
+// module-utils.js - Enhanced shared module utilities
+
 // Module utilities for the Construction Estimator app
 (function() {
     // Ensure our namespace exists
@@ -96,12 +98,12 @@
                 }
             }
             
+            // Clear the client using the client manager
+            window.ConstructionApp.ClientManager.clearCurrentClient();
+            
             // Set the navigation state to indicate manual logout
             sessionStorage.setItem('navigationState', 'manualLogout');
             console.log("[ModuleUtils] Set navigation state: manualLogout");
-            
-            // Clear the client using the client manager
-            window.ConstructionApp.ClientManager.clearCurrentClient();
             
             // Reset unsaved changes flag
             _hasUnsavedChanges = false;
