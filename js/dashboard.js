@@ -1,85 +1,12 @@
 // js/dashboard.js
 // Contains the primary JavaScript logic for the Construction Estimator dashboard (index.html)
-// Added collapse/expand functionality for header modules.
+// Version with Direct Event Listeners for Edit/Delete buttons.
 
 // --- Global Variables ---
 let appData = {
     modules: []
 };
 let globalDraggedItem = null;
-let headerCollapseState = {}; // Stores collapsed state { headerId: true/false }
-
-// --- Utility / Helper Functions (Define Search Function Early) ---
-
-/**
- * Sets up the module search input to filter the sidebar list.
- */
-function setupModuleSearch() {
-     const searchInput = document.getElementById('module-search-input');
-     const container = document.getElementById('modules-container');
-     if (!searchInput || !container) {
-         console.error("Search input or module container not found.");
-         return;
-     }
-
-     // Debounce function to limit how often filtering runs
-     let debounceTimer;
-     const debounceFilter = (func, delay) => {
-         return function() {
-             const context = this;
-             const args = arguments;
-             clearTimeout(debounceTimer);
-             debounceTimer = setTimeout(() => func.apply(context, args), delay);
-         };
-     };
-
-     const filterModules = () => {
-         const searchTerm = searchInput.value.toLowerCase().trim();
-         const allModuleElements = container.querySelectorAll('.module-item'); // Get current elements
-         const visibleModuleIds = new Set(); // Track IDs that should be visible
-
-         // If search term is empty, show all
-         if (searchTerm === '') {
-              allModuleElements.forEach(moduleEl => {
-                   moduleEl.style.display = 'flex';
-              });
-              return;
-         }
-
-         // Find matches and their ancestors using the current appData state
-         appData.modules.forEach(module => {
-             const moduleName = module.name.toLowerCase();
-             const isMatch = moduleName.includes(searchTerm);
-
-             if (isMatch) {
-                  // If a module matches, mark it and all its ancestors for visibility
-                  visibleModuleIds.add(module.id);
-                  let currentParentId = module.parentId;
-                  while (currentParentId && currentParentId !== 'null') { // Check against 'null' string just in case
-                       visibleModuleIds.add(currentParentId);
-                       // Find the parent in appData to get its parentId
-                       const parentModule = appData.modules.find(m => m.id === currentParentId);
-                       currentParentId = parentModule ? parentModule.parentId : null;
-                  }
-             }
-         });
-
-         // Set visibility based on the collected IDs
-         allModuleElements.forEach(moduleEl => {
-              const moduleId = moduleEl.dataset.moduleId;
-              if (visibleModuleIds.has(moduleId)) {
-                   moduleEl.style.display = 'flex'; // Show matching items and their ancestors
-              } else {
-                   moduleEl.style.display = 'none'; // Hide non-matching items
-              }
-         });
-     };
-
-     // Attach the debounced filter function to the input event
-     searchInput.addEventListener('input', debounceFilter(filterModules, 250)); // Debounce by 250ms
-     console.log("[Dashboard] Module search listener attached.");
-}
-
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -87,10 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDebugPanel();
     loadAndRenderModules().then(() => {
         initApp();
-        setupDropdownMenus(); // Sets up global close listener AND collapse listener
+        setupDropdownMenus(); // Sets up global close listener
         setupClientManagement();
         setupAddModuleButton();
-        setupModuleSearch(); // Call the function now that it's defined above
+        setupModuleSearch();
         window.ConstructionApp.ClientManager.loadClients().then(() => {
             console.log("[Dashboard] Clients loaded");
         });
@@ -99,47 +26,99 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function initApp() { /* ... (no changes needed in this function) ... */ console.log("[Dashboard] Initializing app state"); const navigationState = sessionStorage.getItem('navigationState'); const storedClientStr = sessionStorage.getItem('currentClient'); let clientToSet = null; if (navigationState === 'returningToDashboard' && storedClientStr) { try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Restoring client:", clientToSet.name); } catch (error) { console.error("[Dashboard] Error parsing stored client:", error); sessionStorage.removeItem('currentClient'); } } else if (navigationState === 'manualLogout' || navigationState === 'invalidAccess') { console.log("[Dashboard] Manual logout or invalid access detected, clearing client"); sessionStorage.removeItem('currentClient'); } else if (!navigationState && storedClientStr) { try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Fresh load with stored client:", clientToSet.name); } catch (error) { console.error("[Dashboard] Error parsing stored client on fresh load:", error); sessionStorage.removeItem('currentClient'); } } else { console.log("[Dashboard] Fresh load with no client"); } window.ConstructionApp.ClientManager.setCurrentClient(clientToSet); updateTotalProjectCost(); sessionStorage.removeItem('navigationState'); const currentClient = window.ConstructionApp.ClientManager.getCurrentClient(); console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None"); updateDebugPanel(); }
+function initApp() {
+    console.log("[Dashboard] Initializing app state");
+    const navigationState = sessionStorage.getItem('navigationState');
+    const storedClientStr = sessionStorage.getItem('currentClient');
+    let clientToSet = null;
+
+    if (navigationState === 'returningToDashboard' && storedClientStr) {
+        try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Restoring client:", clientToSet.name); }
+        catch (error) { console.error("[Dashboard] Error parsing stored client:", error); sessionStorage.removeItem('currentClient'); }
+    } else if (navigationState === 'manualLogout' || navigationState === 'invalidAccess') {
+         console.log("[Dashboard] Manual logout or invalid access detected, clearing client");
+         sessionStorage.removeItem('currentClient');
+    } else if (!navigationState && storedClientStr) {
+        try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Fresh load with stored client:", clientToSet.name); }
+        catch (error) { console.error("[Dashboard] Error parsing stored client on fresh load:", error); sessionStorage.removeItem('currentClient'); }
+    } else { console.log("[Dashboard] Fresh load with no client"); }
+
+    window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
+    updateTotalProjectCost();
+    sessionStorage.removeItem('navigationState');
+    const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
+    console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
+    updateDebugPanel();
+}
 
 // --- Module Loading and Rendering ---
-async function loadAndRenderModules() { /* ... (no changes needed in this function) ... */ console.log("[Dashboard] Loading and rendering modules"); let loadedModules = []; try { loadedModules = await window.ConstructionApp.Firebase.loadModules(); console.log("[Dashboard] Loaded modules from Firebase:", loadedModules.length); if (!loadedModules || loadedModules.length === 0) { console.warn("[Dashboard] No modules in Firebase, trying backup."); loadedModules = restoreModuleOrderFromBackup() || []; if (loadedModules.length === 0) { console.warn("[Dashboard] Backup empty or failed. Using defaults."); loadedModules = getDefaultModules(); await window.ConstructionApp.Firebase.saveModules(loadedModules); } } } catch (error) { console.error("[Dashboard] Error loading from Firebase, trying backup:", error); loadedModules = restoreModuleOrderFromBackup() || []; if (loadedModules.length === 0) { console.warn("[Dashboard] Backup failed/empty after Firebase error. Using defaults."); loadedModules = getDefaultModules(); await window.ConstructionApp.Firebase.saveModules(loadedModules); } } const notesModuleIndex = loadedModules.findIndex(m => m.id === 'notes'); let notesModuleData = notesModuleIndex > -1 ? loadedModules.splice(notesModuleIndex, 1)[0] : {}; notesModuleData = { id: 'notes', name: notesModuleData.name || 'Notes', requiresClient: notesModuleData.requiresClient !== undefined ? notesModuleData.requiresClient : true, type: notesModuleData.type || 'regular', parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null, order: notesModuleData.order !== undefined ? notesModuleData.order : -1 }; loadedModules.unshift(notesModuleData); appData.modules = loadedModules.map(mod => ({ ...mod, renderTemplate: function(client) { const moduleData = client?.moduleData?.[mod.id]?.data || {}; if (mod.id === 'notes') { const notesText = moduleData.notes || ''; return `<h3>Project Notes</h3><textarea id="project-notes" rows="10" style="width: 100%; padding: 10px;" placeholder="Enter project notes here...">${notesText}</textarea><button class="btn module-save-btn" data-module="notes" style="margin-top: 10px;">Save Notes</button>`; } return `<h3>${mod.name}</h3><p>Data:</p><pre>${JSON.stringify(moduleData, null, 2)}</pre><p><small>Create ${mod.id}.html for custom view.</small></p>`; }, saveData: function() { if (mod.id === 'notes') { const notes = document.getElementById('project-notes')?.value || ''; return { notes: notes }; } return {}; } })); renderModuleList(appData.modules); }
-function getDefaultModules() { /* ... (no changes needed in this function) ... */ return [ { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true, type: 'regular', parentId: null, order: 1 }, { id: 'foundations', name: 'Foundations', requiresClient: false, type: 'header', parentId: null, order: 2 }, { id: 'earthworks', name: 'Earthworks', requiresClient: true, type: 'regular', parentId: 'foundations', order: 0 }, { id: 'concrete', name: 'Concrete', requiresClient: true, type: 'regular', parentId: 'foundations', order: 1 }, { id: 'steel', name: 'Steel', requiresClient: true, type: 'regular', parentId: 'foundations', order: 2 }, { id: 'structure', name: 'Structure', requiresClient: false, type: 'header', parentId: null, order: 3 }, { id: 'brickwork', name: 'Brickwork', requiresClient: true, type: 'regular', parentId: 'structure', order: 0 }, { id: 'demolish', name: 'Demolish', requiresClient: true, type: 'regular', parentId: null, order: 4 }, ]; }
+async function loadAndRenderModules() {
+    console.log("[Dashboard] Loading and rendering modules");
+    let loadedModules = [];
+    try {
+        loadedModules = await window.ConstructionApp.Firebase.loadModules();
+        console.log("[Dashboard] Loaded modules from Firebase:", loadedModules.length);
+        if (!loadedModules || loadedModules.length === 0) {
+             console.warn("[Dashboard] No modules in Firebase, trying backup.");
+             loadedModules = restoreModuleOrderFromBackup() || [];
+             if (loadedModules.length === 0) {
+                 console.warn("[Dashboard] Backup empty or failed. Using defaults.");
+                 loadedModules = getDefaultModules();
+                 await window.ConstructionApp.Firebase.saveModules(loadedModules);
+             }
+        }
+    } catch (error) {
+        console.error("[Dashboard] Error loading from Firebase, trying backup:", error);
+        loadedModules = restoreModuleOrderFromBackup() || [];
+         if (loadedModules.length === 0) {
+             console.warn("[Dashboard] Backup failed/empty after Firebase error. Using defaults.");
+             loadedModules = getDefaultModules();
+             await window.ConstructionApp.Firebase.saveModules(loadedModules);
+         }
+    }
 
-/**
- * Renders the module list hierarchically, respecting collapse state.
- * @param {Array} modules - The complete list of module objects.
- */
+    // Ensure Notes module exists and is first
+    const notesModuleIndex = loadedModules.findIndex(m => m.id === 'notes');
+    let notesModuleData = notesModuleIndex > -1 ? loadedModules.splice(notesModuleIndex, 1)[0] : {};
+    notesModuleData = {
+        id: 'notes', name: notesModuleData.name || 'Notes', requiresClient: notesModuleData.requiresClient !== undefined ? notesModuleData.requiresClient : true, type: notesModuleData.type || 'regular', parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null, order: notesModuleData.order !== undefined ? notesModuleData.order : -1
+    };
+    loadedModules.unshift(notesModuleData);
+
+    // Populate appData.modules with functions
+    appData.modules = loadedModules.map(mod => ({
+        ...mod,
+        renderTemplate: function(client) {
+            const moduleData = client?.moduleData?.[mod.id]?.data || {};
+            if (mod.id === 'notes') { const notesText = moduleData.notes || ''; return `<h3>Project Notes</h3><textarea id="project-notes" rows="10" style="width: 100%; padding: 10px;" placeholder="Enter project notes here...">${notesText}</textarea><button class="btn module-save-btn" data-module="notes" style="margin-top: 10px;">Save Notes</button>`; }
+            return `<h3>${mod.name}</h3><p>Data:</p><pre>${JSON.stringify(moduleData, null, 2)}</pre><p><small>Create ${mod.id}.html for custom view.</small></p>`;
+        },
+        saveData: function() { if (mod.id === 'notes') { const notes = document.getElementById('project-notes')?.value || ''; return { notes: notes }; } return {}; }
+    }));
+
+    renderModuleList(appData.modules);
+}
+
+function getDefaultModules() {
+     return [
+         { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true, type: 'regular', parentId: null, order: 1 }, { id: 'foundations', name: 'Foundations', requiresClient: false, type: 'header', parentId: null, order: 2 }, { id: 'earthworks', name: 'Earthworks', requiresClient: true, type: 'regular', parentId: 'foundations', order: 0 }, { id: 'concrete', name: 'Concrete', requiresClient: true, type: 'regular', parentId: 'foundations', order: 1 }, { id: 'steel', name: 'Steel', requiresClient: true, type: 'regular', parentId: 'foundations', order: 2 }, { id: 'structure', name: 'Structure', requiresClient: false, type: 'header', parentId: null, order: 3 }, { id: 'brickwork', name: 'Brickwork', requiresClient: true, type: 'regular', parentId: 'structure', order: 0 }, { id: 'demolish', name: 'Demolish', requiresClient: true, type: 'regular', parentId: null, order: 4 },
+     ];
+}
+
 function renderModuleList(modules) {
     const container = document.getElementById('modules-container');
     container.innerHTML = '';
     const sortedModules = [...modules].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name));
-
-    // Function to recursively render modules
     function renderLevel(parentId, level) {
-        sortedModules
-            .filter(m => m.parentId === parentId)
-            .forEach(module => {
-                // Create the element
-                const moduleElement = createModuleElement(module, level);
-                container.appendChild(moduleElement);
-
-                // *** MODIFICATION: Check collapse state before rendering children ***
-                const isHeader = module.type === 'header';
-                const isCollapsed = headerCollapseState[module.id] === true; // Check state
-
-                // Only render children if it's not a collapsed header
-                if (!isHeader || !isCollapsed) {
-                    renderLevel(module.id, level + 1);
-                }
-            });
+        sortedModules.filter(m => m.parentId === parentId).forEach(module => { const moduleElement = createModuleElement(module, level); container.appendChild(moduleElement); renderLevel(module.id, level + 1); });
     }
-    renderLevel(null, 0); // Start rendering top-level
+    renderLevel(null, 0);
+    // setupModuleElementEventListeners(); // No longer needed as listeners are added in createModuleElement
     setupDragAndDrop(); // Re-attach DnD listeners
 }
 
 /**
  * Creates a DOM element for a single module AND attaches its specific listeners.
- * Adds collapse icon and state class for headers.
  * @param {object} moduleData - The module data object.
  * @param {number} level - The hierarchy level (for indentation).
  * @returns {HTMLElement} The created module element.
@@ -154,22 +133,8 @@ function createModuleElement(moduleData, level = 0) {
     moduleElement.setAttribute('data-parent-id', moduleData.parentId || 'null');
     moduleElement.setAttribute('data-level', level);
     moduleElement.style.paddingLeft = `${20 + level * 15}px`;
-
-    // *** MODIFICATION: Add collapse icon for headers ***
-    let collapseIconHTML = '';
-    if (moduleData.type === 'header') {
-        moduleElement.classList.add('header-item'); // Add class for styling/targeting
-        const isCollapsed = headerCollapseState[moduleData.id] === true;
-        if (isCollapsed) {
-            moduleElement.classList.add('collapsed'); // Add class if collapsed
-        }
-        // Use ▼ for expanded (default), CSS transform rotates it for collapsed state
-        collapseIconHTML = `<span class="collapse-icon" title="Expand/Collapse">▼</span>`;
-    }
-
     moduleElement.innerHTML = `
         <div class="module-drag-handle" title="Drag to reorder">≡</div>
-        ${collapseIconHTML} {/* Insert the collapse icon */}
         <div class="module-icon">
             ...
             <div class="dropdown-menu">
@@ -185,24 +150,52 @@ function createModuleElement(moduleData, level = 0) {
     const deleteBtn = moduleElement.querySelector('.delete-module');
     const icon = moduleElement.querySelector('.module-icon');
     const nameSpan = moduleElement.querySelector('.module-name');
-    // ** Get collapse icon if it exists **
-    const collapseIcon = moduleElement.querySelector('.collapse-icon');
 
-    if (editBtn) { editBtn.addEventListener('click', (e) => { e.stopPropagation(); console.log("DEBUG: Direct Edit listener fired for:", moduleElement.dataset.moduleId); editModule(moduleElement); closeAllDropdowns(); }); }
-    else { console.warn("Could not find edit button for module:", moduleData.id); }
+    if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent other listeners
+            console.log("DEBUG: Direct Edit listener fired for:", moduleElement.dataset.moduleId);
+            editModule(moduleElement);
+            closeAllDropdowns();
+        });
+    } else { console.warn("Could not find edit button for module:", moduleData.id); }
 
-    if (deleteBtn) { deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); console.log("DEBUG: Direct Delete listener fired for:", moduleElement.dataset.moduleId); deleteModule(moduleElement); closeAllDropdowns(); }); }
-    else { console.warn("Could not find delete button for module:", moduleData.id); }
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent other listeners
+            console.log("DEBUG: Direct Delete listener fired for:", moduleElement.dataset.moduleId);
+            deleteModule(moduleElement);
+            closeAllDropdowns();
+        });
+    } else { console.warn("Could not find delete button for module:", moduleData.id); }
 
-    if (icon) { icon.addEventListener('click', (e) => { e.stopPropagation(); const dropdown = icon.querySelector('.dropdown-menu'); if (dropdown) { const isVisible = dropdown.style.display === 'block'; closeAllDropdowns(); if (!isVisible) dropdown.style.display = 'block'; } }); }
+    // Listener for the icon to toggle dropdown
+    if (icon) {
+        icon.addEventListener('click', (e) => {
+             e.stopPropagation();
+             const dropdown = icon.querySelector('.dropdown-menu');
+             if (dropdown) {
+                 const isVisible = dropdown.style.display === 'block';
+                 closeAllDropdowns(); // Close others first
+                 if (!isVisible) dropdown.style.display = 'block'; // Toggle open
+             }
+        });
+    }
 
-    if (nameSpan) { nameSpan.addEventListener('click', () => { const moduleId = moduleElement.getAttribute('data-module-id'); window.ConstructionApp.ModuleUtils.navigateToModule(moduleId); }); }
-
-    // ** Listener for the collapse icon is now handled by delegation in setupDropdownMenus **
-    // ** Listener for the header item itself is now handled by delegation in setupDropdownMenus **
+    // Listener for clicking the name to navigate
+    if (nameSpan) {
+         nameSpan.addEventListener('click', () => {
+              const moduleId = moduleElement.getAttribute('data-module-id');
+              window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+         });
+    }
 
     return moduleElement;
 }
+
+// function setupModuleElementEventListeners() { // No longer needed
+//      // Listeners are now added directly in createModuleElement
+// }
 
 // --- Module Creation --- (No changes needed here)
 function setupAddModuleButton() { const addModuleBtn = document.getElementById('add-module-btn'); const modalOverlay = document.getElementById('add-module-modal-overlay'); const moduleTypeSelect = document.getElementById('new-module-type'); const parentHeaderGroup = document.getElementById('parent-header-group'); const parentHeaderSelect = document.getElementById('parent-header-select'); const saveNewModuleBtn = document.getElementById('save-new-module-btn'); const modalCloseBtns = modalOverlay.querySelectorAll('.modal-close, .btn-cancel'); if (addModuleBtn) { addModuleBtn.addEventListener('click', () => { parentHeaderSelect.innerHTML = '<option value="null">(Top Level / No Parent)</option>'; appData.modules.filter(m => m.type === 'header').sort((a,b) => a.name.localeCompare(b.name)) .forEach(header => { const option = document.createElement('option'); option.value = header.id; option.textContent = header.name; parentHeaderSelect.appendChild(option); }); document.getElementById('new-module-name').value = ''; moduleTypeSelect.value = 'regular'; parentHeaderGroup.style.display = 'block'; parentHeaderSelect.value = 'null'; document.getElementById('new-module-requires-client').checked = true; modalOverlay.style.display = 'flex'; }); } if (moduleTypeSelect) { moduleTypeSelect.addEventListener('change', function() { parentHeaderGroup.style.display = this.value === 'regular' ? 'block' : 'none'; }); } modalCloseBtns.forEach(btn => { const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', () => modalOverlay.style.display = 'none'); }); modalOverlay.addEventListener('click', (event) => { if (event.target === modalOverlay) modalOverlay.style.display = 'none'; }); if (saveNewModuleBtn) { const newSaveBtn = saveNewModuleBtn.cloneNode(true); saveNewModuleBtn.parentNode.replaceChild(newSaveBtn, saveNewModuleBtn); newSaveBtn.addEventListener('click', addNewModule); } }
@@ -216,54 +209,30 @@ function restoreModuleOrderFromBackup() { const savedOrder = sessionStorage.getI
 let dragOverElement = null; let dropIndicator = null; function setupDragAndDrop() { const container = document.getElementById('modules-container'); container.removeEventListener('dragstart', handleDragStart); container.addEventListener('dragstart', handleDragStart); container.removeEventListener('dragover', handleDragOver); container.addEventListener('dragover', handleDragOver); container.removeEventListener('dragleave', handleDragLeave); container.addEventListener('dragleave', handleDragLeave); container.removeEventListener('drop', handleDrop); container.addEventListener('drop', handleDrop); container.removeEventListener('dragend', handleDragEnd); container.addEventListener('dragend', handleDragEnd); } function handleDragStart(e) { const target = e.target.closest('.module-item'); if (!target || !target.draggable) { e.preventDefault(); return; } globalDraggedItem = target; e.dataTransfer.setData('text/plain', target.dataset.moduleId); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => { if (globalDraggedItem) globalDraggedItem.classList.add('dragging'); }, 0); console.log("Drag Start:", target.dataset.moduleId); } function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const targetElement = e.target.closest('.module-item'); if (!targetElement || targetElement === globalDraggedItem) { clearDropIndicators(); dragOverElement = null; dropIndicator = null; return; } if (targetElement !== dragOverElement) { clearDropIndicators(); dragOverElement = targetElement; } const rect = targetElement.getBoundingClientRect(); const yOffset = e.clientY - rect.top; const dropZoneHeight = rect.height; const targetIsHeader = targetElement.dataset.moduleType === 'header'; const canDropOnHeader = targetIsHeader && globalDraggedItem?.dataset.moduleType !== 'header'; const topThreshold = dropZoneHeight * 0.3; const bottomThreshold = dropZoneHeight * 0.7; let currentIndicator = null; if (canDropOnHeader && yOffset > topThreshold && yOffset < bottomThreshold) currentIndicator = 'middle'; else if (yOffset <= topThreshold) currentIndicator = 'top'; else currentIndicator = 'bottom'; if (currentIndicator !== dropIndicator) { targetElement.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-middle'); dropIndicator = currentIndicator; if (dropIndicator === 'middle') targetElement.classList.add('drag-over-middle'); else if (dropIndicator === 'top') targetElement.classList.add('drag-over-top'); else if (dropIndicator === 'bottom') targetElement.classList.add('drag-over-bottom'); } } function handleDragLeave(e) { const targetElement = e.target.closest('.module-item'); if (!targetElement) return; const relatedTarget = e.relatedTarget ? e.relatedTarget.closest('.module-item') : null; if (targetElement === dragOverElement && relatedTarget !== dragOverElement) { clearDropIndicators(targetElement); if (!targetElement.contains(e.relatedTarget)) { dragOverElement = null; dropIndicator = null; } } } function handleDrop(e) { e.preventDefault(); if (!globalDraggedItem || !dragOverElement || globalDraggedItem === dragOverElement || !dropIndicator) { clearDropIndicators(); return; } console.log(`Drop ${globalDraggedItem.dataset.moduleId} onto ${dragOverElement.dataset.moduleId}, indicator: ${dropIndicator}`); const draggedId = globalDraggedItem.dataset.moduleId; const targetId = dragOverElement.dataset.moduleId; const draggedModuleIndex = appData.modules.findIndex(m => m.id === draggedId); const targetModuleIndex = appData.modules.findIndex(m => m.id === targetId); if (draggedModuleIndex === -1 || targetModuleIndex === -1) { console.error("DnD Error: Module not found in appData."); clearDropIndicators(); return; } const draggedModule = appData.modules[draggedModuleIndex]; const targetModule = appData.modules[targetModuleIndex]; let newParentId = null; let targetPositionIndex = -1; if (dropIndicator === 'middle' && targetModule.type === 'header') { newParentId = targetModule.id; targetPositionIndex = targetModuleIndex + 1; console.log(`Setting parent of ${draggedId} to ${newParentId}`); } else if (dropIndicator === 'bottom') { newParentId = targetModule.parentId; targetPositionIndex = targetModuleIndex + 1; console.log(`Inserting ${draggedId} after ${targetId} (parent: ${newParentId})`); } else { newParentId = targetModule.parentId; targetPositionIndex = targetModuleIndex; console.log(`Inserting ${draggedId} before ${targetId} (parent: ${newParentId})`); } draggedModule.parentId = newParentId; appData.modules.splice(draggedModuleIndex, 1); if (draggedModuleIndex < targetPositionIndex) targetPositionIndex--; appData.modules.splice(targetPositionIndex, 0, draggedModule); recalculateModuleOrder(); renderModuleList(appData.modules); saveModuleStructure(); clearDropIndicators(); } function handleDragEnd(e) { if (globalDraggedItem) globalDraggedItem.classList.remove('dragging'); clearDropIndicators(); globalDraggedItem = null; dragOverElement = null; dropIndicator = null; console.log("Drag End"); } function clearDropIndicators(element) { const selector = '.module-item.drag-over-top, .module-item.drag-over-bottom, .module-item.drag-over-middle'; const elementsToClear = element ? [element] : document.querySelectorAll(selector); elementsToClear.forEach(el => { if (el) el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-middle'); }); } function recalculateModuleOrder() { console.log("Recalculating module order..."); const orderCounters = {}; appData.modules.forEach(module => { const parentKey = module.parentId === null ? 'null' : module.parentId; if (orderCounters[parentKey] === undefined) orderCounters[parentKey] = 0; module.order = orderCounters[parentKey]++; }); console.log("Order recalculation complete."); }
 
 // --- Other UI Functions ---
-// Setup dropdown menus and NEW collapse listener using delegation
+// Setup dropdown menus - simplified as actions are handled directly
 function setupDropdownMenus() {
+     // Remove previous global listener if exists
      document.removeEventListener('click', handleGlobalClickForDropdowns);
+     // Add global listener to close dropdowns when clicking outside
      document.addEventListener('click', handleGlobalClickForDropdowns);
      console.log("[Dashboard] Global dropdown close listener attached.");
-
-     // ** Use event delegation for collapse toggles **
-     const container = document.getElementById('modules-container');
-     // Remove potential old listener before adding
-     container.removeEventListener('click', handleMaybeCollapseToggle);
-     container.addEventListener('click', handleMaybeCollapseToggle);
-     console.log("[Dashboard] Collapse toggle listener attached via delegation.");
 }
 
-// ** NEW: Handler specifically for collapse toggles (delegated) **
-function handleMaybeCollapseToggle(e) {
-    // Check if click was on the collapse icon OR the header item itself (but not drag handle or other icons)
-    const collapseIcon = e.target.closest('.collapse-icon');
-    const headerItem = e.target.closest('.module-item.header-item');
-
-    // Proceed if we clicked a header item...
-    if (headerItem) {
-        // ...and the click was directly on the collapse icon OR
-        // the click was somewhere else on the header item *except* the drag handle or the "..." icon
-        if (collapseIcon || (!e.target.closest('.module-drag-handle') && !e.target.closest('.module-icon'))) {
-             e.stopPropagation(); // Prevent navigation if name is clicked accidentally
-             const moduleId = headerItem.dataset.moduleId;
-             if (moduleId) {
-                handleCollapseToggle(moduleId);
-             }
-        }
-    }
+// Handler for clicks within the modules container (now only for toggling) - Simplified
+function handleDropdownClick(e) {
+     const icon = e.target.closest('.module-icon');
+     // Only handle icon clicks here
+     if (icon) {
+         e.stopPropagation();
+         const dropdown = icon.querySelector('.dropdown-menu');
+         if (dropdown) {
+             const isVisible = dropdown.style.display === 'block';
+             closeAllDropdowns(); // Close others first
+             if (!isVisible) dropdown.style.display = 'block'; // Toggle open
+         }
+     }
+     // Edit/Delete clicks are handled by direct listeners in createModuleElement
 }
-
-
-// ** NEW: Function to toggle collapse state and re-render **
-function handleCollapseToggle(headerModuleId) {
-    console.log("Toggling collapse for header:", headerModuleId);
-    // Toggle the state (if undefined, treat as expanded (false), so toggle to true)
-    headerCollapseState[headerModuleId] = !(headerCollapseState[headerModuleId] === true);
-    console.log("New collapse state:", headerCollapseState);
-    // Re-render the entire list to show/hide children
-    renderModuleList(appData.modules);
-    // Optional: Save collapse state to sessionStorage/localStorage here if persistence is needed
-    // e.g., sessionStorage.setItem('headerCollapseState', JSON.stringify(headerCollapseState));
-    // And load it during initApp or loadAndRenderModules
-}
-
 
 function handleGlobalClickForDropdowns(e) {
       // If the click was outside any module icon or dropdown menu itself
@@ -278,10 +247,45 @@ function closeAllDropdowns() {
     });
 }
 
-// Edit Module Function (No changes needed)
-function editModule(moduleElement) { console.log("DEBUG: editModule function started."); const moduleId = moduleElement?.dataset?.moduleId; if (!moduleId) { console.error("Edit Error: Could not get module ID."); return; } const moduleIndex = appData.modules.findIndex(m => m.id === moduleId); if (moduleIndex === -1) { console.error("Edit Error: Module not found in appData:", moduleId); return; } const currentModule = appData.modules[moduleIndex]; const currentName = currentModule.name; console.log("DEBUG: Editing module:", currentModule); console.log("DEBUG: About to show prompt for new name..."); const newName = prompt(`Edit module name:`, currentName); console.log("DEBUG: Prompt returned:", newName); if (newName && newName.trim() !== '' && newName !== currentName) { const finalNewName = newName.trim(); console.log("DEBUG: New name accepted:", finalNewName); currentModule.name = finalNewName; const nameSpan = moduleElement.querySelector('.module-name'); if (nameSpan) { nameSpan.textContent = finalNewName; console.log("DEBUG: DOM name updated."); } else { console.log("DEBUG: Warning: Could not find name span."); } saveModuleStructure(); alert(`Module renamed to "${finalNewName}"`); } else { console.log("DEBUG: Edit cancelled or name unchanged."); } }
-// Delete Module Function (No changes needed)
-function deleteModule(moduleElement) { console.log("DEBUG: deleteModule function started."); const moduleId = moduleElement?.dataset?.moduleId; if (!moduleId) { console.error("Delete Error: Could not get module ID."); return; } const moduleIndex = appData.modules.findIndex(m => m.id === moduleId); if (moduleIndex === -1) { console.error("Delete Error: Module not found in appData:", moduleId); return; } const moduleToDelete = appData.modules[moduleIndex]; const moduleName = moduleToDelete.name; console.log("DEBUG: Attempting to delete module:", moduleToDelete); if (moduleId === 'notes') { alert('The Notes module cannot be deleted.'); console.log("DEBUG: Delete cancelled: Notes module."); return; } const children = appData.modules.filter(m => m.parentId === moduleId); let confirmMessage = `Are you sure you want to delete the "${moduleName}" module?`; if (moduleToDelete.type === 'header' && children.length > 0) { confirmMessage += `\n\nWARNING: This header has ${children.length} sub-module(s). Deleting it also deletes ALL descendants. This cannot be undone.`; } else { confirmMessage += `\nThis cannot be undone.`; } console.log("DEBUG: About to show confirm dialog..."); const confirmed = confirm(confirmMessage); console.log("DEBUG: Confirm dialog returned:", confirmed); if (confirmed) { console.log("DEBUG: Deletion confirmed."); const idsToDelete = new Set([moduleId]); const queue = [moduleId]; while (queue.length > 0) { const currentParentId = queue.shift(); appData.modules.forEach(module => { if (module.parentId === currentParentId && !idsToDelete.has(module.id)) { idsToDelete.add(module.id); queue.push(module.id); } }); } console.log("DEBUG: IDs to delete:", Array.from(idsToDelete)); appData.modules = appData.modules.filter(module => !idsToDelete.has(module.id)); console.log("DEBUG: appData filtered. Remaining:", appData.modules.length); recalculateModuleOrder(); renderModuleList(appData.modules); saveModuleStructure(); alert(`Module "${moduleName}" ${idsToDelete.size > 1 ? 'and descendants ' : ''}deleted.`); } else { console.log("DEBUG: Deletion cancelled."); } }
+// Edit Module Function (prompt should now appear)
+function editModule(moduleElement) {
+     console.log("DEBUG: editModule function started.");
+     const moduleId = moduleElement?.dataset?.moduleId;
+     if (!moduleId) { console.error("Edit Error: Could not get module ID."); return; }
+     const moduleIndex = appData.modules.findIndex(m => m.id === moduleId);
+     if (moduleIndex === -1) { console.error("Edit Error: Module not found in appData:", moduleId); return; }
+     const currentModule = appData.modules[moduleIndex]; const currentName = currentModule.name;
+     console.log("DEBUG: Editing module:", currentModule);
+     console.log("DEBUG: About to show prompt for new name..."); // Check if this logs
+     const newName = prompt(`Edit module name:`, currentName); // This should now execute
+     console.log("DEBUG: Prompt returned:", newName);
+     if (newName && newName.trim() !== '' && newName !== currentName) {
+        const finalNewName = newName.trim(); console.log("DEBUG: New name accepted:", finalNewName); currentModule.name = finalNewName;
+        const nameSpan = moduleElement.querySelector('.module-name'); if (nameSpan) { nameSpan.textContent = finalNewName; console.log("DEBUG: DOM name updated."); } else { console.log("DEBUG: Warning: Could not find name span."); }
+        saveModuleStructure(); alert(`Module renamed to "${finalNewName}"`);
+     } else { console.log("DEBUG: Edit cancelled or name unchanged."); }
+}
+
+// Delete Module Function (confirm should now appear)
+function deleteModule(moduleElement) {
+     console.log("DEBUG: deleteModule function started.");
+     const moduleId = moduleElement?.dataset?.moduleId; if (!moduleId) { console.error("Delete Error: Could not get module ID."); return; }
+     const moduleIndex = appData.modules.findIndex(m => m.id === moduleId); if (moduleIndex === -1) { console.error("Delete Error: Module not found in appData:", moduleId); return; }
+     const moduleToDelete = appData.modules[moduleIndex]; const moduleName = moduleToDelete.name;
+     console.log("DEBUG: Attempting to delete module:", moduleToDelete);
+     if (moduleId === 'notes') { alert('The Notes module cannot be deleted.'); console.log("DEBUG: Delete cancelled: Notes module."); return; }
+     const children = appData.modules.filter(m => m.parentId === moduleId); let confirmMessage = `Are you sure you want to delete the "${moduleName}" module?`; if (moduleToDelete.type === 'header' && children.length > 0) { confirmMessage += `\n\nWARNING: This header has ${children.length} sub-module(s). Deleting it also deletes ALL descendants. This cannot be undone.`; } else { confirmMessage += `\nThis cannot be undone.`; }
+    console.log("DEBUG: About to show confirm dialog..."); // Check if this logs
+    const confirmed = confirm(confirmMessage); // This should now execute
+    console.log("DEBUG: Confirm dialog returned:", confirmed);
+    if (confirmed) {
+         console.log("DEBUG: Deletion confirmed."); const idsToDelete = new Set([moduleId]); const queue = [moduleId];
+         while (queue.length > 0) { const currentParentId = queue.shift(); appData.modules.forEach(module => { if (module.parentId === currentParentId && !idsToDelete.has(module.id)) { idsToDelete.add(module.id); queue.push(module.id); } }); }
+         console.log("DEBUG: IDs to delete:", Array.from(idsToDelete));
+         appData.modules = appData.modules.filter(module => !idsToDelete.has(module.id)); console.log("DEBUG: appData filtered. Remaining:", appData.modules.length);
+         recalculateModuleOrder(); renderModuleList(appData.modules); saveModuleStructure(); alert(`Module "${moduleName}" ${idsToDelete.size > 1 ? 'and descendants ' : ''}deleted.`);
+    } else { console.log("DEBUG: Deletion cancelled."); }
+}
 
 // --- Client Management & Dashboard Update --- (No changes needed here)
 function setupClientManagement() { console.log("[Dashboard] Setting up client management"); const newClientBtn = document.getElementById('new-client-btn'); const openClientBtn = document.getElementById('open-client-btn'); let clientModalOverlay = document.getElementById('client-modal-overlay'); if (!clientModalOverlay) { clientModalOverlay = document.createElement('div'); clientModalOverlay.className = 'modal-overlay'; clientModalOverlay.id = 'client-modal-overlay'; document.body.appendChild(clientModalOverlay); clientModalOverlay.addEventListener('click', (event) => { if (event.target === clientModalOverlay) clientModalOverlay.style.display = 'none'; }); } newClientBtn.addEventListener('click', () => { const clientModal = createClientModal('new'); clientModalOverlay.innerHTML = ''; clientModalOverlay.appendChild(clientModal); clientModalOverlay.style.display = 'flex'; }); openClientBtn.addEventListener('click', () => { const clientModal = createClientModal('open'); clientModalOverlay.innerHTML = ''; clientModalOverlay.appendChild(clientModal); clientModalOverlay.style.display = 'flex'; }); }
@@ -302,3 +306,4 @@ function updateDebugPanel() { const debugPanel = document.getElementById('debug-
 
  // --- Helper Functions ---
  function setupModuleClickHandler(moduleElement) { const moduleText = moduleElement.querySelector('.module-name'); if (moduleText) { const newModuleText = moduleText.cloneNode(true); moduleText.parentNode.replaceChild(newModuleText, moduleText); newModuleText.addEventListener('click', function() { const moduleId = moduleElement.getAttribute('data-module-id'); window.ConstructionApp.ModuleUtils.navigateToModule(moduleId); }); } }
+ // function setupDropdownForModule(moduleElement) { /* Placeholder - direct listeners used now */ }
