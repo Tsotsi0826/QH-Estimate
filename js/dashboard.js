@@ -133,6 +133,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(error => {
         console.error("[Dashboard] Critical error during module loading:", error);
         // Display an error message to the user?
+        const contentElement = document.getElementById('module-content');
+        if (contentElement) {
+            contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Error Loading Modules</h2><p>Could not load module definitions. Please check the console (F12) for details or contact support.</p><p>Error: ${error.message || 'Unknown error'}</p></div>`;
+        }
     });
 });
 
@@ -153,7 +157,7 @@ function initApp() {
         // User came back from a module page
         try {
             clientToSet = JSON.parse(storedClientStr);
-            console.log("[Dashboard] Restoring client from sessionStorage (returning):", clientToSet.name);
+            console.log("[Dashboard] Restoring client from sessionStorage (returning):", clientToSet?.name || 'Unknown');
         } catch (error) {
             console.error("[Dashboard] Error parsing stored client on return:", error);
             sessionStorage.removeItem('currentClient'); // Clear corrupted data
@@ -167,7 +171,7 @@ function initApp() {
         // Fresh page load or unknown state, but client data exists in session
         try {
             clientToSet = JSON.parse(storedClientStr);
-            console.log("[Dashboard] Restoring client from sessionStorage (fresh load/unknown):", clientToSet.name);
+            console.log("[Dashboard] Restoring client from sessionStorage (fresh load/unknown):", clientToSet?.name || 'Unknown');
         } catch (error) {
             console.error("[Dashboard] Error parsing stored client on fresh load:", error);
             sessionStorage.removeItem('currentClient'); // Clear corrupted data
@@ -179,20 +183,21 @@ function initApp() {
 
     // Set the current client in the ClientManager (this triggers onClientChanged -> updateDashboard)
     if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
+        // IMPORTANT: setCurrentClient triggers the onClientChanged callback, which calls updateDashboard
         window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
     } else {
          console.error("[Dashboard] ClientManager not available during initApp!");
          // Manually update dashboard if ClientManager is missing? Risky.
-         updateDashboard(clientToSet); // Attempt manual update
+         updateDashboard(clientToSet); // Attempt manual update as fallback
     }
 
     // Clean up navigation state flag after using it
     sessionStorage.removeItem('navigationState');
     console.log("[Dashboard] Cleared navigation state.");
 
-    // Log final client state after init
-    const finalClient = window.ConstructionApp?.ClientManager?.getCurrentClient();
-    console.log("[Dashboard] Current client after initialization:", finalClient ? finalClient.name : "None");
+    // Log final client state after init (might be slightly delayed if ClientManager is async)
+    // const finalClient = window.ConstructionApp?.ClientManager?.getCurrentClient();
+    // console.log("[Dashboard] Current client immediately after setting:", finalClient ? finalClient.name : "None");
     updateDebugPanel(); // Update debug info
 }
 
@@ -211,7 +216,7 @@ async function loadAndRenderModules() {
     try {
         if (!window.ConstructionApp?.Firebase) throw new Error("Firebase module not available");
         loadedModules = await window.ConstructionApp.Firebase.loadModules();
-        console.log("[Dashboard] Loaded modules from Firebase:", loadedModules.length);
+        console.log("[Dashboard] Loaded modules from Firebase:", loadedModules?.length || 0);
 
         // Basic validation of loaded data
         if (!Array.isArray(loadedModules)) {
@@ -1467,6 +1472,7 @@ function setupClientListSelection(modal) {
 // == DASHBOARD CONTENT RENDERING & UPDATE (MODIFIED APPROACH) ==
 // =========================================================================
 
+// UPDATED FUNCTION START
 /**
  * Render dashboard content (module tiles) - MODIFIED to always show all modules.
  * @param {object|null} client - The current client object, or null if no client is selected.
@@ -1481,7 +1487,7 @@ function renderDashboardContent(client) {
     // Preserve notification if it exists, otherwise clear
     const notificationElement = contentElement.querySelector('.no-client-notification');
     const notificationHtml = notificationElement ? notificationElement.outerHTML : '';
-    contentElement.innerHTML = notificationHtml; // Start with notification (if any) or clear
+    // contentElement.innerHTML = notificationHtml; // Start with notification (if any) or clear - Let updateDashboard handle this
 
     let tilesHTML = '';
     let hasAnyTiles = false; // Flag to check if we have any modules to display
@@ -1537,7 +1543,7 @@ function renderDashboardContent(client) {
              // Cost is also 0 if !hasData (no client or no data for this module)
 
             // ** NEW LOG **
-            console.log(`DEBUG: Processing tile for ${moduleId} (${moduleName}). HasData: ${hasData}, Calculated Cost: ${moduleCost}`);
+            // console.log(`DEBUG: Processing tile for ${moduleId} (${moduleName}). HasData: ${hasData}, Calculated Cost: ${moduleCost}`); // Can be noisy
 
             // --- Format & Prepare HTML ---
             const formattedCost = window.ConstructionApp?.ModuleUtils?.formatCurrency(moduleCost) ?? `R${moduleCost.toFixed(2)}`;
@@ -1570,31 +1576,33 @@ function renderDashboardContent(client) {
     }
 
     // --- Assemble Final Content ---
-    let finalContent = notificationHtml; // Keep notification if present
+    // The notificationHtml is now handled by updateDashboard directly
 
     // Add wrapper for tiles section
-    finalContent += `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
-                        <h4 style="margin-bottom: 15px;">Module Summaries</h4>
-                        <div id="module-tiles">`; // Grid styles applied via CSS
+    let tilesWrapperHtml = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+                              <h4 style="margin-bottom: 15px;">Module Summaries</h4>
+                              <div id="module-tiles">`; // Grid styles applied via CSS
 
     if (hasAnyTiles) {
-        finalContent += tilesHTML; // Add the generated tiles
+        tilesWrapperHtml += tilesHTML; // Add the generated tiles
         console.log("DEBUG: Rendering module tiles container with tiles.");
     } else {
         // Message if no modules are defined at all
-        finalContent += `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1; text-align: center; color: #666;"><p>No modules defined in the system.</p><p style="margin-top: 5px;"><small>Add modules using the sidebar.</small></p></div>`;
+        tilesWrapperHtml += `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1; text-align: center; color: #666;"><p>No modules defined in the system.</p><p style="margin-top: 5px;"><small>Add modules using the sidebar.</small></p></div>`;
         console.log("DEBUG: No module definitions found, showing 'No modules defined' message.");
     }
-    finalContent += `</div></div>`; // Close #module-tiles and wrapper div
+    tilesWrapperHtml += `</div></div>`; // Close #module-tiles and wrapper div
 
-    // Update the DOM
-    contentElement.innerHTML = finalContent;
+    // Append the tiles wrapper to the content element (after the notification, if any)
+    contentElement.innerHTML += tilesWrapperHtml;
+
 
     // Re-attach listeners for the newly created tile buttons
     setupDashboardTileListeners();
 }
 
 
+// UPDATED FUNCTION START
 /**
  * Update the dashboard UI based on the current client - MODIFIED for new rendering.
  * This function is typically called by ClientManager.onClientChanged.
@@ -1636,16 +1644,13 @@ function updateDashboard(client) {
             }
         });
 
-        // Remove any "No Client" notification that might exist from previous state
-        const notificationElement = dashboardContent.querySelector('.no-client-notification');
-        if (notificationElement) {
-            notificationElement.remove();
-        }
+        // Clear the content area before rendering tiles (removes loading/no-client message)
+        dashboardContent.innerHTML = '';
 
         // Render the module tiles WITH the client's data
         renderDashboardContent(client);
         // Update total project cost based on the client's data
-        updateTotalProjectCost(); // This function should read from the current client internally
+        updateTotalProjectCost(); // Make sure this uses the client data correctly
 
     } else {
         // --- No Client Selected ---
@@ -1655,17 +1660,19 @@ function updateDashboard(client) {
         dashboardDesc.textContent = 'Overview of project data.'; // Reset description
         logoutBtn.style.display = 'none'; // Hide logout button
 
-        // Display the "No Client" notification message *before* rendering empty tiles
-        // Ensure dashboardContent is cleared or managed correctly before adding notification + tiles
+        // Display the "No Client" notification message *first*
         dashboardContent.innerHTML = `<div class="no-client-notification" style="margin-bottom: 20px;"><h2>No Client Selected</h2><p>Please select an existing client or create a new client using the sidebar.</p></div>`;
 
         // Render the module tiles WITHOUT client data (will show defaults/empty states)
+        // This will append the tiles container after the notification message
         renderDashboardContent(null);
     }
 
     // Update debug panel regardless of client state
     updateDebugPanel();
 }
+// UPDATED FUNCTION END
+
 // =========================================================================
 // == END OF MODIFIED DASHBOARD CONTENT RENDERING & UPDATE ==
 // =========================================================================
@@ -1677,7 +1684,8 @@ function updateDashboard(client) {
 function setupDashboardTileListeners() {
     const tilesContainer = document.getElementById('module-tiles');
     if (!tilesContainer) {
-         console.warn("[Dashboard] Module tiles container #module-tiles not found for attaching listeners.");
+         // This might happen temporarily if called before tiles are rendered
+         // console.warn("[Dashboard] Module tiles container #module-tiles not found for attaching listeners.");
          return;
     }
 
@@ -1743,7 +1751,9 @@ function clearModuleData(moduleId) {
                 if (client.moduleData) {
                     delete client.moduleData[moduleId]; // Remove the key
                      // Update the client object stored by ClientManager (which updates sessionStorage)
-                     window.ConstructionApp.ClientManager.setCurrentClient({...client}); // Pass a new object reference
+                     // Create a shallow copy to ensure change detection if ClientManager relies on object reference change
+                     const updatedClient = { ...client };
+                     window.ConstructionApp.ClientManager.setCurrentClient(updatedClient);
                      console.log("[Dashboard] Updated client session after clearing module.");
                 }
 
@@ -1751,7 +1761,7 @@ function clearModuleData(moduleId) {
                 window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`Data for "${moduleId}" cleared.`);
 
                 // Re-render the dashboard content to reflect the cleared tile
-                renderDashboardContent(client);
+                renderDashboardContent(client); // Re-render with the updated client object
                 // Recalculate the total project cost
                 updateTotalProjectCost();
 
@@ -1776,10 +1786,10 @@ function updateTotalProjectCost() {
     const client = window.ConstructionApp?.ClientManager?.getCurrentClient();
 
     // ** NEW LOG **
-    console.log(`DEBUG: updateTotalProjectCost called. Client: ${client ? client.name : 'None'}`);
+    // console.log(`DEBUG: updateTotalProjectCost called. Client: ${client ? client.name : 'None'}`); // Can be noisy
 
     if (client && client.moduleData) {
-        console.log("DEBUG: Calculating total project cost. Module data keys:", Object.keys(client.moduleData)); // Log keys
+        // console.log("DEBUG: Calculating total project cost. Module data keys:", Object.keys(client.moduleData)); // Log keys
 
         Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => {
             // Handle both versioned {data: ...} and direct data storage
@@ -1797,17 +1807,17 @@ function updateTotalProjectCost() {
                  if (window.ConstructionApp && window.ConstructionApp.ModuleUtils) {
                       costForThisModule = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
                  } else {
-                      console.warn(`[Dashboard] ModuleUtils not available for total cost calculation on module ${moduleId}`);
+                      // console.warn(`[Dashboard] ModuleUtils not available for total cost calculation on module ${moduleId}`); // Can be noisy
                  }
             }
             // else cost remains 0
 
             // ** NEW LOG **
-            console.log(`DEBUG: Cost for ${moduleId}: ${costForThisModule}`);
+            // console.log(`DEBUG: Cost for ${moduleId}: ${costForThisModule}`); // Can be noisy
             totalCost += costForThisModule;
         });
     } else {
-         console.log("DEBUG: No client or moduleData found for total project cost calculation.");
+         // console.log("DEBUG: No client or moduleData found for total project cost calculation."); // Can be noisy
     }
 
     // Update the display element
@@ -1815,11 +1825,11 @@ function updateTotalProjectCost() {
     const totalCostElement = document.getElementById('total-project-cost');
 
     // ** NEW LOG **
-    console.log(`DEBUG: Final calculated total project cost: ${totalCost}, Formatted: ${formattedTotal}`);
+    // console.log(`DEBUG: Final calculated total project cost: ${totalCost}, Formatted: ${formattedTotal}`); // Can be noisy
 
     if (totalCostElement) {
         totalCostElement.textContent = `Total Project Cost: ${formattedTotal}`;
-        console.log("[Dashboard] Updated total project cost display in UI.");
+        // console.log("[Dashboard] Updated total project cost display in UI."); // Can be noisy
     } else {
          console.warn("[Dashboard] Total project cost display element not found.");
     }
@@ -1949,4 +1959,3 @@ function updateDebugPanel() {
 // --- Helper Functions --- (Keep if used, e.g., setupModuleClickHandler if needed)
 // Example:
 // function setupModuleClickHandler(moduleElement) { /* ... */ }
-
