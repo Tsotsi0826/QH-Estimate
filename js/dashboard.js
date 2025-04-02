@@ -1,5 +1,5 @@
 // js/dashboard.js
-// Added visually obvious temporary styles to dashboard tiles for debugging.
+// Added display: block to wrapper in renderDashboardContent. Removed temporary tile styles.
 
 // --- Global Variables ---
 let appData = {
@@ -95,7 +95,7 @@ function updateDashboard(client) {
     updateDebugPanel();
 }
 
-// Render dashboard content - ADDED LOGGING + Verification Log + Delayed Check
+// Render dashboard content - ADDED LOGGING + Verification Log + Delayed Check + Style Change
 function renderDashboardContent(client) {
     const contentElement = document.getElementById('module-content');
     if (!contentElement) {
@@ -124,13 +124,16 @@ function renderDashboardContent(client) {
                   console.log(`DEBUG: >>> Rendering tile HTML for ${moduleId}`);
                   hasModuleDataToShow = true;
                   const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-                  // ** ADDING TEMPORARY VISUAL STYLE **
-                  tilesHTML += `<div class="module-tile" data-module-id="${moduleId}" style="background-color: #ffdddd; border: 2px solid red; color: black;">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
+                  // ** REMOVED TEMPORARY VISUAL STYLE **
+                  tilesHTML += `<div class="module-tile" data-module-id="${moduleId}">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
               }
          });
     }
 
-    let finalContent = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;"><h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">`;
+    // ** ADDING explicit style to wrapper div **
+    let finalContent = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: block;">`; // Added display: block
+    finalContent += `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">`;
+
     if (hasModuleDataToShow) {
         finalContent += tilesHTML;
         console.log("DEBUG: Adding generated tilesHTML to finalContent.");
@@ -138,7 +141,7 @@ function renderDashboardContent(client) {
         finalContent += `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1; text-align: center; color: #666;"><p>No module data with costs entered yet.</p><p style="margin-top: 5px;"><small>Click a module in the sidebar to begin.</small></p></div>`;
         console.log("DEBUG: No tiles rendered, adding 'No module data' message.");
     }
-    finalContent += `</div></div>`;
+    finalContent += `</div></div>`; // Close #module-tiles and the wrapper div
 
     console.log("DEBUG: Attempting to set contentElement.innerHTML");
     contentElement.innerHTML = finalContent;
@@ -148,7 +151,6 @@ function renderDashboardContent(client) {
     setTimeout(() => {
         const currentContent = contentElement.innerHTML;
         console.log("DEBUG: Verifying contentElement.innerHTML after 0ms delay:", currentContent.substring(0, 500));
-        // ** NEW CHECK: Does it still contain the tile structure? **
         if (hasModuleDataToShow && !currentContent.includes('module-tile')) {
             console.error("ERROR: Tiles seem to have disappeared immediately after setting innerHTML!");
         } else if (!hasModuleDataToShow && currentContent.includes('module-tile')) {
