@@ -1,5 +1,5 @@
 // js/dashboard.js
-// Added explicit visibility styles to #module-tiles container as a final CSS check.
+// Uses createElement/appendChild in renderDashboardContent as proposed solution.
 
 // --- Global Variables ---
 let appData = {
@@ -49,14 +49,14 @@ function setupModalCloseButtons(modal, overlayId) { /* ... (no changes) ... */ c
 function setupClientSearch(modal) { /* ... (no changes) ... */ const searchInput = modal.querySelector('#client-search'); const clientListContainer = modal.querySelector('.client-list'); if (searchInput && clientListContainer) { searchInput.addEventListener('input', () => { const searchTerm = searchInput.value.toLowerCase().trim(); const clientItems = clientListContainer.querySelectorAll('.client-list-item'); clientItems.forEach(item => { if (item.dataset.clientId) { const clientName = item.textContent.toLowerCase(); item.style.display = (searchTerm === '' || clientName.includes(searchTerm)) ? 'block' : 'none'; } }); }); } }
 function setupClientListSelection(modal) { /* ... (no changes) ... */ const clientListContainer = modal.querySelector('.client-list'); if (!clientListContainer) return; clientListContainer.addEventListener('click', (event) => { const listItem = event.target.closest('.client-list-item'); if (listItem && listItem.dataset.clientId) { const clientId = listItem.dataset.clientId; const clients = window.ConstructionApp.ClientManager.getAllClients(); const selectedClient = clients.find(c => c.id === clientId); if (selectedClient) { console.log("[Dashboard] Selecting client:", selectedClient.name); window.ConstructionApp.ClientManager.setCurrentClient(selectedClient); updateDebugPanel(); const overlay = modal.closest('.modal-overlay'); if (overlay) overlay.style.display = 'none'; alert(`Client "${selectedClient.name}" selected.`); } else { console.error("Selected client ID not found:", clientId); } } }); }
 
-// Update the dashboard UI - ADDED LOGGING
+// Update the dashboard UI - Using function provided by user
 function updateDashboard(client) {
-    console.log(`DEBUG: updateDashboard called. Client: ${client ? client.name : 'None'}`); // Log entry
+    console.log(`DEBUG: updateDashboard called. Client: ${client ? client.name : 'None'}`);
 
     const logoutBtn = document.getElementById('logout-btn');
     const dashboardContent = document.getElementById('module-content');
     const clientNameDisplay = document.getElementById('client-name-display');
-    const dashboardDesc = document.querySelector('.dashboard-description');
+    const dashboardDesc = document.getElementById('dashboard-description'); // Corrected ID selector
 
     if (!dashboardContent) {
         console.error("CRITICAL ERROR: #module-content element not found!");
@@ -64,18 +64,20 @@ function updateDashboard(client) {
     }
 
     if (client) {
-        console.log("DEBUG: updateDashboard - Client is present. Updating UI elements."); // Log client presence
+        console.log("DEBUG: updateDashboard - Client is present. Updating UI elements.");
         if(clientNameDisplay) clientNameDisplay.textContent = `Client: ${client.name}`;
+        // Use the correct element reference for description
         if(dashboardDesc) dashboardDesc.textContent = `${client.address || 'No address provided'}`;
         if(logoutBtn) {
             logoutBtn.style.display = 'inline-block';
-            const newLogoutBtn = logoutBtn.cloneNode(true); logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+            const newLogoutBtn = logoutBtn.cloneNode(true);
+            logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
             newLogoutBtn.addEventListener('click', () => window.ConstructionApp.ModuleUtils.logoutClient());
         }
 
-        console.log("DEBUG: updateDashboard - Calling updateTotalProjectCost..."); // Log before call
+        console.log("DEBUG: updateDashboard - Calling updateTotalProjectCost...");
         updateTotalProjectCost();
-        console.log("DEBUG: updateDashboard - Calling renderDashboardContent..."); // Log before call
+        console.log("DEBUG: updateDashboard - Calling renderDashboardContent...");
         renderDashboardContent(client);
 
     } else {
@@ -83,88 +85,167 @@ function updateDashboard(client) {
         if(clientNameDisplay) clientNameDisplay.textContent = '';
         const costElement = document.getElementById('total-project-cost');
         if(costElement) costElement.textContent = 'Total Project Cost: R0.00';
+        // Use the correct element reference for description
         if(dashboardDesc) dashboardDesc.textContent = 'Overview of project data.';
         if(logoutBtn) logoutBtn.style.display = 'none';
 
         // Set the "No Client Selected" message
         dashboardContent.innerHTML = `<div class="no-client-notification"><h2>No Client Selected</h2><p>Please select an existing client or create a new client to start working.</p><div class="no-client-buttons"><button id="prompt-new-client" class="btn no-client-button">Create New Client</button><button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button></div></div>`;
         // Add listeners to buttons inside the message
-        setTimeout(() => { const newClientBtn = document.getElementById('prompt-new-client'); const openClientBtn = document.getElementById('prompt-open-client'); if (newClientBtn) newClientBtn.addEventListener('click', () => document.getElementById('new-client-btn')?.click()); if (openClientBtn) openClientBtn.addEventListener('click', () => document.getElementById('open-client-btn')?.click()); }, 0);
+        setTimeout(() => {
+            const newClientBtn = document.getElementById('prompt-new-client');
+            const openClientBtn = document.getElementById('prompt-open-client');
+            if (newClientBtn) newClientBtn.addEventListener('click', () => document.getElementById('new-client-btn')?.click());
+            if (openClientBtn) openClientBtn.addEventListener('click', () => document.getElementById('open-client-btn')?.click());
+        }, 0);
     }
-    console.log("DEBUG: updateDashboard - Calling updateDebugPanel."); // Log before call
+    console.log("DEBUG: updateDashboard - Calling updateDebugPanel.");
     updateDebugPanel();
 }
 
-// Render dashboard content - ADDED LOGGING + Verification Log + Delayed Check + Style Change
+// Render dashboard content - Using function provided by user
 function renderDashboardContent(client) {
     const contentElement = document.getElementById('module-content');
     if (!contentElement) {
         console.error("DEBUG: Cannot find #module-content element to render tiles!");
         return;
     }
-    contentElement.innerHTML = ''; // Clear first
-    let tilesHTML = '';
+
+    console.log(`DEBUG: renderDashboardContent called for client: ${client?.name}`);
+
+    // Clear existing content first
+    contentElement.innerHTML = '';
+
+    if (!client || !client.moduleData) {
+        console.log("DEBUG: No client or module data to render");
+        // Display the "No client" message if needed (or handle appropriately)
+         contentElement.innerHTML = `<div class="no-client-notification"><h2>Client Data Not Found</h2><p>Could not find data for the selected client.</p></div>`;
+        return;
+    }
+
+    const moduleDataEntries = Object.entries(client.moduleData);
+    console.log(`DEBUG: Found ${moduleDataEntries.length} entries in moduleData`);
+
+    // Create wrapper and tiles container
+    const wrapperDiv = document.createElement('div');
+    wrapperDiv.style.backgroundColor = '#f8f9fa';
+    wrapperDiv.style.padding = '15px';
+    wrapperDiv.style.borderRadius = '5px';
+    wrapperDiv.style.marginBottom = '10px';
+    wrapperDiv.style.display = 'block'; // Ensure wrapper is visible
+
+    const headerElement = document.createElement('h4');
+    headerElement.style.marginBottom = '15px';
+    headerElement.textContent = 'Module Summaries';
+    wrapperDiv.appendChild(headerElement);
+
+    const tilesContainer = document.createElement('div');
+    tilesContainer.id = 'module-tiles';
+    tilesContainer.style.display = 'grid'; // Ensure grid container is visible
+    tilesContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
+    tilesContainer.style.gap = '15px';
+    wrapperDiv.appendChild(tilesContainer);
+
+    // Add wrapper to content element first
+    contentElement.appendChild(wrapperDiv);
+
     let hasModuleDataToShow = false;
-    const moduleDataEntries = client?.moduleData ? Object.entries(client.moduleData) : [];
 
-    console.log(`DEBUG: renderDashboardContent called for client: ${client?.name}. Found ${moduleDataEntries.length} entries in moduleData.`);
-
-    if (moduleDataEntries.length > 0) {
-         moduleDataEntries.forEach(([moduleId, moduleVersionedData]) => {
-              const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {};
-              if (!moduleData || Object.keys(moduleData).length === 0) { return; }
-              const moduleInfo = appData.modules.find(m => m.id === moduleId);
-              const moduleName = moduleInfo ? moduleInfo.name : moduleId;
-              let moduleCost = 0;
-              if (moduleData.totalCost !== undefined) moduleCost = parseFloat(moduleData.totalCost) || 0;
-              else if (moduleData.items && Array.isArray(moduleData.items)) moduleCost = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
-              else if (moduleId === 'notes') moduleCost = 0;
-              console.log(`DEBUG: Processing tile for ${moduleId} (${moduleName}). Calculated Cost: ${moduleCost}`);
-              if (moduleCost > 0 || moduleId === 'notes') {
-                  console.log(`DEBUG: >>> Rendering tile HTML for ${moduleId}`);
-                  hasModuleDataToShow = true;
-                  const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-                  // Removed temporary red styling
-                  tilesHTML += `<div class="module-tile" data-module-id="${moduleId}">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
-              }
-         });
-    }
-
-    // Added explicit style="display: block;" to the wrapper div
-    let finalContent = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: block;">`;
-    finalContent += `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">`; // Added explicit display style
-
-    if (hasModuleDataToShow) {
-        finalContent += tilesHTML;
-        console.log("DEBUG: Adding generated tilesHTML to finalContent.");
-    } else {
-        finalContent += `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1; text-align: center; color: #666;"><p>No module data with costs entered yet.</p><p style="margin-top: 5px;"><small>Click a module in the sidebar to begin.</small></p></div>`;
-        console.log("DEBUG: No tiles rendered, adding 'No module data' message.");
-    }
-    finalContent += `</div></div>`; // Close #module-tiles and the wrapper div
-
-    console.log("DEBUG: Attempting to set contentElement.innerHTML");
-    contentElement.innerHTML = finalContent;
-    console.log("DEBUG: Verifying contentElement.innerHTML (first 500 chars):", contentElement.innerHTML.substring(0, 500));
-
-    // Delayed check
-    setTimeout(() => {
-        const currentContent = contentElement.innerHTML;
-        console.log("DEBUG: Verifying contentElement.innerHTML after 0ms delay:", currentContent.substring(0, 500));
-        if (hasModuleDataToShow && !currentContent.includes('module-tile')) {
-            console.error("ERROR: Tiles seem to have disappeared immediately after setting innerHTML!");
-        } else if (!hasModuleDataToShow && currentContent.includes('module-tile')) {
-             console.error("ERROR: Tiles appeared unexpectedly after setting 'No data' message!");
+    // Now process and add each tile
+    moduleDataEntries.forEach(([moduleId, moduleVersionedData]) => {
+        const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {};
+        if (!moduleData || Object.keys(moduleData).length === 0) {
+            return;
         }
-    }, 0);
 
-    console.log("DEBUG: contentElement.innerHTML update complete. Attaching tile listeners.");
+        const moduleInfo = appData.modules.find(m => m.id === moduleId);
+        const moduleName = moduleInfo ? moduleInfo.name : moduleId;
+
+        let moduleCost = 0;
+        if (moduleData.totalCost !== undefined) {
+            moduleCost = parseFloat(moduleData.totalCost) || 0;
+        } else if (moduleData.items && Array.isArray(moduleData.items)) {
+            moduleCost = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items);
+        }
+
+        console.log(`DEBUG: Processing tile for ${moduleId} (${moduleName}). Calculated Cost: ${moduleCost}`);
+
+        if (moduleCost > 0 || moduleId === 'notes') {
+            console.log(`DEBUG: >>> Creating tile for ${moduleId}`);
+            hasModuleDataToShow = true;
+
+            const tile = document.createElement('div');
+            tile.className = 'module-tile';
+            tile.setAttribute('data-module-id', moduleId);
+
+            // Create tile content
+            if (moduleId !== 'notes') {
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-module-btn';
+                clearBtn.title = 'Clear module data';
+                clearBtn.textContent = '×';
+                tile.appendChild(clearBtn);
+            }
+
+            const tileHeader = document.createElement('h5');
+            tileHeader.textContent = moduleName;
+            tile.appendChild(tileHeader);
+
+            if (moduleId !== 'notes') {
+                const costElement = document.createElement('p');
+                costElement.className = 'module-tile-cost';
+                costElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
+                tile.appendChild(costElement);
+            } else {
+                const notesDescription = document.createElement('p');
+                notesDescription.style.fontSize = '0.9em';
+                notesDescription.style.color = '#666';
+                notesDescription.style.marginTop = '10px';
+                notesDescription.textContent = '(No cost associated)';
+                tile.appendChild(notesDescription);
+            }
+
+            const openBtn = document.createElement('button');
+            openBtn.className = 'btn module-open-btn';
+            openBtn.style.marginTop = '10px';
+            openBtn.textContent = 'Open Module';
+            tile.appendChild(openBtn);
+
+            // Append the tile to the container
+            tilesContainer.appendChild(tile);
+        }
+    });
+
+    // If no tiles were added, show the empty message
+    if (!hasModuleDataToShow) {
+        console.log("DEBUG: No tiles rendered, adding 'No module data' message");
+        const emptyMessage = document.createElement('div');
+        emptyMessage.style.backgroundColor = 'white';
+        emptyMessage.style.padding = '15px';
+        emptyMessage.style.borderRadius = '5px';
+        emptyMessage.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        emptyMessage.style.gridColumn = '1 / -1';
+        emptyMessage.style.textAlign = 'center';
+        emptyMessage.style.color = '#666';
+
+        const messagePara = document.createElement('p');
+        messagePara.textContent = 'No module data with costs entered yet.';
+        emptyMessage.appendChild(messagePara);
+
+        const messageSmall = document.createElement('p');
+        messageSmall.style.marginTop = '5px';
+        const smallText = document.createElement('small');
+        smallText.textContent = 'Click a module in the sidebar to begin.';
+        messageSmall.appendChild(smallText);
+        emptyMessage.appendChild(messageSmall);
+
+        tilesContainer.appendChild(emptyMessage);
+    }
+
+    console.log("DEBUG: renderDashboardContent complete, setting up listeners");
     setupDashboardTileListeners();
 }
 
-function setupDashboardTileListeners() { /* ... (no changes) ... */ const tilesContainer = document.getElementById('module-tiles'); if (!tilesContainer) return; tilesContainer.removeEventListener('click', handleTileClick); tilesContainer.addEventListener('click', handleTileClick); }
-function handleTileClick(e) { /* ... (no changes) ... */ const openBtn = e.target.closest('.module-open-btn'); const clearBtn = e.target.closest('.clear-module-btn'); const tile = e.target.closest('.module-tile'); if (!tile) return; const moduleId = tile.dataset.moduleId; if (openBtn) window.ConstructionApp.ModuleUtils.navigateToModule(moduleId); else if (clearBtn) { const moduleInfo = appData.modules.find(m => m.id === moduleId); const moduleName = moduleInfo ? moduleInfo.name : moduleId; if (confirm(`Are you sure you want to clear all data for "${moduleName}"? This cannot be undone.`)) clearModuleData(moduleId); } }
-function clearModuleData(moduleId) { /* ... (no changes) ... */ const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client && client.moduleData && client.moduleData.hasOwnProperty(moduleId)) { console.log(`[Dashboard] Clearing module data for: ${moduleId}`); window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => { if (success) { if (client.moduleData) { delete client.moduleData[moduleId]; sessionStorage.setItem('currentClient', JSON.stringify(client)); console.log("[Dashboard] Updated client session after clearing module."); } window.ConstructionApp.ModuleUtils.showSuccessMessage(`Module data cleared.`); renderDashboardContent(client); updateTotalProjectCost(); } else { window.ConstructionApp.ModuleUtils.showErrorMessage(`Error clearing data: ${error || 'Unknown'}`); } }); } else { console.warn(`[Dashboard] No data found for module ${moduleId} to clear.`); } }
 
 // Update total project cost - ADDED LOGGING
 function updateTotalProjectCost() { /* ... (no changes needed in function body) ... */ let totalCost = 0; const client = window.ConstructionApp.ClientManager.getCurrentClient(); const costElement = document.getElementById('total-project-cost'); console.log(`DEBUG: updateTotalProjectCost called. Client: ${client ? client.name : 'None'}`); if (client && client.moduleData) { console.log("DEBUG: Calculating total cost. Module data keys:", Object.keys(client.moduleData)); Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => { const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? {}; if (!moduleData) return; let costForThisModule = 0; if (moduleData.totalCost !== undefined) costForThisModule = parseFloat(moduleData.totalCost) || 0; else if (moduleData.items && Array.isArray(moduleData.items)) costForThisModule = window.ConstructionApp.ModuleUtils.calculateModuleTotal(moduleData.items); console.log(`DEBUG: Cost for ${moduleId}: ${costForThisModule}`); totalCost += costForThisModule; }); } else { console.log("DEBUG: No client or moduleData for cost calculation."); } const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost); console.log(`DEBUG: Final calculated total: ${totalCost}, Formatted: ${formattedTotal}`); if (costElement) { console.log(`DEBUG: Attempting to update #total-project-cost textContent to: Total Project Cost: ${formattedTotal}`); costElement.textContent = `Total Project Cost: ${formattedTotal}`; console.log("DEBUG: Verifying #total-project-cost textContent:", costElement.textContent); console.log("DEBUG: #total-project-cost textContent update complete."); } else { console.error("DEBUG: Could not find #total-project-cost element to update!"); } }
