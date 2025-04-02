@@ -1,6 +1,5 @@
 // js/dashboard.js
-// Updated to always show all module tiles on the dashboard.
-// Modifications primarily in renderDashboardContent and updateDashboard.
+// Added specific debug logs at the start of updateDashboard
 
 // --- Global Variables ---
 let appData = {
@@ -102,13 +101,26 @@ function setupModuleSearch() {
  * Loads modules, initializes client state, sets up UI listeners.
  */
 document.addEventListener('DOMContentLoaded', function() {
+    // --- ADDED LOG ---
+    console.log("DEBUG: DOMContentLoaded event fired");
+    // --- END LOG ---
     console.log("[Dashboard] DOM loaded, initializing app");
     setupDebugPanel(); // Setup debug panel first
 
     // Load module definitions (structure)
+    // --- ADDED LOG ---
+    console.log("DEBUG: Calling loadAndRenderModules...");
+    // --- END LOG ---
     loadAndRenderModules().then(() => {
+        // --- ADDED LOG ---
+        console.log("DEBUG: loadAndRenderModules COMPLETE.");
+        console.log("DEBUG: Calling initApp...");
+        // --- END LOG ---
         // Once modules are loaded, initialize the rest of the app
         initApp(); // Determine initial client state
+        // --- ADDED LOG ---
+        console.log("DEBUG: initApp COMPLETE.");
+        // --- END LOG ---
         setupDropdownMenus(); // Sidebar module dropdowns
         setupClientManagement(); // Client modal buttons
         setupAddModuleButton(); // Add module button/modal
@@ -117,6 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Load client list asynchronously (doesn't block UI)
         if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
+            // --- ADDED LOG ---
+            console.log("DEBUG: Setting ClientManager.onClientChanged callback to updateDashboard.");
+            // --- END LOG ---
+            // Set the callback for when the client changes
+            window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
+
             window.ConstructionApp.ClientManager.loadClients().then(() => {
                 console.log("[Dashboard] Client list loaded");
                 // Potentially refresh client selection UI if needed after load
@@ -124,13 +142,14 @@ document.addEventListener('DOMContentLoaded', function() {
                  console.error("[Dashboard] Error loading client list:", error);
             });
 
-            // Set the callback for when the client changes
-            window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
         } else {
              console.error("[Dashboard] ClientManager not available!");
         }
 
     }).catch(error => {
+        // --- ADDED LOG ---
+        console.error("DEBUG: loadAndRenderModules FAILED.", error);
+        // --- END LOG ---
         console.error("[Dashboard] Critical error during module loading:", error);
         // Display an error message to the user?
         const contentElement = document.getElementById('module-content');
@@ -184,7 +203,13 @@ function initApp() {
     // Set the current client in the ClientManager (this triggers onClientChanged -> updateDashboard)
     if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
         // IMPORTANT: setCurrentClient triggers the onClientChanged callback, which calls updateDashboard
+        // --- ADDED LOG ---
+        console.log("DEBUG: Calling ClientManager.setCurrentClient with client:", clientToSet ? clientToSet.name : 'None');
+        // --- END LOG ---
         window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
+        // --- ADDED LOG ---
+        console.log("DEBUG: ClientManager.setCurrentClient call complete.");
+        // --- END LOG ---
     } else {
          console.error("[Dashboard] ClientManager not available during initApp!");
          // Manually update dashboard if ClientManager is missing? Risky.
@@ -1469,15 +1494,17 @@ function setupClientListSelection(modal) {
 
 
 // =========================================================================
-// == DASHBOARD CONTENT RENDERING & UPDATE (MODIFIED APPROACH) ==
+// == DASHBOARD CONTENT RENDERING & UPDATE (Using "Show All Tiles" Approach) ==
 // =========================================================================
 
-// UPDATED FUNCTION START
 /**
- * Render dashboard content (module tiles) - MODIFIED to always show all modules.
+ * Render dashboard content (module tiles) - Shows tiles for all non-header modules.
  * @param {object|null} client - The current client object, or null if no client is selected.
  */
 function renderDashboardContent(client) {
+    // --- ADDED LOG ---
+    console.log("DEBUG: renderDashboardContent START. Client:", client ? client.name : 'None');
+    // --- END LOG ---
     const contentElement = document.getElementById('module-content');
     if (!contentElement) {
         console.error("[Dashboard] Main content element #module-content not found!");
@@ -1487,13 +1514,10 @@ function renderDashboardContent(client) {
     // Preserve notification if it exists, otherwise clear
     const notificationElement = contentElement.querySelector('.no-client-notification');
     const notificationHtml = notificationElement ? notificationElement.outerHTML : '';
-    // contentElement.innerHTML = notificationHtml; // Start with notification (if any) or clear - Let updateDashboard handle this
+    // Let updateDashboard handle placing the notification correctly
 
     let tilesHTML = '';
     let hasAnyTiles = false; // Flag to check if we have any modules to display
-
-    // ** NEW LOG **
-    console.log(`DEBUG: renderDashboardContent called. Client: ${client?.name || 'None'}. Rendering all non-header modules.`);
 
     // Ensure appData.modules is available and is an array
     if (appData.modules && Array.isArray(appData.modules) && appData.modules.length > 0) {
@@ -1501,6 +1525,9 @@ function renderDashboardContent(client) {
         appData.modules.forEach(module => {
             // Skip rendering tiles for header-type modules in the main dashboard area
             if (module.type === 'header') {
+                // --- ADDED LOG ---
+                // console.log(`DEBUG: Skipping header module: ${module.name}`);
+                // --- END LOG ---
                 return; // Skip to the next module
             }
 
@@ -1585,7 +1612,9 @@ function renderDashboardContent(client) {
 
     if (hasAnyTiles) {
         tilesWrapperHtml += tilesHTML; // Add the generated tiles
-        console.log("DEBUG: Rendering module tiles container with tiles.");
+        // --- ADDED LOG ---
+        // console.log("DEBUG: Rendering module tiles container with tiles."); // Can be noisy
+        // --- END LOG ---
     } else {
         // Message if no modules are defined at all
         tilesWrapperHtml += `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); grid-column: 1 / -1; text-align: center; color: #666;"><p>No modules defined in the system.</p><p style="margin-top: 5px;"><small>Add modules using the sidebar.</small></p></div>`;
@@ -1594,23 +1623,32 @@ function renderDashboardContent(client) {
     tilesWrapperHtml += `</div></div>`; // Close #module-tiles and wrapper div
 
     // Append the tiles wrapper to the content element (after the notification, if any)
+    // --- ADDED LOG ---
+    console.log("DEBUG: Attempting to update #module-content innerHTML (appending tiles wrapper)...");
+    // --- END LOG ---
     contentElement.innerHTML += tilesWrapperHtml;
+    // --- ADDED LOG ---
+    console.log("DEBUG: #module-content innerHTML update COMPLETE.");
+    // --- END LOG ---
 
 
     // Re-attach listeners for the newly created tile buttons
     setupDashboardTileListeners();
+    // --- ADDED LOG ---
+    console.log("DEBUG: renderDashboardContent COMPLETE.");
+    // --- END LOG ---
 }
 
 
-// UPDATED FUNCTION START
 /**
  * Update the dashboard UI based on the current client - MODIFIED for new rendering.
  * This function is typically called by ClientManager.onClientChanged.
  * @param {object|null} client - The new client object, or null if logged out.
  */
 function updateDashboard(client) {
-    // ** ADDING LOGGING **
-    console.log(`DEBUG: updateDashboard called. Client: ${client ? client.name : 'None'}`);
+    // --- ADDED LOG ---
+    console.log("DEBUG: updateDashboard START - Client:", client ? client.name : 'None');
+    // --- END LOG ---
 
     // Get references to UI elements
     const logoutBtn = document.getElementById('logout-btn');
@@ -1619,10 +1657,18 @@ function updateDashboard(client) {
     const dashboardDesc = document.querySelector('.dashboard-description'); // Header description area
     const totalProjectCostDisplay = document.getElementById('total-project-cost'); // Header total cost
 
+    // --- ADDED LOG ---
+    // Check if elements exist right at the start
+    console.log(`DEBUG: Checking elements: logoutBtn=${!!logoutBtn}, dashboardContent=${!!dashboardContent}, clientNameDisplay=${!!clientNameDisplay}, dashboardDesc=${!!dashboardDesc}, totalProjectCostDisplay=${!!totalProjectCostDisplay}`);
+    // --- END LOG ---
+
     // Ensure essential elements exist
     if (!dashboardContent || !clientNameDisplay || !dashboardDesc || !logoutBtn || !totalProjectCostDisplay) {
         console.error("[Dashboard] One or more essential dashboard UI elements missing, cannot update.");
-        return;
+        // --- ADDED LOG ---
+        console.log("DEBUG: updateDashboard EXITING due to missing elements.");
+        // --- END LOG ---
+        return; // Stop execution if critical elements are missing
     }
 
     // --- Update UI based on whether a client is selected ---
@@ -1644,13 +1690,20 @@ function updateDashboard(client) {
             }
         });
 
-        // Clear the content area before rendering tiles (removes loading/no-client message)
+        // Clear the content area entirely before rendering tiles for a client
         dashboardContent.innerHTML = '';
+        // --- ADDED LOG ---
+        console.log("DEBUG: Cleared #module-content for client view.");
+        console.log("DEBUG: Calling renderDashboardContent(client)...");
+        // --- END LOG ---
 
         // Render the module tiles WITH the client's data
         renderDashboardContent(client);
+        // --- ADDED LOG ---
+        console.log("DEBUG: Calling updateTotalProjectCost()...");
+        // --- END LOG ---
         // Update total project cost based on the client's data
-        updateTotalProjectCost(); // Make sure this uses the client data correctly
+        updateTotalProjectCost(); // This function should read from the current client internally
 
     } else {
         // --- No Client Selected ---
@@ -1660,8 +1713,12 @@ function updateDashboard(client) {
         dashboardDesc.textContent = 'Overview of project data.'; // Reset description
         logoutBtn.style.display = 'none'; // Hide logout button
 
-        // Display the "No Client" notification message *first*
+        // Display the "No Client" notification message *first* by setting innerHTML
         dashboardContent.innerHTML = `<div class="no-client-notification" style="margin-bottom: 20px;"><h2>No Client Selected</h2><p>Please select an existing client or create a new client using the sidebar.</p></div>`;
+        // --- ADDED LOG ---
+        console.log("DEBUG: Set #module-content to 'No Client' notification.");
+        console.log("DEBUG: Calling renderDashboardContent(null)...");
+        // --- END LOG ---
 
         // Render the module tiles WITHOUT client data (will show defaults/empty states)
         // This will append the tiles container after the notification message
@@ -1670,11 +1727,12 @@ function updateDashboard(client) {
 
     // Update debug panel regardless of client state
     updateDebugPanel();
+    // --- ADDED LOG ---
+    console.log("DEBUG: updateDashboard COMPLETE.");
+    // --- END LOG ---
 }
-// UPDATED FUNCTION END
-
 // =========================================================================
-// == END OF MODIFIED DASHBOARD CONTENT RENDERING & UPDATE ==
+// == END OF DASHBOARD CONTENT RENDERING & UPDATE ==
 // =========================================================================
 
 
@@ -1761,7 +1819,8 @@ function clearModuleData(moduleId) {
                 window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`Data for "${moduleId}" cleared.`);
 
                 // Re-render the dashboard content to reflect the cleared tile
-                renderDashboardContent(client); // Re-render with the updated client object
+                // updateDashboard should handle re-rendering correctly now
+                // renderDashboardContent(client); // Re-render with the updated client object
                 // Recalculate the total project cost
                 updateTotalProjectCost();
 
