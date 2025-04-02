@@ -1,5 +1,5 @@
 // js/dashboard.js
-// Added log to verify innerHTML content immediately after setting it.
+// Added delayed log check after setting innerHTML in renderDashboardContent.
 
 // --- Global Variables ---
 let appData = {
@@ -140,6 +140,12 @@ function renderDashboardContent(client) {
     contentElement.innerHTML = finalContent;
     // ** NEW Verification Log **
     console.log("DEBUG: Verifying contentElement.innerHTML (first 500 chars):", contentElement.innerHTML.substring(0, 500));
+
+    // ** NEW Delayed Verification Log **
+    setTimeout(() => {
+        console.log("DEBUG: Verifying contentElement.innerHTML after 0ms delay:", contentElement.innerHTML.substring(0, 500));
+    }, 0);
+
     console.log("DEBUG: contentElement.innerHTML update complete. Attaching tile listeners.");
 
     setupDashboardTileListeners();
