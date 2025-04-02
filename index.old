@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Construction Estimator</title>
-    
-    <!-- Firebase Libraries -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
-    
-    <!-- Shared JavaScript Files -->
+
     <script src="js/firebase-config.js"></script>
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
-    
+
     <style>
+        /* General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -30,22 +29,14 @@
             background-color: #f5f5f5;
         }
 
+        /* Sidebar Styles */
         .sidebar {
-            width: 25%;
+            width: 25%; /* Adjusted width slightly */
+            min-width: 250px; /* Minimum width */
             background-color: #1c2639;
             color: #fff;
             height: 100%;
-            overflow-y: auto;
             border-right: 1px solid #333;
-        }
-
-        .main-content {
-            width: 75%;
-            height: 100%;
-            overflow: hidden;
-            background-color: white;
-            color: #333;
-            position: relative;
             display: flex;
             flex-direction: column;
         }
@@ -55,16 +46,19 @@
             font-size: 1.4em;
             font-weight: bold;
             border-bottom: 1px solid #333;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .section-title {
             padding: 20px;
             font-size: 1.2em;
             font-weight: bold;
+            flex-shrink: 0;
         }
 
         .client-actions {
             padding: 0 20px;
+            flex-shrink: 0;
         }
 
         .client-action {
@@ -82,133 +76,9 @@
             color: #4eca8b;
         }
 
-        /* Add New Module Button */
-        .add-module-btn {
-            display: flex;
-            align-items: center;
-            padding: 10px 20px;
-            background-color: #2d364a;
-            color: #fff;
-            cursor: pointer;
-            margin: 10px 20px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .add-module-btn:hover {
-            background-color: #4eca8b;
-        }
-
-        .add-module-btn i {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
-        /* Client Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            width: 500px;
-            max-width: 90%;
-            color: #333;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .modal-close {
-            cursor: pointer;
-            font-size: 1.5em;
-            color: #888;
-        }
-
-        .modal-close:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .btn-cancel {
-            background-color: #ddd;
-            color: #333;
-            margin-right: 10px;
-        }
-
-        .client-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .client-list-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            cursor: pointer;
-        }
-
-        .client-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .client-list-item:hover {
-            background-color: #f5f5f5;
-        }
-
-        .client-list-item.active {
-            background-color: #e9e9e9;
-        }
-
         .search-container {
             padding: 20px;
+            flex-shrink: 0;
         }
 
         .search-input {
@@ -224,71 +94,150 @@
             color: #aaa;
         }
 
-        .modules-list {
+        .add-module-btn {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #2d364a;
+            color: #fff;
+            cursor: pointer;
+            margin: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .add-module-btn:hover {
+            background-color: #4eca8b;
+        }
+
+        .add-module-btn i {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* Module List Styles */
+        .modules-list-container {
+            flex-grow: 1; /* Allow container to grow */
+            overflow-y: auto; /* Enable scrolling for the list */
             padding: 10px 0;
         }
 
+        /* Custom scrollbar styling for sidebar module list */
+        .modules-list-container::-webkit-scrollbar {
+            width: 6px;
+            background-color: transparent;
+        }
+
+        .modules-list-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .modules-list-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
         .module-item {
-            padding: 10px 20px;
+            padding: 8px 10px 8px 20px; /* Base padding */
             cursor: pointer;
             display: flex;
             align-items: center;
             position: relative;
             transition: background-color 0.2s;
+            white-space: nowrap; /* Prevent wrapping */
+            /* overflow: hidden; */ /* <-- REMOVED THIS LINE to prevent dropdown clipping */
+            text-overflow: ellipsis; /* Add ellipsis for long names (applies if width is constrained) */
+            border-radius: 3px; /* Slight rounding */
+            margin: 2px 10px 2px 0; /* Margin for spacing */
         }
 
         .module-item:hover {
             background-color: #2d364a;
         }
 
+        /* Indentation based on level attribute */
+        .module-item[data-level="1"] { padding-left: 35px; }
+        .module-item[data-level="2"] { padding-left: 50px; }
+        .module-item[data-level="3"] { padding-left: 65px; }
+        /* Add more levels if needed */
+
+        /* Header specific styles */
+        .module-item[data-module-type="header"] .module-name {
+            font-weight: bold;
+            color: #4eca8b; /* Green color for headers */
+        }
+
+        /* Dragging styles */
         .module-item.dragging {
             opacity: 0.5;
             background-color: #3a4967;
             border: 1px dashed #aaa;
         }
 
-        .module-item.drag-over {
-            border-top: 2px solid #4eca8b;
+        /* Drop target indicator styles */
+        .module-item.drag-over-top {
+             border-top: 2px solid #4eca8b;
+        }
+        .module-item.drag-over-bottom {
+             border-bottom: 2px solid #4eca8b;
+        }
+        .module-item.drag-over-middle { /* Style for dropping ONTO a header */
+             background-color: #3a4967;
+             outline: 2px dashed #4eca8b;
+             outline-offset: -2px;
         }
 
+        /* Module Item Icons/Handles */
         .module-icon {
-            margin-right: 10px;
+            margin-right: 8px; /* Reduced margin */
             font-size: 0.8em;
             cursor: pointer;
-            width: 20px;
+            width: 16px; /* Reduced size */
             text-align: center;
-            position: relative;
+            position: relative; /* Important for dropdown positioning */
             display: inline-block;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .module-drag-handle {
             cursor: move;
             position: absolute;
-            left: 5px;
+            left: 5px; /* Position handle */
+            top: 50%;
+            transform: translateY(-50%);
             opacity: 0;
             transition: opacity 0.2s;
+            padding: 0 5px; /* Padding around handle */
+            flex-shrink: 0;
         }
 
         .module-item:hover .module-drag-handle {
             opacity: 0.7;
         }
 
-        /* Dropdown styles */
+        .module-name {
+            flex-grow: 1; /* Allow name to take remaining space */
+            overflow: hidden; /* Keep overflow hidden on name itself */
+            text-overflow: ellipsis; /* Apply ellipsis to name */
+        }
+
+        /* Dropdown Menu Styles */
         .dropdown-menu {
             display: none;
             position: absolute;
             background-color: #fff;
             min-width: 120px;
             box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
+            z-index: 10; /* Increased z-index slightly */
             border-radius: 4px;
             left: 0;
-            top: 100%;
+            top: 100%; /* Position below the icon */
             color: #333;
         }
 
         .module-icon:hover .dropdown-menu {
-            display: block;
+            /* Display is handled by JS now */
         }
 
         .dropdown-item {
@@ -296,10 +245,36 @@
             text-decoration: none;
             display: block;
             font-size: 14px;
+            white-space: nowrap; /* Prevent wrapping inside dropdown */
         }
 
         .dropdown-item:hover {
             background-color: #f1f1f1;
+        }
+
+         /* Style for non-client modules (gear icon) */
+        .module-item[data-requires-client="false"] {
+            position: relative;
+        }
+
+        .module-item[data-requires-client="false"]::after {
+            content: "⚙️";
+            position: absolute;
+            right: 10px;
+            font-size: 14px;
+            opacity: 0.7; /* Make it slightly less prominent */
+        }
+
+        /* Main Content Area Styles */
+        .main-content {
+            width: 75%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            color: #333;
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .dashboard-header {
@@ -310,6 +285,7 @@
             border-bottom: 1px solid #e0e0e0;
             background-color: #1c2639;
             color: #fff;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .dashboard-title {
@@ -323,15 +299,33 @@
             margin-right: 10px;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+
+         .btn-small { /* Logout button style */
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #6c757d;
+        }
+
+        .btn-small:hover {
+            background-color: #5a6268;
+        }
+
         .total-cost {
             font-size: 1.2em;
             color: #4eca8b;
+            font-weight: bold; /* Make total cost bold */
         }
 
         .dashboard-description {
             padding: 10px 20px;
             color: #aaa;
             background-color: #1c2639;
+            flex-shrink: 0;
+            min-height: 38px; /* Ensure space even if empty */
         }
 
         .dashboard-content {
@@ -339,12 +333,12 @@
             background-color: #fff;
             margin: 0;
             color: #333;
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; /* Allow content to take remaining space */
+            overflow-y: auto; /* Enable scrolling for content */
             overflow-x: hidden;
         }
 
-        /* Custom scrollbar styling */
+        /* Custom scrollbar styling for dashboard content */
         .dashboard-content::-webkit-scrollbar {
             width: 8px;
             background-color: #f5f5f5;
@@ -359,20 +353,55 @@
             background-color: #888;
         }
 
-        .dashboard-content-header {
-            margin-bottom: 20px;
+        /* Dashboard Tile Styles */
+         .module-tile {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
         }
 
-        .dashboard-content-title {
-            font-size: 1.5em;
+        .module-tile h5 { /* Module name in tile */
+             margin-bottom: 10px;
+             font-size: 1.1em;
+        }
+
+        .module-tile-cost {
+            font-size: 1.4em; /* Slightly larger cost */
+            margin: 10px 0;
+            color: #4eca8b;
             font-weight: bold;
-            margin-bottom: 10px;
         }
 
-        .dashboard-content-description {
-            color: #555;
+        .clear-module-btn { /* Clear button on tile */
+            position: absolute;
+            top: 8px; /* Adjusted position */
+            right: 8px;
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 18px; /* Slightly larger */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            padding: 0;
+            opacity: 0.5; /* Less prominent initially */
+            transition: opacity 0.2s;
+        }
+         .module-tile:hover .clear-module-btn {
+             opacity: 1; /* Show on hover */
+         }
+
+        .clear-module-btn:hover {
+            background-color: #f8d7da;
         }
 
+
+        /* General Table Styles (used within modules) */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -406,6 +435,7 @@
             background-color: #e9e9e9;
         }
 
+        /* General Button Styles */
         .btn {
             background-color: #4eca8b;
             color: white;
@@ -413,144 +443,225 @@
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
 
         .btn:hover {
             background-color: #3db97a;
         }
 
-        .scroll-container {
-            max-height: calc(100vh - 180px);
-            overflow-y: auto;
-            overflow-x: hidden;
+        .btn-cancel {
+            background-color: #aaa;
+            color: #fff;
+        }
+        .btn-cancel:hover {
+            background-color: #888;
         }
 
-        /* Custom scrollbar styling for sidebar */
-        .scroll-container::-webkit-scrollbar {
-            width: 6px;
-            background-color: transparent;
-        }
-
-        .scroll-container::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-
-        .scroll-container::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Style for non-client modules */
-        .module-item[data-requires-client="false"] {
-            position: relative;
-        }
-        
-        .module-item[data-requires-client="false"]::after {
-            content: "⚙️";
-            position: absolute;
-            right: 10px;
-            font-size: 14px;
-        }
-        
-        /* Styles for logout button */
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 0.9em;
-            background-color: #6c757d;
-        }
-
-        .btn-small:hover {
-            background-color: #5a6268;
-        }
-
-        .header-actions {
-            display: flex;
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+            display: none;
+            justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
-        
-        /* Debug panel */
+
+        .modal {
+            background-color: white;
+            padding: 25px; /* More padding */
+            border-radius: 8px; /* More rounded */
+            width: 500px;
+            max-width: 95%;
+            color: #333;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px; /* Add padding below header */
+            border-bottom: 1px solid #eee; /* Separator line */
+        }
+
+        .modal-title {
+            font-size: 1.3em; /* Larger title */
+            font-weight: bold;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.8em; /* Larger close button */
+            color: #aaa;
+            line-height: 1;
+            padding: 0 5px;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555; /* Slightly softer label color */
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px; /* More padding */
+            border: 1px solid #ccc; /* Slightly darker border */
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        .form-control:focus {
+             border-color: #4eca8b;
+             outline: none;
+             box-shadow: 0 0 0 2px rgba(78, 202, 139, 0.2);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 15px; /* Add padding above footer */
+            border-top: 1px solid #eee; /* Separator line */
+        }
+
+        /* Client List specific styles */
+        .client-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px; /* Space above list */
+        }
+
+        .client-list-item {
+            padding: 12px 15px; /* More padding */
+            border-bottom: 1px solid #eee; /* Lighter separator */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .client-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-list-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .client-list-item.active { /* Style for currently selected client if needed */
+            background-color: #e0f2e9;
+            font-weight: bold;
+        }
+
+        /* Add Module Modal Specific Styles */
+        #add-module-modal .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+         #add-module-modal select, #add-module-modal input[type="text"] {
+             margin-top: 5px;
+         }
+         #add-module-modal input[type="checkbox"] {
+              margin-right: 8px;
+              vertical-align: middle;
+         }
+         #add-module-modal label small { /* Style for the hint text */
+              display: block;
+              color: #666;
+              margin-top: 3px;
+              font-weight: normal;
+         }
+
+
+        /* Debug Panel */
         .debug-panel {
             position: fixed;
             bottom: 10px;
             right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.8); /* Darker */
+            color: #0f0; /* Green text */
+            font-family: monospace; /* Monospace font */
+            padding: 15px;
             border-radius: 5px;
             font-size: 12px;
-            max-width: 300px;
+            max-width: 350px; /* Wider */
+            max-height: 50vh; /* Limit height */
+            overflow: auto; /* Scroll if needed */
             z-index: 9999;
-            display: none;
+            display: none; /* Hidden by default */
+            border: 1px solid #444;
         }
-        
-        /* No client selected notification */
+         #debug-toggle-btn { /* Style the toggle button */
+             position: fixed;
+             bottom: 10px;
+             right: 10px;
+             z-index: 10000;
+             padding: 5px 10px;
+             background: #333;
+             color: white;
+             border: none;
+             border-radius: 3px;
+             cursor: pointer;
+             opacity: 0.8;
+         }
+         #debug-toggle-btn:hover {
+              opacity: 1;
+         }
+
+
+        /* No Client Notification */
         .no-client-notification {
             padding: 30px;
             background-color: #f8f9fa;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 8px; /* More rounded */
+            margin: 20px; /* Add margin */
             text-align: center;
             border: 2px dashed #ddd;
         }
-        
+
         .no-client-notification h2 {
-            color: #dc3545;
-            margin-bottom: 20px;
+            color: #555; /* Softer color */
+            margin-bottom: 15px;
+            font-size: 1.4em;
         }
-        
+
         .no-client-notification p {
-            font-size: 18px;
-            margin-bottom: 20px;
+            font-size: 1.1em; /* Slightly larger text */
+            margin-bottom: 25px;
+            color: #666;
         }
-        
+
         .no-client-buttons {
             display: flex;
             justify-content: center;
             gap: 20px;
         }
-        
+
         .no-client-button {
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 1em;
         }
 
-        /* Module card clear button */
-        .clear-module-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #dc3545;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            text-align: center;
-            padding: 0;
-        }
-
-        .clear-module-btn:hover {
-            background-color: #f8d7da;
-        }
-
-        /* Module tile styles */
-        .module-tile {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .module-tile-cost {
-            font-size: 20px;
-            margin: 10px 0;
-            color: #4eca8b;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -559,38 +670,34 @@
 
         <div class="section-title">Clients</div>
         <div class="client-actions">
-            <div class="client-action" id="new-client-btn">
+            <div class="client-action" id="new-client-btn" title="Create a new client project">
                 <i>+</i> New Client
             </div>
-            <div class="client-action" id="open-client-btn">
+            <div class="client-action" id="open-client-btn" title="Open an existing client project">
                 <i>O</i> Open Client
             </div>
         </div>
 
         <div class="search-container">
-            <input type="text" class="search-input" placeholder="Search modules...">
+            <input type="text" id="module-search-input" class="search-input" placeholder="Search modules...">
         </div>
 
-        <!-- Add New Module Button -->
-        <div class="add-module-btn" id="add-module-btn">
+        <div class="add-module-btn" id="add-module-btn" title="Add a new module or category header">
             <i>+</i> Add New Module
         </div>
 
-        <div class="scroll-container">
-            <div class="modules-list" id="modules-container">
-                <div class="module-item" draggable="true" data-module-id="notes" data-requires-client="true">
-                    <div class="module-drag-handle">≡</div>
-                    <div class="module-icon">
-                        ...
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item edit-module">Edit</div>
-                            <div class="dropdown-item delete-module">Delete</div>
-                        </div>
-                    </div>
-                    <span>Notes</span>
-                </div>
-                <!-- P&Gs module removed as requested -->
-            </div>
+        <div class="modules-list-container" id="modules-container">
+            <div class="module-item" draggable="true" data-module-id="notes" data-requires-client="true" data-module-type="regular" data-parent-id="null" data-level="0">
+                 <div class="module-drag-handle" title="Drag to reorder">≡</div>
+                 <div class="module-icon">
+                     ...
+                     <div class="dropdown-menu">
+                         <div class="dropdown-item edit-module">Edit</div>
+                         <div class="dropdown-item delete-module">Delete</div>
+                     </div>
+                 </div>
+                 <span class="module-name">Notes</span>
+             </div>
         </div>
     </div>
 
@@ -599,1456 +706,78 @@
             <div class="dashboard-title">
                 <i>D</i> Dashboard
             </div>
-            <div id="client-name-display" style="margin-left: 20px;"></div>
+            <div id="client-name-display" style="margin-left: 20px; font-weight: bold;"></div>
             <div class="header-actions">
-                <button id="logout-btn" class="btn btn-small" style="display: none;">Logout Client</button>
+                <button id="logout-btn" class="btn btn-small" style="display: none;" title="Close the current client project">Logout Client</button>
             </div>
             <div class="total-cost" id="total-project-cost">
                 Total Project Cost: R0.00
             </div>
         </div>
 
-        <div class="dashboard-description">
+        <div class="dashboard-description" id="dashboard-description">
             Overview of project data.
         </div>
 
         <div class="dashboard-content">
             <div id="module-content">
-                <!-- Dashboard content will be loaded here -->
                 <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
                     <h3>Getting Started</h3>
                     <p>To start using the Construction Estimator:</p>
                     <ol style="margin-left: 20px; margin-top: 10px;">
-                        <li>Create a new client or open an existing client</li>
-                        <li>Select a module from the sidebar to begin estimating</li>
-                        <li>Add new modules using the "Add New Module" button</li>
+                        <li>Create a new client or open an existing client using the buttons in the sidebar.</li>
+                        <li>Select a module from the sidebar list to begin estimating.</li>
+                        <li>Add new custom modules or category headers using the "Add New Module" button.</li>
+                        <li>Drag and drop modules in the sidebar to reorder them or place them under headers.</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Debug panel -->
+
     <div class="debug-panel" id="debug-panel"></div>
+    <div class="modal-overlay" id="client-modal-overlay">
+        </div>
 
-    <script>
-        // Application data structure 
-        const appData = {
-            modules: [
-                {
-                    id: 'notes',
-                    name: 'Notes',
-                    requiresClient: true,
-                    renderTemplate: function(client) {
-                        const notesData = client?.moduleData?.notes?.notes || '';
-                        return `
-                            <h3>Project Notes</h3>
-                            <textarea id="project-notes" rows="10" style="width: 100%; padding: 10px;" placeholder="Enter project notes here...">${notesData}</textarea>
-                            <button class="btn module-save-btn" data-module="notes" style="margin-top: 10px;">Save Notes</button>
-                        `;
-                    },
-                    saveData: function() {
-                        const notes = document.getElementById('project-notes').value;
-                        return { notes: notes };
-                    }
-                },
-                // P&Gs module removed as requested
-            ],
-        };
+    <div class="modal-overlay" id="add-module-modal-overlay">
+        <div class="modal" id="add-module-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Module</h2>
+                <span class="modal-close" data-modal-id="add-module-modal-overlay">&times;</span>
+            </div>
+            <div class="modal-body">
+                 <div class="form-group">
+                     <label for="new-module-name">Module Name:</label>
+                     <input type="text" id="new-module-name" class="form-control" required placeholder="e.g., Roofing, Finishes, Site Prep">
+                 </div>
+                 <div class="form-group">
+                     <label for="new-module-type">Module Type:</label>
+                     <select id="new-module-type" class="form-control">
+                         <option value="regular" selected>Regular Module (e.g., Concrete, Brickwork)</option>
+                         <option value="header">Header / Category (e.g., Foundations, Structure)</option>
+                     </select>
+                 </div>
+                 <div class="form-group" id="parent-header-group"> <label for="parent-header-select">Place Under Header:</label>
+                     <select id="parent-header-select" class="form-control">
+                         <option value="null">(Top Level / No Parent)</option>
+                         </select>
+                 </div>
+                 <div class="form-group">
+                     <label>
+                         <input type="checkbox" id="new-module-requires-client" checked>
+                         Requires Client Selection
+                     </label>
+                     <small>Check this if the module involves client-specific estimates (most modules). Uncheck for general setup/config modules.</small>
+                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" data-modal-id="add-module-modal-overlay">Cancel</button>
+                <button class="btn btn-save" id="save-new-module-btn">Add Module</button>
+            </div>
+        </div>
+    </div>
 
-        // Register all known modules to ensure they appear in the dashboard
-        (function registerAllModules() {
-            // Define all known modules in your application
-            const knownModules = [
-                { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true },
-                { id: 'steel', name: 'Steel', requiresClient: true },
-                { id: 'demolish', name: 'Demolish', requiresClient: true },
-                { id: 'concrete', name: 'Concrete', requiresClient: true },
-                { id: 'brickwork', name: 'Brickwork', requiresClient: true }
-                // Add other modules as needed
-            ];
-            
-            console.log("[Dashboard] Registering all known modules");
-            
-            // Check if each known module exists in appData.modules, add if not
-            knownModules.forEach(knownModule => {
-                // Check if the module is already registered
-                const exists = appData.modules.some(m => m.id === knownModule.id);
-                
-                if (!exists) {
-                    console.log(`[Dashboard] Registering module: ${knownModule.name}`);
-                    
-                    // Add the module to appData.modules
-                    appData.modules.push({
-                        id: knownModule.id,
-                        name: knownModule.name,
-                        requiresClient: knownModule.requiresClient,
-                        renderTemplate: function(client) {
-                            return `
-                                <h3>${knownModule.name}</h3>
-                                <p>This module can be accessed from the sidebar.</p>
-                            `;
-                        },
-                        saveData: function() {
-                            return {};
-                        }
-                    });
-                    
-                    // Add to the sidebar if not already present
-                    const modulesContainer = document.getElementById('modules-container');
-                    if (!modulesContainer.querySelector(`[data-module-id="${knownModule.id}"]`)) {
-                        const moduleElement = document.createElement('div');
-                        moduleElement.className = 'module-item';
-                        moduleElement.draggable = true;
-                        moduleElement.setAttribute('data-module-id', knownModule.id);
-                        moduleElement.setAttribute('data-requires-client', knownModule.requiresClient ? 'true' : 'false');
-                        
-                        moduleElement.innerHTML = `
-                            <div class="module-drag-handle">≡</div>
-                            <div class="module-icon">
-                                ...
-                                <div class="dropdown-menu">
-                                    <div class="dropdown-item edit-module">Edit</div>
-                                    <div class="dropdown-item delete-module">Delete</div>
-                                </div>
-                            </div>
-                            <span>${knownModule.name}</span>
-                        `;
-                        
-                        modulesContainer.appendChild(moduleElement);
-                    }
-                }
-            });
-        })();
+    <script src="js/dashboard.js" defer></script>
 
-        // Initialize the application with proper module order loading
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("[Dashboard] DOM loaded, initializing app");
-            
-            // Enable debug panel during development
-            setupDebugPanel();
-            
-            // Load modules with order preservation
-            loadModulesWithOrderPreservation().then(() => {
-                // Initialize app
-                initApp();
-                
-                // Setup dropdowns, client management, and module button
-                setupDropdownMenus();
-                setupClientManagement();
-                setupAddModuleButton();
-                
-                // Load clients using the shared client manager
-                window.ConstructionApp.ClientManager.loadClients().then(() => {
-                    console.log("[Dashboard] Clients loaded");
-                });
-                
-                // Set up client change handler
-                window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
-                
-                // Set up drag and drop after modules are fully loaded
-                setupDragAndDrop();
-            });
-        });
-
-        // Initialize app function - UPDATED VERSION
-        function initApp() {
-            console.log("[Dashboard] Initializing app");
-            
-            // Get navigation state and clear it for future navigations
-            const navigationState = sessionStorage.getItem('navigationState');
-            console.log("[Dashboard] Navigation state:", navigationState);
-            
-            // DON'T immediately clear the navigation state (we'll do it at the end)
-            
-            // Log client state for debugging
-            const storedClientStr = sessionStorage.getItem('currentClient');
-            console.log("[Dashboard] Client in sessionStorage:", storedClientStr ? "Present" : "None");
-            
-            // Handle different navigation states
-            if (navigationState === 'returningToDashboard' && storedClientStr) {
-                try {
-                    // Parse and set the client
-                    const clientData = JSON.parse(storedClientStr);
-                    console.log("[Dashboard] Restoring client from sessionStorage:", clientData.name);
-                    
-                    // IMPORTANT: Directly set the client from sessionStorage
-                    window.ConstructionApp.ClientManager.setCurrentClient(clientData);
-                    
-                    // Update dashboard with the client data
-                    if (typeof updateDashboard === 'function') {
-                        updateDashboard(clientData);
-                    }
-                    
-                    console.log("[Dashboard] Client restored successfully with modules:", 
-                        Object.keys(clientData.moduleData || {}).join(', '));
-                } catch (error) {
-                    console.error("[Dashboard] Error parsing stored client:", error);
-                    window.ConstructionApp.ClientManager.clearCurrentClient();
-                }
-            } else if (navigationState === 'manualLogout') {
-                // User manually logged out, ensure client is fully cleared
-                console.log("[Dashboard] Manual logout detected, clearing client");
-                window.ConstructionApp.ClientManager.clearCurrentClient();
-            } else if (navigationState === 'invalidAccess') {
-                // Redirected due to invalid module access
-                console.log("[Dashboard] Invalid module access detected, clearing client");
-                window.ConstructionApp.ClientManager.clearCurrentClient();
-            } else if (!navigationState) {
-                // Fresh load - check if there's a client in sessionStorage
-                if (storedClientStr) {
-                    try {
-                        // Keep the client in sessionStorage on first load
-                        const clientData = JSON.parse(storedClientStr);
-                        console.log("[Dashboard] Fresh load with stored client:", clientData.name);
-                        window.ConstructionApp.ClientManager.setCurrentClient(clientData);
-                    } catch (error) {
-                        console.error("[Dashboard] Error parsing stored client on fresh load:", error);
-                        window.ConstructionApp.ClientManager.clearCurrentClient();
-                    }
-                } else {
-                    // No client in sessionStorage
-                    console.log("[Dashboard] Fresh load with no client");
-                    window.ConstructionApp.ClientManager.clearCurrentClient();
-                }
-            }
-            
-            // Update total project cost after client is set
-            updateTotalProjectCost();
-            
-            // NOW clear the navigation state (after we've handled it)
-            sessionStorage.removeItem('navigationState');
-            
-            // Log client state after initialization
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            console.log("[Dashboard] Current client after initialization:", currentClient ? currentClient.name : "None");
-            updateDebugPanel();
-        }
-        
-        // Setup debug panel
-        function setupDebugPanel() {
-            const debugPanel = document.getElementById('debug-panel');
-            
-            // Create toggle button
-            const toggleBtn = document.createElement('button');
-            toggleBtn.textContent = 'Debug';
-            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
-            document.body.appendChild(toggleBtn);
-            
-            // Toggle debug panel on click
-            toggleBtn.addEventListener('click', function() {
-                const isVisible = debugPanel.style.display === 'block';
-                debugPanel.style.display = isVisible ? 'none' : 'block';
-                
-                if (!isVisible) {
-                    updateDebugPanel();
-                }
-            });
-        }
-        
-        // Update debug panel with current state - UPDATED VERSION
-        function updateDebugPanel() {
-            const debugPanel = document.getElementById('debug-panel');
-            
-            // Get state information
-            const navigationState = sessionStorage.getItem('navigationState');
-            const currentClient = window.ConstructionApp.ClientManager.getCurrentClient();
-            const storedClientStr = sessionStorage.getItem('currentClient');
-            
-            // Create debug info
-            let debugInfo = `
-                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
-                <strong>Current Client:</strong> ${currentClient ? currentClient.name : 'None'}<br>
-                <strong>Client in sessionStorage:</strong> ${storedClientStr ? 'Present' : 'None'}<br>
-                <strong>Modules loaded:</strong> ${appData.modules.length}<br>
-            `;
-            
-            // Add module data if client exists
-            if (currentClient && currentClient.moduleData) {
-                debugInfo += '<strong>Module Data:</strong><br>';
-                let totalCost = 0;
-                
-                for (const moduleId in currentClient.moduleData) {
-                    const moduleData = currentClient.moduleData[moduleId];
-                    const moduleCost = moduleData.totalCost || 0;
-                    totalCost += parseFloat(moduleCost);
-                    
-                    debugInfo += `- ${moduleId}: Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost)}<br>`;
-                }
-                
-                debugInfo += `<strong>Total Project Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}<br>`;
-            }
-            
-            // Update panel
-            debugPanel.innerHTML = debugInfo;
-        }
-        
-        // Load modules with order preservation
-        async function loadModulesWithOrderPreservation() {
-            console.log("[Dashboard] Loading modules with order preservation");
-            
-            try {
-                // First try to load from Firebase
-                await loadModulesFromFirebase();
-                
-                // If Firebase load was successful, we're done
-                return true;
-            } catch (error) {
-                console.error("[Dashboard] Error loading modules from Firebase, trying backup:", error);
-                
-                // If Firebase load fails, try to restore from backup
-                const restored = restoreModuleOrderFromBackup();
-                return restored;
-            }
-        }
-
-        // Load modules from Firebase
-        async function loadModulesFromFirebase() {
-            console.log("[Dashboard] Loading modules from Firebase");
-            
-            if (window.ConstructionApp.Firebase) {
-                try {
-                    // Load saved modules
-                    const savedModules = await window.ConstructionApp.Firebase.loadModules();
-                    
-                    if (savedModules && savedModules.length > 0) {
-                        console.log("[Dashboard] Loaded modules from Firebase:", savedModules.length);
-                        
-                        // Clear existing modules in the DOM except the Notes module
-                        const modulesContainer = document.getElementById('modules-container');
-                        const notesModule = modulesContainer.querySelector('.module-item[data-module-id="notes"]');
-                        modulesContainer.innerHTML = '';
-                        
-                        // Add Notes module back first if it exists
-                        if (notesModule) {
-                            modulesContainer.appendChild(notesModule);
-                        }
-                        
-                        // Refresh appData.modules with just the Notes module
-                        appData.modules = appData.modules.filter(m => m.id === 'notes');
-                        
-                        // Process and add all modules from Firebase
-                        savedModules.forEach(moduleData => {
-                            // Skip Notes as we already have it
-                            if (moduleData.id === 'notes') {
-                                return;
-                            }
-                            
-                            // Avoid duplicate modules in appData
-                            if (!appData.modules.some(m => m.id === moduleData.id)) {
-                                appData.modules.push({
-                                    id: moduleData.id,
-                                    name: moduleData.name,
-                                    requiresClient: moduleData.requiresClient,
-                                    renderTemplate: function(client) {
-                                        return `
-                                            <h3>${moduleData.name}</h3>
-                                            <p>This is a custom module. You can create an HTML file named "${moduleData.id}.html" to implement this module.</p>
-                                            <p>For now, this is a placeholder.</p>
-                                        `;
-                                    },
-                                    saveData: function() {
-                                        return {};
-                                    }
-                                });
-                            }
-                            
-                            // Create DOM element for the module
-                            const moduleElement = createModuleElement(moduleData);
-                            
-                            // Add to the DOM
-                            modulesContainer.appendChild(moduleElement);
-                        });
-                        
-                        console.log("[Dashboard] Finished loading and adding modules. Total modules:", appData.modules.length);
-                    } else {
-                        console.log("[Dashboard] No modules found in Firebase or empty array returned");
-                    }
-                } catch (error) {
-                    console.error("[Dashboard] Error loading modules from Firebase:", error);
-                    throw error; // Re-throw to trigger backup loading
-                }
-            } else {
-                console.warn("[Dashboard] Firebase not available, cannot load modules");
-                throw new Error("Firebase not available"); // Throw error to trigger backup loading
-            }
-        }
-
-        // Helper function to create a module element
-        function createModuleElement(moduleData) {
-            const moduleElement = document.createElement('div');
-            moduleElement.className = 'module-item';
-            moduleElement.draggable = true;
-            moduleElement.setAttribute('data-module-id', moduleData.id);
-            moduleElement.setAttribute('data-requires-client', moduleData.requiresClient ? 'true' : 'false');
-            
-            moduleElement.innerHTML = `
-                <div class="module-drag-handle">≡</div>
-                <div class="module-icon">
-                    ...
-                    <div class="dropdown-menu">
-                        <div class="dropdown-item edit-module">Edit</div>
-                        <div class="dropdown-item delete-module">Delete</div>
-                    </div>
-                </div>
-                <span>${moduleData.name}</span>
-            `;
-            
-            // Add event listeners
-            setupModuleEventListeners(moduleElement);
-            
-            return moduleElement;
-        }
-
-        // Global variable for dragged item reference
-        let globalDraggedItem = null;
-
-        // Helper function to attach event listeners to a module element
-        function setupModuleEventListeners(moduleElement) {
-            // Set up click handler
-            setupModuleClickHandler(moduleElement);
-            
-            // Setup dropdown
-            setupDropdownForModule(moduleElement);
-            
-            // Drag and drop is set up separately in setupDragAndDrop
-        }
-
-        // Setup click handler for module (separate from drag handlers)
-        function setupModuleClickHandler(moduleElement) {
-            // Click event for navigating to the module
-            const moduleText = moduleElement.querySelector('span');
-            if (moduleText) {
-                moduleText.addEventListener('click', function() {
-                    const moduleId = moduleElement.getAttribute('data-module-id');
-                    const requiresClient = moduleElement.getAttribute('data-requires-client') === 'true';
-                    
-                    if (requiresClient) {
-                        // Verify client is selected
-                        const client = window.ConstructionApp.ClientManager.getCurrentClient();
-                        if (!client) {
-                            alert("Please select or create a client first to access this module.");
-                            return;
-                        }
-                        
-                        // Set navigation state before navigating
-                        sessionStorage.setItem('navigationState', 'fromDashboard');
-                        
-                        // Save current client to sessionStorage
-                        sessionStorage.setItem('currentClient', JSON.stringify(client));
-                        
-                        // Navigate to the module
-                        window.location.href = moduleId + '.html';
-                    } else {
-                        // For non-client modules, just navigate directly
-                        window.location.href = moduleId + '.html';
-                    }
-                });
-            }
-        }
-
-        // Restore module order from backup if Firebase load fails
-        function restoreModuleOrderFromBackup() {
-            const savedOrder = sessionStorage.getItem('moduleOrder');
-            if (savedOrder) {
-                try {
-                    const orderData = JSON.parse(savedOrder);
-                    console.log("[Dashboard] Restoring module order from backup:", orderData.length, "modules");
-                    
-                    // Clear existing modules in the DOM except the Notes module
-                    const modulesContainer = document.getElementById('modules-container');
-                    const notesModule = modulesContainer.querySelector('.module-item[data-module-id="notes"]');
-                    modulesContainer.innerHTML = '';
-                    
-                    // Add Notes module back first if it exists
-                    if (notesModule) {
-                        modulesContainer.appendChild(notesModule);
-                    }
-                    
-                    // Refresh appData.modules with just the Notes module
-                    appData.modules = appData.modules.filter(m => m.id === 'notes');
-                    
-                    // Add modules in saved order
-                    orderData.forEach(moduleData => {
-                        // Skip Notes as we already have it
-                        if (moduleData.id === 'notes') {
-                            return;
-                        }
-                        
-                        // Add to appData.modules
-                        if (!appData.modules.some(m => m.id === moduleData.id)) {
-                            appData.modules.push({
-                                id: moduleData.id,
-                                name: moduleData.name,
-                                requiresClient: moduleData.requiresClient,
-                                renderTemplate: function(client) {
-                                    return `
-                                        <h3>${moduleData.name}</h3>
-                                        <p>This is a custom module. You can create an HTML file named "${moduleData.id}.html" to implement this module.</p>
-                                        <p>For now, this is a placeholder.</p>
-                                    `;
-                                },
-                                saveData: function() {
-                                    return {};
-                                }
-                            });
-                        }
-                        
-                        // Create DOM element for the module
-                        const moduleElement = createModuleElement(moduleData);
-                        
-                        // Add to the DOM
-                        modulesContainer.appendChild(moduleElement);
-                    });
-                    
-                    return true;
-                } catch (error) {
-                    console.error("[Dashboard] Error parsing saved module order:", error);
-                }
-            } else {
-                console.warn("[Dashboard] No saved module order found in backup");
-            }
-            return false;
-        }
-
-        // Add a new module with proper drag functionality
-        function addNewModule() {
-            // Prompt for module name
-            const moduleName = prompt("Enter new module name:");
-            
-            if (!moduleName || moduleName.trim() === '') {
-                return; // User cancelled or entered empty name
-            }
-            
-            // Generate a module ID (lowercase, no spaces, dashes for spaces)
-            const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            
-            // Check if module ID already exists
-            const existingModuleElement = document.querySelector(`.module-item[data-module-id="${moduleId}"]`);
-            if (existingModuleElement) {
-                alert(`A module with the ID "${moduleId}" already exists. Please choose a different name.`);
-                return;
-            }
-            
-            // Ask if this module requires a client selection
-            const requiresClient = confirm("Does this module require a client selection?\n\nClick OK if this module needs client data.\nClick Cancel if this is a setup/config module that doesn't need client data.");
-            
-            // Create the module data object
-            const moduleData = {
-                id: moduleId,
-                name: moduleName,
-                requiresClient: requiresClient
-            };
-            
-            // Create a new module element
-            const moduleElement = createModuleElement(moduleData);
-            
-            // Add to the DOM
-            const modulesContainer = document.getElementById('modules-container');
-            modulesContainer.appendChild(moduleElement);
-            
-            // Add to appData modules array
-            appData.modules.push({
-                id: moduleId,
-                name: moduleName,
-                requiresClient: requiresClient,
-                renderTemplate: function(client) {
-                    return `
-                        <h3>${moduleName}</h3>
-                        <p>This is a custom module. You can create an HTML file named "${moduleId}.html" to implement this module.</p>
-                        <p>For now, this is a placeholder.</p>
-                    `;
-                },
-                saveData: function() {
-                    return {};
-                }
-            });
-            
-            // Save modules to Firebase and ensure it's reloaded on refresh
-            saveModulesToFirebase();
-            
-            // Make sure drag and drop is set up for all modules including the new one
-            setupDragAndDrop();
-            
-            // Notify user
-            alert(`New module "${moduleName}" created with ID "${moduleId}". Create a file named "${moduleId}.html" to implement this module.`);
-        }
-
-        // Save modules to Firebase
-        function saveModulesToFirebase() {
-            // Save only the necessary data (not the functions)
-            const modulesToSave = appData.modules.map(module => ({
-                id: module.id,
-                name: module.name,
-                requiresClient: module.requiresClient
-            }));
-            
-            console.log("[Dashboard] Saving modules to Firebase:", modulesToSave.length);
-            
-            // Save to Firebase
-            if (window.ConstructionApp.Firebase) {
-                return window.ConstructionApp.Firebase.saveModules(modulesToSave)
-                    .then(() => {
-                        console.log("[Dashboard] Modules saved successfully to Firebase");
-                        
-                        // Save to sessionStorage as backup
-                        sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-                        
-                        return true;
-                    })
-                    .catch(error => {
-                        console.error("[Dashboard] Error saving modules to Firebase:", error);
-                        
-                        // Even if Firebase save fails, store in sessionStorage as backup
-                        sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-                        
-                        return false;
-                    });
-            } else {
-                console.warn("[Dashboard] Firebase not available, saving to sessionStorage only");
-                sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
-                return Promise.resolve(false);
-            }
-        }
-
-        // Setup dropdown for a single module
-        function setupDropdownForModule(moduleElement) {
-            const icon = moduleElement.querySelector('.module-icon');
-            icon.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdown = this.querySelector('.dropdown-menu');
-                if (dropdown) {
-                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                        if (menu !== dropdown && menu.style.display === 'block') {
-                            menu.style.display = 'none';
-                        }
-                    });
-                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                }
-            });
-            
-            // Edit button
-            const editBtn = moduleElement.querySelector('.edit-module');
-            editBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const moduleName = moduleElement.querySelector('span').textContent.trim();
-                editModule(moduleName, moduleElement);
-            });
-            
-            // Delete button
-            const deleteBtn = moduleElement.querySelector('.delete-module');
-            deleteBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const moduleName = moduleElement.querySelector('span').textContent.trim();
-                deleteModule(moduleName, moduleElement);
-            });
-        }
-
-        // Setup drag and drop functionality with shared dragged item reference
-        function setupDragAndDrop() {
-            const moduleItems = document.querySelectorAll('.module-item');
-            
-            // Clear existing drag handlers to prevent duplicates
-            moduleItems.forEach(item => {
-                // Clone the node to remove all event listeners
-                const oldItem = item;
-                const newItem = oldItem.cloneNode(true);
-                if (oldItem.parentNode) {
-                    oldItem.parentNode.replaceChild(newItem, oldItem);
-                }
-                
-                // Set up new drag handlers
-                setupDragForModule(newItem);
-                
-                // Re-add dropdown and click handlers
-                setupDropdownForModule(newItem);
-                setupModuleClickHandler(newItem);
-            });
-            
-            // Add container-level listeners
-            const modulesContainer = document.getElementById('modules-container');
-            
-            // Listen for changes to module container that might not trigger normal events
-            if (!modulesContainer._observer) { // Only add observer once
-                const observer = new MutationObserver(function(mutations) {
-                    let orderChanged = false;
-                    
-                    mutations.forEach(function(mutation) {
-                        if (mutation.type === 'childList') {
-                            // If nodes were added or removed, update module order
-                            orderChanged = true;
-                        }
-                    });
-                    
-                    if (orderChanged) {
-                        // Save the new order
-                        updateModuleOrder();
-                    }
-                });
-                
-                // Start observing changes to the modules container
-                observer.observe(modulesContainer, { childList: true });
-                modulesContainer._observer = observer; // Store reference to avoid duplicates
-            }
-        }
-
-        // Setup drag for a single module with global dragged item reference
-        function setupDragForModule(moduleElement) {
-            // Drag start event
-            moduleElement.addEventListener('dragstart', function(e) {
-                globalDraggedItem = this;
-                setTimeout(() => this.classList.add('dragging'), 0);
-                
-                // Store data about the dragged item
-                e.dataTransfer.setData('text/plain', this.getAttribute('data-module-id'));
-                e.dataTransfer.effectAllowed = 'move';
-            });
-            
-            // Drag end event
-            moduleElement.addEventListener('dragend', function() {
-                this.classList.remove('dragging');
-                document.querySelectorAll('.module-item').forEach(item => item.classList.remove('drag-over'));
-                
-                // Reset global variable
-                globalDraggedItem = null;
-                
-                // Save module order
-                updateModuleOrder();
-            });
-            
-            // Drag over event
-            moduleElement.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                if (this !== globalDraggedItem) {
-                    this.classList.add('drag-over');
-                }
-            });
-            
-            // Drag leave event
-            moduleElement.addEventListener('dragleave', function() {
-                this.classList.remove('drag-over');
-            });
-            
-            // Drop event
-            moduleElement.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                
-                if (this !== globalDraggedItem && globalDraggedItem) {
-                    const modulesContainer = document.getElementById('modules-container');
-                    const allItems = Array.from(modulesContainer.querySelectorAll('.module-item'));
-                    const draggedIndex = allItems.indexOf(globalDraggedItem);
-                    const targetIndex = allItems.indexOf(this);
-                    
-                    // If dropping after the target, insert after, otherwise insert before
-                    if (draggedIndex < targetIndex) {
-                        this.parentNode.insertBefore(globalDraggedItem, this.nextSibling);
-                    } else {
-                        this.parentNode.insertBefore(globalDraggedItem, this);
-                    }
-                    
-                    // Update the data array order and save to Firebase
-                    updateModuleOrder();
-                }
-            });
-            
-            // Add click handler for the drag handle
-            const dragHandle = moduleElement.querySelector('.module-drag-handle');
-            if (dragHandle) {
-                dragHandle.addEventListener('mousedown', function(e) {
-                    // Prevent the dropdown from opening when drag starts
-                    e.stopPropagation();
-                });
-            }
-        }
-        
-        // Set up module-specific interactions
-        function setupModuleInteractions(moduleId) {
-            // Add event listeners for the save buttons in the module
-            const saveButtons = document.querySelectorAll('.module-save-btn');
-            saveButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const moduleId = this.getAttribute('data-module');
-                    saveModuleData(moduleId);
-                });
-            });
-
-            // Add specific handling for each module type if needed
-        }
-
-        // Save module data to the current client
-        function saveModuleData(moduleId) {
-            const module = appData.modules.find(m => m.id === moduleId);
-            if (module && module.saveData) {
-                const data = module.saveData();
-                
-                console.log("[Dashboard] Saving module data for", moduleId);
-                
-                // Use the shared client manager to save module data
-                window.ConstructionApp.ClientManager.saveModuleData(moduleId, data);
-                
-                // Show success message
-                window.ConstructionApp.ModuleUtils.showSuccessMessage('Module data saved successfully!');
-                
-                // Recalculate total project cost
-                updateTotalProjectCost();
-                
-                // Update debug panel
-                updateDebugPanel();
-            }
-        }
-
-        // Setup dropdown menus
-        function setupDropdownMenus() {
-            // Module icons dropdown
-            document.querySelectorAll('.module-icon').forEach(icon => {
-                icon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const dropdown = this.querySelector('.dropdown-menu');
-                    if (dropdown) {
-                        // Close other open dropdowns
-                        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                            if (menu !== dropdown && menu.style.display === 'block') {
-                                menu.style.display = 'none';
-                            }
-                        });
-
-                        // Toggle this dropdown
-                        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                    }
-                });
-            });
-
-            // Edit and delete module handlers
-            document.querySelectorAll('.edit-module').forEach(editBtn => {
-                editBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const moduleItem = this.closest('.module-item');
-                    const moduleName = moduleItem.querySelector('span').textContent.trim();
-                    editModule(moduleName, moduleItem);
-                });
-            });
-
-            document.querySelectorAll('.delete-module').forEach(deleteBtn => {
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const moduleItem = this.closest('.module-item');
-                    const moduleName = moduleItem.querySelector('span').textContent.trim();
-                    deleteModule(moduleName, moduleItem);
-                });
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function() {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            });
-        }
-
-        // Edit a module
-        function editModule(moduleName, moduleElement) {
-            // Create a simple edit prompt
-            const newName = prompt(`Edit module name:`, moduleName);
-
-            if (newName && newName.trim() !== '' && newName !== moduleName) {
-                // Update the module name
-                moduleElement.querySelector('span').textContent = newName;
-
-                // Find and update the module in data if it exists
-                const moduleId = moduleElement.getAttribute('data-module-id');
-                const module = appData.modules.find(mod => mod.id === moduleId);
-                if (module) {
-                    module.name = newName;
-                    
-                    // Save modules to Firebase
-                    saveModulesToFirebase();
-                }
-
-                // Show success message
-                alert(`Module renamed to "${newName}"`);
-            }
-        }
-
-        // Delete a module
-        function deleteModule(moduleName, moduleElement) {
-            // Confirm before deleting
-            if (confirm(`Are you sure you want to delete the "${moduleName}" module?`)) {
-                // Get module ID before removing
-                const moduleId = moduleElement.getAttribute('data-module-id');
-                
-                // Check if it's the Notes module (we should prevent deleting it)
-                if (moduleId === 'notes') {
-                    alert('The Notes module cannot be deleted as it is a system module.');
-                    return;
-                }
-                
-                // Remove the module element from DOM
-                moduleElement.remove();
-
-                // Remove from data array if it exists
-                const moduleIndex = appData.modules.findIndex(mod => mod.id === moduleId);
-                if (moduleIndex !== -1) {
-                    appData.modules.splice(moduleIndex, 1);
-                    
-                    // Save modules to Firebase
-                    saveModulesToFirebase();
-                }
-
-                // Show success message
-                alert(`Module "${moduleName}" has been deleted`);
-            }
-        }
-
-        // Update module order and save to Firebase
-        function updateModuleOrder() {
-            const moduleItems = document.querySelectorAll('.module-item');
-            const newOrder = Array.from(moduleItems).map(item => {
-                const moduleId = item.getAttribute('data-module-id');
-                const requiresClient = item.getAttribute('data-requires-client') === 'true';
-                const moduleName = item.querySelector('span').textContent.trim();
-                
-                return {
-                    id: moduleId,
-                    name: moduleName,
-                    requiresClient: requiresClient === true || requiresClient === 'true'
-                };
-            });
-
-            // Log the new order
-            console.log('[Dashboard] Module order changed. New order:', newOrder.map(m => m.name).join(', '));
-            
-            // Update appData.modules to match the new order while preserving functionality
-            const updatedModules = [];
-            
-            newOrder.forEach(orderData => {
-                // Find the original module to preserve functions
-                const existingModule = appData.modules.find(m => m.id === orderData.id);
-                
-                if (existingModule) {
-                    // Update name and requiresClient if they changed
-                    if (existingModule.name !== orderData.name || 
-                        existingModule.requiresClient !== orderData.requiresClient) {
-                        existingModule.name = orderData.name;
-                        existingModule.requiresClient = orderData.requiresClient;
-                    }
-                    updatedModules.push(existingModule);
-                } else {
-                    // Create a new module object if not found (shouldn't happen often)
-                    updatedModules.push({
-                        id: orderData.id,
-                        name: orderData.name,
-                        requiresClient: orderData.requiresClient,
-                        renderTemplate: function(client) {
-                            return `
-                                <h3>${orderData.name}</h3>
-                                <p>This is a custom module.</p>
-                            `;
-                        },
-                        saveData: function() {
-                            return {};
-                        }
-                    });
-                }
-            });
-            
-            // Replace the modules array with the updated one
-            appData.modules = updatedModules;
-            
-            // Save updated module order to Firebase
-            saveModulesToFirebase();
-            
-            // Save order to sessionStorage as backup
-            sessionStorage.setItem('moduleOrder', JSON.stringify(newOrder));
-            
-            return true;
-        }
-
-        // Add module button setup
-        function setupAddModuleButton() {
-            const addModuleBtn = document.getElementById('add-module-btn');
-            if (addModuleBtn) {
-                addModuleBtn.addEventListener('click', function() {
-                    addNewModule();
-                });
-            }
-        }
-
-        // Set up client management
-        function setupClientManagement() {
-            console.log("[Dashboard] Setting up client management");
-            const newClientBtn = document.getElementById('new-client-btn');
-            const openClientBtn = document.getElementById('open-client-btn');
-            
-            // Create modal overlay if it doesn't exist
-            let modalOverlay = document.querySelector('.modal-overlay');
-            if (!modalOverlay) {
-                modalOverlay = document.createElement('div');
-                modalOverlay.className = 'modal-overlay';
-                document.body.appendChild(modalOverlay);
-            }
-
-            // New client button event listener
-            newClientBtn.addEventListener('click', () => {
-                const clientModal = createClientModal('new');
-                
-                // Clear any existing content
-                modalOverlay.innerHTML = '';
-                modalOverlay.appendChild(clientModal);
-                modalOverlay.style.display = 'flex';
-            });
-
-            // Open client button event listener
-            openClientBtn.addEventListener('click', () => {
-                const clientModal = createClientModal('open');
-                
-                // Clear any existing content
-                modalOverlay.innerHTML = '';
-                modalOverlay.appendChild(clientModal);
-                modalOverlay.style.display = 'flex';
-            });
-
-            // Close modal when clicking outside
-            modalOverlay.addEventListener('click', (event) => {
-                if (event.target === modalOverlay) {
-                    modalOverlay.style.display = 'none';
-                }
-            });
-        }
-
-        // Create client modal dialog
-        function createClientModal(type) {
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-
-            if (type === 'new') {
-                // New client modal content
-                modal.innerHTML = `
-                    <div class="modal-header">
-                        <h2 class="modal-title">New Client</h2>
-                        <span class="modal-close">&times;</span>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="client-name">Client Name:</label>
-                            <input type="text" id="client-name" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="client-address">Client Address:</label>
-                            <input type="text" id="client-address" class="form-control">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-cancel">Cancel</button>
-                        <button class="btn btn-save">Save</button>
-                    </div>
-                `;
-
-                // Set up event handlers
-                setTimeout(() => {
-                    // Setup close and cancel buttons
-                    setupModalCloseButtons(modal);
-
-                    const saveBtn = modal.querySelector('.btn-save');
-                    saveBtn.addEventListener('click', () => {
-                        const name = document.getElementById('client-name').value;
-                        const address = document.getElementById('client-address').value;
-
-                        if (name.trim() === '') {
-                            alert('Client name is required');
-                            return;
-                        }
-
-                        // Create new client
-                        const newClient = {
-                            name: name,
-                            address: address,
-                            moduleData: {}
-                        };
-
-                        console.log("[Dashboard] Creating new client:", name);
-                        
-                        // Add client using the shared client manager
-                        const client = window.ConstructionApp.ClientManager.addClient(newClient);
-                        window.ConstructionApp.ClientManager.setCurrentClient(client);
-                        
-                        // Update debug panel
-                        updateDebugPanel();
-
-                        alert(`Client "${name}" created and selected.`);
-                        modal.closest('.modal-overlay').style.display = 'none';
-                    });
-                }, 0);
-            } else if (type === 'open') {
-                // Get clients from the shared client manager
-                const clients = window.ConstructionApp.ClientManager.getAllClients();
-                
-                // Generate client list HTML
-                let clientListHTML = '';
-                if (clients.length > 0) {
-                    clientListHTML = clients.map((client, index) => 
-                        `<div class="client-list-item" data-client-index="${index}">${client.name}</div>`
-                    ).join('');
-                } else {
-                    clientListHTML = '<div class="client-list-item">No clients found</div>';
-                }
-
-                // Open client modal content
-                modal.innerHTML = `
-                    <div class="modal-header">
-                        <h2 class="modal-title">Open Client</h2>
-                        <span class="modal-close">&times;</span>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="client-search">Search Clients:</label>
-                            <input type="text" id="client-search" class="form-control">
-                        </div>
-                        <div class="client-list">
-                            ${clientListHTML}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-cancel">Cancel</button>
-                    </div>
-                `;
-
-                // Set up event handlers
-                setTimeout(() => {
-                    // Setup close and cancel buttons
-                    setupModalCloseButtons(modal);
-
-                    // Set up client selection
-                    setupClientListSelection(modal);
-
-                    // Set up search filtering
-                    setupClientSearch(modal);
-                }, 0);
-            }
-
-            return modal;
-        }
-
-        // Set up modal close buttons
-        function setupModalCloseButtons(modal) {
-            const closeBtn = modal.querySelector('.modal-close');
-            closeBtn.addEventListener('click', () => {
-                modal.closest('.modal-overlay').style.display = 'none';
-            });
-
-            const cancelBtn = modal.querySelector('.btn-cancel');
-            cancelBtn.addEventListener('click', () => {
-                modal.closest('.modal-overlay').style.display = 'none';
-            });
-        }
-
-        // Set up client search filtering
-        function setupClientSearch(modal) {
-            const searchInput = modal.querySelector('#client-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', () => {
-                    const searchTerm = searchInput.value.toLowerCase();
-                    const clientItems = modal.querySelectorAll('.client-list-item');
-                    
-                    clientItems.forEach(item => {
-                        const clientName = item.textContent.toLowerCase();
-                        if (clientName.includes(searchTerm)) {
-                            item.style.display = 'block';
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
-                });
-            }
-        }
-
-        // Set up client list selection
-        function setupClientListSelection(modal) {
-            const clientListItems = modal.querySelectorAll('.client-list-item');
-            const clients = window.ConstructionApp.ClientManager.getAllClients();
-            
-            clientListItems.forEach(item => {
-                // Skip the "No clients found" message
-                if (item.getAttribute('data-client-index') === null) {
-                    return;
-                }
-                
-                item.addEventListener('click', () => {
-                    const clientIndex = parseInt(item.getAttribute('data-client-index'));
-                    
-                    if (!isNaN(clientIndex) && clients[clientIndex]) {
-                        // Set as current client using the shared client manager
-                        console.log("[Dashboard] Selecting client:", clients[clientIndex].name);
-                        window.ConstructionApp.ClientManager.setCurrentClient(clients[clientIndex]);
-                        
-                        // Update debug panel
-                        updateDebugPanel();
-                        
-                        modal.closest('.modal-overlay').style.display = 'none';
-                        alert(`Client "${clients[clientIndex].name}" selected.`);
-                    }
-                });
-            });
-        }
-
-        // Update the dashboard - UPDATED VERSION
-        function updateDashboard(client) {
-            console.log("[Dashboard] Updating dashboard for client:", client?.name);
-            
-            const logoutBtn = document.getElementById('logout-btn');
-            const dashboardContent = document.getElementById('module-content');
-            
-            if (client) {
-                // Update client display and show logout button
-                document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
-                document.querySelector('.dashboard-description').textContent = `${client.address || ''}`;
-                logoutBtn.style.display = 'block';
-                logoutBtn.onclick = () => window.ConstructionApp.ModuleUtils.logoutClient();
-                
-                // Update total cost
-                updateTotalProjectCost();
-                
-                // Render the dashboard content without headers
-                renderDashboardContent(client);
-                
-                // Update debug panel
-                updateDebugPanel();
-            } else {
-                // Clear client display and hide logout button
-                document.getElementById('client-name-display').textContent = '';
-                document.getElementById('total-project-cost').textContent = 'Total Project Cost: R0.00';
-                document.querySelector('.dashboard-description').textContent = '';
-                logoutBtn.style.display = 'none';
-                
-                // Show a more prominent message when no client is selected
-                dashboardContent.innerHTML = `
-                    <div class="no-client-notification">
-                        <h2>No Client Selected</h2>
-                        <p>Please select an existing client or create a new client to start working.</p>
-                        <div class="no-client-buttons">
-                            <button id="prompt-new-client" class="btn no-client-button">Create New Client</button>
-                            <button id="prompt-open-client" class="btn no-client-button">Open Existing Client</button>
-                        </div>
-                    </div>
-                `;
-                
-                // Add event listeners to the prompt buttons
-                setTimeout(() => {
-                    const newClientBtn = document.getElementById('prompt-new-client');
-                    const openClientBtn = document.getElementById('prompt-open-client');
-                    
-                    if (newClientBtn) {
-                        newClientBtn.addEventListener('click', () => {
-                            document.getElementById('new-client-btn').click();
-                        });
-                    }
-                    
-                    if (openClientBtn) {
-                        openClientBtn.addEventListener('click', () => {
-                            document.getElementById('open-client-btn').click();
-                        });
-                    }
-                }, 0);
-                
-                // Update debug panel
-                updateDebugPanel();
-            }
-        }
-
-        // Render dashboard content - UPDATED VERSION WITH SMALLER TILES AND ORDERED DISPLAY
-        function renderDashboardContent(client) {
-            const contentElement = document.getElementById('module-content');
-            contentElement.innerHTML = '';
-            
-            // Remove the welcome headers and go straight to module tiles
-            let content = `
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
-                    <h4 style="margin-bottom: 15px;">Module Summaries</h4>
-                    <div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">
-            `;
-            
-            // Check if there's any module data
-            let hasModuleData = false;
-            for (const moduleId in client.moduleData) {
-                if (client.moduleData[moduleId]) {
-                    hasModuleData = true;
-                    break;
-                }
-            }
-            
-            if (hasModuleData) {
-                // Log all available module data for debugging
-                console.log("[Dashboard] Available module data in client:", Object.keys(client.moduleData));
-                
-                // For all modules in client.moduleData, create tiles (even if not in appData.modules)
-                for (const moduleId in client.moduleData) {
-                    const moduleData = client.moduleData[moduleId];
-                    
-                    // Skip if moduleData is null or empty
-                    if (!moduleData) continue;
-                    
-                    // Determine module name - use appData if possible, otherwise use moduleId
-                    let moduleName = moduleId;
-                    const moduleInfo = appData.modules.find(m => m.id === moduleId);
-                    if (moduleInfo) {
-                        moduleName = moduleInfo.name;
-                    }
-                    
-                    // Calculate module cost
-                    let moduleCost = 0;
-                    if (moduleData.totalCost !== undefined) {
-                        moduleCost = parseFloat(moduleData.totalCost) || 0;
-                        console.log(`[Dashboard] Module ${moduleId} has totalCost: ${moduleCost}`);
-                    } else if (moduleData.items && Array.isArray(moduleData.items)) {
-                        moduleData.items.forEach(item => {
-                            if (item.qty > 0) {
-                                moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
-                            }
-                        });
-                        console.log(`[Dashboard] Calculated total for ${moduleId}: ${moduleCost}`);
-                    }
-                    
-                    // Only display tiles with cost > 0
-                    if (moduleCost > 0) {
-                        // Format the cost
-                        const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-                        
-                        // Add module card with clear button
-                        content += `
-                            <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative;">
-                                <button class="clear-module-btn" data-module-id="${moduleId}" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px;" title="Clear module data">×</button>
-                                <h5>${moduleName}</h5>
-                                <p style="font-size: 20px; margin: 10px 0; color: #4eca8b; font-weight: bold;">${formattedCost}</p>
-                                <button class="btn module-open-btn" style="margin-top: 10px;" data-module-id="${moduleId}">Open Module</button>
-                            </div>
-                        `;
-                    } else {
-                        console.log(`[Dashboard] Skipping tile for ${moduleId} - cost is zero`);
-                    }
-                }
-            } else {
-                // If no module data, show message
-                content += `
-                    <div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <p>No module data available yet. Start by clicking on a module in the sidebar.</p>
-                    </div>
-                `;
-            }
-            
-            content += `
-                    </div>
-                </div>
-            `;
-            
-            contentElement.innerHTML = content;
-            
-            // Add event listeners to the module open buttons
-            document.querySelectorAll('.module-open-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const moduleId = this.getAttribute('data-module-id');
-                    
-                    // Save navigation state
-                    sessionStorage.setItem('navigationState', 'fromDashboard');
-                    
-                    // Save current client to sessionStorage
-                    const client = window.ConstructionApp.ClientManager.getCurrentClient();
-                    if (client) {
-                        sessionStorage.setItem('currentClient', JSON.stringify(client));
-                    }
-                    
-                    // Navigate to the module
-                    window.location.href = moduleId + '.html';
-                });
-            });
-            
-            // Add event listeners to the clear module buttons
-            document.querySelectorAll('.clear-module-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const moduleId = this.getAttribute('data-module-id');
-                    const module = appData.modules.find(m => m.id === moduleId);
-                    
-                    if (confirm(`Are you sure you want to clear all data for the ${module ? module.name : moduleId} module?`)) {
-                        clearModuleData(moduleId);
-                    }
-                });
-            });
-        }
-
-        // Add function to clear module data
-        function clearModuleData(moduleId) {
-            // Get current client
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            
-            if (client && client.moduleData && client.moduleData[moduleId]) {
-                console.log(`[Dashboard] Clearing module data for: ${moduleId}`);
-                
-                // Remove the module data
-                delete client.moduleData[moduleId];
-                
-                // Update client's lastModified timestamp
-                client.lastModified = new Date().toISOString();
-                
-                // Update the client in ClientManager and sessionStorage
-                window.ConstructionApp.ClientManager.setCurrentClient(client);
-                
-                // Also update client via the saveModuleData API to ensure Firebase is updated
-                window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => {
-                    if (success) {
-                        window.ConstructionApp.ModuleUtils.showSuccessMessage(`Module data cleared successfully`);
-                    } else {
-                        window.ConstructionApp.ModuleUtils.showErrorMessage(`Error clearing module data: ${error || 'Unknown error'}`);
-                    }
-                });
-                
-                // Update the dashboard to reflect the changes
-                updateDashboard(client);
-                
-                // Update total project cost
-                updateTotalProjectCost();
-            }
-        }
-
-        // Update total project cost - UPDATED VERSION 
-        function updateTotalProjectCost() {
-            let totalCost = 0;
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            
-            if (client && client.moduleData) {
-                console.log("[Dashboard] Calculating total cost for client:", client.name);
-                console.log("[Dashboard] Available modules:", Object.keys(client.moduleData).join(', '));
-                
-                // Calculate from each module
-                for (const moduleId in client.moduleData) {
-                    const moduleData = client.moduleData[moduleId];
-                    
-                    // Skip if moduleData is null or empty
-                    if (!moduleData) continue;
-                    
-                    // Check if the module has a totalCost property
-                    if (moduleData.totalCost !== undefined) {
-                        const cost = parseFloat(moduleData.totalCost) || 0;
-                        console.log(`[Dashboard] Adding module cost from ${moduleId}: ${cost}`);
-                        totalCost += cost;
-                    }
-                    // Alternative: if the module has 'items' array, calculate from items
-                    else if (moduleData.items && Array.isArray(moduleData.items)) {
-                        let moduleCost = 0;
-                        moduleData.items.forEach(item => {
-                            if (item.qty > 0) {
-                                moduleCost += (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
-                            }
-                        });
-                        console.log(`[Dashboard] Calculated module cost for ${moduleId}: ${moduleCost}`);
-                        totalCost += moduleCost;
-                    }
-                }
-            }
-            
-            // Format and display
-            const formattedTotal = window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
-            document.getElementById('total-project-cost').textContent = `Total Project Cost: ${formattedTotal}`;
-            console.log("[Dashboard] Updated total project cost:", formattedTotal);
-        }
-    </script>
 </body>
 </html>
