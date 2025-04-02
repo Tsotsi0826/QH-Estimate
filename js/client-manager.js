@@ -1,352 +1,364 @@
-// Client management for the Construction Estimator
+// client-manager.js - Revised Client data management with enhanced logging
+
+// Client manager for the Construction Estimator app
 (function() {
     // Ensure our namespace exists
     window.ConstructionApp = window.ConstructionApp || {};
-    
-    // Client manager object
+
+    // Private data
+    let _clients = [];
+    let _currentClient = null;
+    let _pendingSaves = {}; // Track pending save operations
+    let _autoSaveTimer = null; // Timer for auto-saving
+
+    // --- Helper Function to Safely Stringify ---
+    // Handles potential circular references or large objects, though sessionStorage limit is the main concern
+    function safeStringify(obj, replacer = null, space = null) {
+        try {
+            return JSON.stringify(obj, replacer, space);
+        } catch (error) {
+            console.error("[ClientManager] Error stringifying object:", error);
+            // Decide how to handle: return null, empty object string, or throw
+            // Returning null might hide issues but prevent crashes.
+            return null;
+        }
+    }
+
+    // Client Manager object
     const ClientManager = {
-        // Internal storage for clients and current client
-        _clients: [],
-        _currentClient: null,
-        
-        // Client changed event handler
-        onClientChanged: null,
-        
-        // Initialize the client manager
-        init: function() {
-            console.log("[ClientManager] Initializing client manager");
-            return this.loadClients();
-        },
-        
-        // Load clients from storage
-        loadClients: function() {
-            return new Promise((resolve, reject) => {
-                if (window.ConstructionApp.Firebase) {
-                    window.ConstructionApp.Firebase.loadClients()
-                        .then(clients => {
-                            this._clients = clients || [];
-                            console.log("[ClientManager] Loaded", this._clients.length, "clients from Firebase");
-                            resolve(this._clients);
-                        })
-                        .catch(error => {
-                            console.error("[ClientManager] Error loading clients from Firebase:", error);
-                            this._clients = this.loadClientsFromBackup() || [];
-                            console.log("[ClientManager] Loaded", this._clients.length, "clients from backup");
-                            resolve(this._clients);
-                        });
-                } else {
-                    console.warn("[ClientManager] Firebase not available, loading from backup");
-                    this._clients = this.loadClientsFromBackup() || [];
-                    console.log("[ClientManager] Loaded", this._clients.length, "clients from backup");
-                    resolve(this._clients);
-                }
-            });
-        },
-        
         // Get all clients
         getAllClients: function() {
-            return this._clients;
+            return _clients;
         },
-        
+
         // Get current client
         getCurrentClient: function() {
-            // If we have client in memory, return it
-            if (this._currentClient) {
-                return this._currentClient;
-            }
-            
-            // Try to restore from sessionStorage as fallback
-            const storedClientStr = sessionStorage.getItem('currentClient');
-            if (storedClientStr) {
-                try {
-                    const restoredClient = JSON.parse(storedClientStr);
-                    console.log("[ClientManager] Restored client from sessionStorage:", restoredClient.name);
-                    this._currentClient = restoredClient;
-                    return restoredClient;
-                } catch (error) {
-                    console.error("[ClientManager] Error parsing stored client:", error);
-                    sessionStorage.removeItem('currentClient');
+            // If _currentClient is null, try to get from sessionStorage
+            if (!_currentClient) {
+                const clientDataStr = sessionStorage.getItem('currentClient');
+                if (clientDataStr) {
+                    try {
+                        _currentClient = JSON.parse(clientDataStr);
+                        console.log("[ClientManager] Restored client from sessionStorage on demand:", _currentClient?.name || 'Unknown');
+                    } catch (error) {
+                        console.error("[ClientManager] Error parsing stored client on demand:", error);
+                        sessionStorage.removeItem('currentClient');
+                        _currentClient = null; // Ensure it's null if parsing failed
+                    }
+                } else {
+                     console.log("[ClientManager] No client found in sessionStorage on demand.");
                 }
             }
-            
-            return null;
+            return _currentClient;
         },
-        
+
         // Set current client
         setCurrentClient: function(client) {
-            console.log("[ClientManager] Setting current client:", client ? client.name : "None");
-            
-            // Store internally in the ClientManager object
-            this._currentClient = client;
-            
-            // Always save to sessionStorage if we have a client
+            console.log("[ClientManager] Attempting to set current client:", client ? client.name : "None");
+            _currentClient = client; // Update internal state first
+
+            // Save to sessionStorage for persistence between pages
             if (client) {
-                sessionStorage.setItem('currentClient', JSON.stringify(client));
-                console.log("[ClientManager] Client saved to sessionStorage:", client.name);
+                const clientString = safeStringify(client);
+                if (clientString) {
+                    try {
+                        sessionStorage.setItem('currentClient', clientString);
+                        console.log("[ClientManager] Client saved to sessionStorage:", client.name);
+                         // Check size (approximate) - log warning if large
+                         if (clientString.length > 4 * 1024 * 1024) { // ~4MB warning
+                             console.warn(`[ClientManager] Client data size is large (${(clientString.length / 1024 / 1024).toFixed(2)} MB), may approach sessionStorage limits.`);
+                         }
+                    } catch (e) {
+                         console.error("[ClientManager] Error saving client to sessionStorage (Quota Exceeded?):", e);
+                         // Optionally notify user or handle error
+                         alert("Error: Could not save client session. Data might be too large.");
+                         _currentClient = null; // Clear internal state if save failed
+                    }
+                } else {
+                    console.error("[ClientManager] Failed to stringify client data, not saving to sessionStorage.");
+                    _currentClient = null; // Clear internal state if stringify failed
+                }
+                 // Start auto-save timer for this client only if successfully set
+                 if (_currentClient) {
+                    this.startAutoSave();
+                 } else {
+                    this.stopAutoSave(); // Stop if setting failed
+                 }
             } else {
-                // Only remove if explicitly setting to null
                 sessionStorage.removeItem('currentClient');
                 console.log("[ClientManager] Client removed from sessionStorage");
+                // Stop auto-save timer when no client is selected
+                this.stopAutoSave();
             }
-            
-            // Trigger client changed event if we have one
+
+            // Notify any listeners ONLY if the client state genuinely changed
+            // This check might need refinement depending on how onClientChanged is used
             if (typeof this.onClientChanged === 'function') {
-                console.log("[ClientManager] Triggering onClientChanged");
-                this.onClientChanged(client);
+                 // Pass a deep copy? Or rely on consumers not mutating? For now, pass directly.
+                this.onClientChanged(_currentClient);
             }
-            
-            return client;
+
+            return _currentClient; // Return the client that was actually set (could be null if failed)
         },
-        
-        // Clear current client
-        clearCurrentClient: function() {
-            console.log("[ClientManager] Clearing current client");
-            this._currentClient = null;
-            sessionStorage.removeItem('currentClient');
-            
-            // Trigger client changed event if we have one
-            if (typeof this.onClientChanged === 'function') {
-                console.log("[ClientManager] Triggering onClientChanged after clear");
-                this.onClientChanged(null);
-            }
-            
-            return null;
-        },
-        
+
         // Add a new client
-        addClient: function(clientData) {
-            if (!clientData || !clientData.name) {
-                console.error("[ClientManager] Cannot add client: Invalid client data");
-                return null;
-            }
-            
-            console.log("[ClientManager] Adding new client:", clientData.name);
-            
-            // Generate unique ID if not provided
-            if (!clientData.id) {
-                clientData.id = 'client-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-            }
-            
-            // Initialize module data if not provided
-            if (!clientData.moduleData) {
-                clientData.moduleData = {};
-            }
-            
-            // Create timestamps
-            const now = new Date().toISOString();
-            clientData.createdAt = clientData.createdAt || now;
-            clientData.updatedAt = now;
-            
-            // Add to clients array
-            this._clients.push(clientData);
-            
-            // Save clients to storage
-            this.saveClients();
-            
-            // Save to backup
-            this.saveClientsToBackup();
-            
-            // Set as current client
-            this.setCurrentClient(clientData);
-            
-            return clientData;
-        },
-        
-        // Update an existing client
-        updateClient: function(clientId, updatedData) {
-            if (!clientId || !updatedData) {
-                console.error("[ClientManager] Cannot update client: Missing ID or data");
-                return null;
-            }
-            
-            console.log("[ClientManager] Updating client:", clientId);
-            
-            // Find the client
-            const clientIndex = this._clients.findIndex(client => client.id === clientId);
-            if (clientIndex === -1) {
-                console.error("[ClientManager] Cannot update client: Client not found");
-                return null;
-            }
-            
-            // Get the existing client
-            const existingClient = this._clients[clientIndex];
-            
-            // Create an updated client object
-            const updatedClient = {
-                ...existingClient,
-                ...updatedData,
-                id: clientId, // Ensure ID doesn't change
-                updatedAt: new Date().toISOString()
+        addClient: function(clientData, callback) {
+            // Create a new client with a unique ID if not provided
+            const client = {
+                id: clientData.id || `client-${Date.now()}`,
+                name: clientData.name,
+                address: clientData.address || '',
+                moduleData: clientData.moduleData || {}, // Ensure moduleData exists
+                created: new Date().toISOString(),
+                lastModified: new Date().toISOString()
             };
-            
-            // Update the clients array
-            this._clients[clientIndex] = updatedClient;
-            
-            // Save clients to storage
-            this.saveClients();
-            
-            // Save to backup
-            this.saveClientsToBackup();
-            
-            // Update current client if this is the current client
-            if (this._currentClient && this._currentClient.id === clientId) {
-                this.setCurrentClient(updatedClient);
-            }
-            
-            return updatedClient;
-        },
-        
-        // Delete a client
-        deleteClient: function(clientId) {
-            if (!clientId) {
-                console.error("[ClientManager] Cannot delete client: Missing ID");
-                return false;
-            }
-            
-            console.log("[ClientManager] Deleting client:", clientId);
-            
-            // Find the client
-            const clientIndex = this._clients.findIndex(client => client.id === clientId);
-            if (clientIndex === -1) {
-                console.error("[ClientManager] Cannot delete client: Client not found");
-                return false;
-            }
-            
-            // Remove from clients array
-            this._clients.splice(clientIndex, 1);
-            
-            // Save clients to storage
-            this.saveClients();
-            
-            // Save to backup
-            this.saveClientsToBackup();
-            
-            // Clear current client if this is the current client
-            if (this._currentClient && this._currentClient.id === clientId) {
-                this.clearCurrentClient();
-            }
-            
-            return true;
-        },
-        
-        // Save module data for current client
-        saveModuleData: function(moduleId, moduleData, callback) {
-            console.log("[ClientManager] Saving module data for:", moduleId);
-            
-            const client = this.getCurrentClient();
-            if (!client) {
-                console.error("[ClientManager] Cannot save module data: No client selected");
-                if (callback) callback(false, "No client selected");
-                return false;
-            }
-            
-            // Make sure moduleData property exists
-            if (!client.moduleData) {
-                client.moduleData = {};
-            }
-            
-            // Update the module data with version tracking
-            if (moduleData === null) {
-                // Clear module data if null is passed
-                delete client.moduleData[moduleId];
-            } else {
-                // Otherwise update with the new data
-                client.moduleData[moduleId] = {
-                    data: moduleData,
-                    lastUpdated: new Date().toISOString()
-                };
-            }
-            
-            // Update timestamp
-            client.updatedAt = new Date().toISOString();
-            
-            // Update sessionStorage with the updated client
-            sessionStorage.setItem('currentClient', JSON.stringify(client));
-            console.log("[ClientManager] Updated client in sessionStorage after module save");
-            
-            // Update the client in the clients array
-            const clientIndex = this._clients.findIndex(c => c.id === client.id);
-            if (clientIndex !== -1) {
-                this._clients[clientIndex] = client;
-            }
-            
-            // Save to Firebase if available
+
+            console.log("[ClientManager] Adding new client:", client.name);
+
+            // Add to the clients array (in-memory)
+            _clients.push(client);
+
+            // Save to Firestore if available
             if (window.ConstructionApp.Firebase) {
                 window.ConstructionApp.Firebase.saveClient(client)
-                    .then(success => {
-                        console.log("[ClientManager] Client saved to Firebase:", success);
-                        if (callback) callback(success);
+                    .then(() => {
+                        console.log("[ClientManager] Client saved to Firebase successfully:", client.name);
+                        if (callback) callback(true, client);
                     })
                     .catch(error => {
                         console.error("[ClientManager] Error saving client to Firebase:", error);
                         if (callback) callback(false, error.message);
                     });
             } else {
-                console.warn("[ClientManager] Firebase not available, client only saved to sessionStorage");
-                if (callback) callback(true);
+                 console.warn("[ClientManager] Firebase not available, client added locally only.");
+                if (callback) callback(true, client); // Report success for local add
             }
-            
-            // Also update backup
-            this.saveClientsToBackup();
-            
-            // Make sure we update the internal client reference
-            this._currentClient = client;
-            
-            return true;
+
+            return client;
         },
-        
-        // Save clients to storage
-        saveClients: function() {
-            console.log("[ClientManager] Saving all clients");
-            
-            // Save to Firebase if available
-            if (window.ConstructionApp.Firebase) {
-                window.ConstructionApp.Firebase.saveClients(this._clients)
-                    .then(success => {
-                        console.log("[ClientManager] Clients saved to Firebase:", success);
-                    })
-                    .catch(error => {
-                        console.error("[ClientManager] Error saving clients to Firebase:", error);
-                        // Save to backup on error
-                        this.saveClientsToBackup();
-                    });
-            } else {
-                console.warn("[ClientManager] Firebase not available, clients only saved to backup");
-                this.saveClientsToBackup();
+
+        // Update an existing client (primarily for non-moduleData changes, or full saves)
+        updateClient: function(client, callback) {
+            if (!client || !client.id) {
+                 console.error("[ClientManager] updateClient called with invalid client object.");
+                 if(callback) callback(false, "Invalid client data");
+                 return false;
             }
-            
-            return true;
-        },
-        
-        // Save clients to local storage backup
-        saveClientsToBackup: function() {
-            try {
-                localStorage.setItem('clientsBackup', JSON.stringify(this._clients));
-                console.log("[ClientManager] Clients saved to backup");
+            console.log("[ClientManager] Updating client:", client.name);
+
+            // Update last modified timestamp
+            client.lastModified = new Date().toISOString();
+
+            // Find and update the client in the array
+            const index = _clients.findIndex(c => c.id === client.id);
+            if (index >= 0) {
+                _clients[index] = client; // Update in-memory list
+
+                // If this is the current client, update the internal reference AND sessionStorage
+                if (_currentClient && _currentClient.id === client.id) {
+                    console.log("[ClientManager] Updating _currentClient reference and sessionStorage.");
+                    // Use setCurrentClient to handle storage and notifications
+                    this.setCurrentClient(client);
+                }
+
+                // Save to Firestore if available
+                if (window.ConstructionApp.Firebase) {
+                    window.ConstructionApp.Firebase.saveClient(client)
+                        .then(() => {
+                            console.log("[ClientManager] Client updated in Firebase successfully");
+                            if (callback) callback(true, null);
+                        })
+                        .catch(error => {
+                            console.error("[ClientManager] Error updating client in Firebase:", error);
+                            if (callback) callback(false, error.message);
+                        });
+                } else {
+                     console.warn("[ClientManager] Firebase not available, updated locally only.");
+                    if (callback) callback(true, "Firebase not available, updated locally only");
+                }
+
                 return true;
-            } catch (error) {
-                console.error("[ClientManager] Error saving clients to backup:", error);
+            } else {
+                 console.warn("[ClientManager] Client not found in local list for update:", client.id);
+                 if (callback) callback(false, "Client not found locally");
+                 // Should we still try to save to Firebase? Or add it locally?
+                 // For now, assume it must exist locally to be updated.
+                 return false;
+            }
+        },
+
+        // Load clients from Firestore
+        loadClients: async function() {
+            console.log("[ClientManager] Loading clients from Firestore...");
+            if (window.ConstructionApp.Firebase) {
+                try {
+                    const loadedClients = await window.ConstructionApp.Firebase.loadClients();
+                    _clients = loadedClients || []; // Ensure _clients is always an array
+                    console.log("[ClientManager] Loaded", _clients.length, "clients");
+                    return _clients;
+                } catch (error) {
+                    console.error("[ClientManager] Error loading clients:", error);
+                    _clients = []; // Reset local list on error
+                    return []; // Return empty array
+                }
+            } else {
+                 console.warn("[ClientManager] Firebase not available, cannot load clients.");
+                 _clients = []; // Ensure local list is empty
+                 return [];
+            }
+        },
+
+        // Save module data for the current client with enhanced error handling
+        saveModuleData: function(moduleId, data, callback) {
+            // Use getCurrentClient to ensure we attempt loading from session if _currentClient is null
+            const clientToUpdate = this.getCurrentClient();
+
+            if (!clientToUpdate) {
+                console.error("[ClientManager] No current client to save module data for.");
+                if (callback) callback(false, "No client selected");
                 return false;
             }
-        },
-        
-        // Load clients from local storage backup
-        loadClientsFromBackup: function() {
-            try {
-                const clientsStr = localStorage.getItem('clientsBackup');
-                if (clientsStr) {
-                    const clients = JSON.parse(clientsStr);
-                    console.log("[ClientManager] Loaded clients from backup:", clients.length);
-                    return clients;
-                }
-            } catch (error) {
-                console.error("[ClientManager] Error loading clients from backup:", error);
+
+            console.log(`[ClientManager] Saving module data for [${moduleId}] to client [${clientToUpdate.name}]`);
+
+            // Generate a save operation ID for potential tracking (optional)
+            const saveOpId = `${moduleId}-${Date.now()}`;
+            _pendingSaves[saveOpId] = true; // Mark as pending
+
+            // Update last modified timestamp on the client object
+            clientToUpdate.lastModified = new Date().toISOString();
+
+            // Ensure moduleData exists
+            if (!clientToUpdate.moduleData) {
+                clientToUpdate.moduleData = {};
             }
-            
-            return [];
-        }
+
+            // Update the module data within the client object
+            console.log("[ClientManager] Updating client object in memory with new module data for:", moduleId);
+            clientToUpdate.moduleData[moduleId] = data;
+
+            // Update sessionStorage with the modified client object
+            // Use setCurrentClient to handle the update consistently
+            console.log("[ClientManager] Calling setCurrentClient to update sessionStorage with modified client.");
+            this.setCurrentClient(clientToUpdate); // This handles saving to sessionStorage
+
+            // Save *only the module data* to Firestore if available
+            if (window.ConstructionApp.Firebase) {
+                window.ConstructionApp.Firebase.saveModuleData(clientToUpdate.id, moduleId, data)
+                    .then(() => {
+                        console.log(`[ClientManager] Module data [${moduleId}] saved to Firebase successfully.`);
+                        delete _pendingSaves[saveOpId]; // Remove from pending
+                        if (callback) callback(true, null);
+                    })
+                    .catch(error => {
+                        console.error(`[ClientManager] Error saving module data [${moduleId}] to Firebase:`, error);
+                        delete _pendingSaves[saveOpId]; // Remove from pending
+                        // Retry logic could be added here or within Firebase.saveModuleData
+                        if (callback) callback(false, error.message);
+                    });
+            } else {
+                 console.warn(`[ClientManager] Firebase not available, module data [${moduleId}] saved locally only.`);
+                delete _pendingSaves[saveOpId]; // Remove from pending
+                if (callback) callback(true, "Firebase not available, saved locally only");
+            }
+
+            return true;
+        },
+
+        // Get module data for the current client
+        getModuleData: function(moduleId) {
+            const client = this.getCurrentClient(); // Use getter to ensure it tries loading from session
+            if (!client || !client.moduleData) {
+                // console.log(`[ClientManager] No client or moduleData found when getting data for ${moduleId}`);
+                return null;
+            }
+            // console.log(`[ClientManager] Getting module data for ${moduleId}. Found:`, !!client.moduleData[moduleId]);
+            return client.moduleData[moduleId] || null;
+        },
+
+        // Clear the current client
+        clearCurrentClient: function() {
+            console.log("[ClientManager] Clearing current client.");
+            // Use setCurrentClient with null to handle clearing storage and stopping timers
+            this.setCurrentClient(null);
+            return true;
+        },
+
+        // Force a refresh of the current client from sessionStorage (less commonly needed now)
+        refreshCurrentClient: function() {
+             console.log("[ClientManager] Refreshing current client from sessionStorage.");
+             sessionStorage.removeItem('currentClient'); // Clear current session item first
+             _currentClient = null; // Clear internal variable
+             const client = this.getCurrentClient(); // Let the getter handle reloading
+             // Notify listeners that client might have changed (even if it's null)
+             if (typeof this.onClientChanged === 'function') {
+                 this.onClientChanged(client);
+             }
+             return client;
+        },
+
+
+        // Check if there are pending save operations (basic check)
+        hasPendingSaves: function() {
+            // This currently only tracks module data saves initiated via saveModuleData
+            // It doesn't track the batch commits from firebase-config.js directly
+            return Object.keys(_pendingSaves).length > 0;
+        },
+
+        // Start auto-save timer (saves entire client)
+        startAutoSave: function(interval = 5 * 60 * 1000) { // Default: 5 minutes
+            // Clear any existing timer
+            this.stopAutoSave();
+
+            // Only start if we have a current client
+            if (!_currentClient) return;
+
+            console.log("[ClientManager] Starting auto-save timer for client:", _currentClient.name);
+
+            // Create new timer
+            _autoSaveTimer = setInterval(() => {
+                // Only auto-save if we have a current client and no active user inputs
+                 const activeElement = document.activeElement;
+                 const isInputActive = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
+
+                if (_currentClient && !isInputActive) {
+                    console.log("[ClientManager] Auto-saving client data for:", _currentClient.name);
+                    // We'll just update the client to save all data
+                    // Pass a callback that logs success/failure
+                    this.updateClient(_currentClient, (success, error) => {
+                         if(success) {
+                              // console.log("[ClientManager] Auto-save successful.");
+                         } else {
+                              console.error("[ClientManager] Auto-save failed:", error);
+                         }
+                    });
+                }
+            }, interval);
+        },
+
+        // Stop auto-save timer
+        stopAutoSave: function() {
+            if (_autoSaveTimer) {
+                console.log("[ClientManager] Stopping auto-save timer");
+                clearInterval(_autoSaveTimer);
+                _autoSaveTimer = null;
+            }
+        },
+
+        // Event handler for client changes - to be implemented by consumers
+        onClientChanged: null
     };
-    
+
     // Export the ClientManager
     window.ConstructionApp.ClientManager = ClientManager;
+
+    // Add window beforeunload handler to warn about pending saves (optional)
+    // Note: This check might be limited if saves are batched in firebase-config
+    // window.addEventListener('beforeunload', function(e) {
+    //     if (ClientManager.hasPendingSaves()) {
+    //         const message = 'You have unsaved changes that might not have reached the server. Are you sure you want to leave?';
+    //         e.returnValue = message;
+    //         return message;
+    //     }
+    // });
 })();
