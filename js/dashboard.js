@@ -1,6 +1,5 @@
 // js/dashboard.js
-// Final working version with hierarchy, collapse/expand, direct listeners.
-// Removed temporary debug styles and verification logs for tile rendering.
+// Added explicit visibility styles to #module-tiles container as a final CSS check.
 
 // --- Global Variables ---
 let appData = {
@@ -125,15 +124,15 @@ function renderDashboardContent(client) {
                   console.log(`DEBUG: >>> Rendering tile HTML for ${moduleId}`);
                   hasModuleDataToShow = true;
                   const formattedCost = window.ConstructionApp.ModuleUtils.formatCurrency(moduleCost);
-                  // ** Removed TEMPORARY VISUAL STYLE, Added explicit display block to wrapper **
+                  // Removed temporary red styling
                   tilesHTML += `<div class="module-tile" data-module-id="${moduleId}">${moduleId !== 'notes' ? `<button class="clear-module-btn" title="Clear module data">×</button>` : ''}<h5>${moduleName}</h5>${moduleId !== 'notes' ? `<p class="module-tile-cost">${formattedCost}</p>` : '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>'}<button class="btn module-open-btn" style="margin-top: 10px;">Open Module</button></div>`;
               }
          });
     }
 
-    // ** Added explicit style="display: block;" to the wrapper div **
+    // Added explicit style="display: block;" to the wrapper div
     let finalContent = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: block;">`;
-    finalContent += `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">`;
+    finalContent += `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px;">`; // Added explicit display style
 
     if (hasModuleDataToShow) {
         finalContent += tilesHTML;
