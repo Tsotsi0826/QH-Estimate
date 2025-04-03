@@ -1,8 +1,10 @@
-// js/dashboard.js - Refactored: Dashboard rendering logic moved to dashboard-renderer.js
+// js/dashboard.js - Final Refactored Version: Initializes managers and handles core callback.
 
 // --- Global Variables ---
+// Keep appData here temporarily to hold the loaded modules from the definition manager
+// and pass them to other managers during initialization.
 let appData = {
-    modules: [] // Still holds module definitions loaded by ModuleDefinitionManager
+    modules: []
 };
 
 // Ensure the main app namespace exists
@@ -14,47 +16,74 @@ window.ConstructionApp = window.ConstructionApp || {};
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DEBUG: DOMContentLoaded event fired");
     console.log("[Dashboard] DOM loaded, initializing app");
-    setupDebugPanel(); // Setup debug panel first
 
-    // Ensure dependent managers are available
-    if (!window.ConstructionApp.ModuleDefinitionManager || !window.ConstructionApp.ClientManager || !window.ConstructionApp.SidebarManager || !window.ConstructionApp.ClientUI || !window.ConstructionApp.DashboardRenderer) { // Added DashboardRenderer check
-        console.error("[Dashboard] CRITICAL: One or more required managers not found! App cannot initialize correctly.");
+    // Ensure ALL required managers are available before proceeding
+    const requiredManagers = [
+        'Firebase',
+        'ModuleUtils',
+        'ClientManager',
+        'ModuleDefinitionManager',
+        'SidebarManager',
+        'ClientUI',
+        'DashboardRenderer',
+        'DebugPanel'
+        // 'DataModels' is used by modules, not directly by dashboard init
+    ];
+    let missingManager = null;
+    for (const managerName of requiredManagers) {
+        // Check if the manager object exists and has an 'init' function (except for Firebase/DataModels/ModuleUtils)
+        const manager = window.ConstructionApp[managerName];
+        if (!manager || (typeof manager.init !== 'function' && !['Firebase', 'DataModels', 'ModuleUtils'].includes(managerName))) {
+            missingManager = managerName;
+            break;
+        }
+    }
+
+    if (missingManager) {
+        console.error(`[Dashboard] CRITICAL: Required manager "${missingManager}" not found or invalid! App cannot initialize correctly.`);
         const contentElement = document.getElementById('module-content');
-         if (contentElement) {
-             contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Initialization Error</h2><p>A critical component failed to load. Please check the console (F12) or contact support.</p></div>`;
-         }
+        if (contentElement) {
+            contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Initialization Error</h2><p>A critical component (${missingManager}) failed to load. Please check the console (F12) or contact support.</p></div>`;
+        }
+        // Try to init DebugPanel anyway to show potential errors if it exists
+        window.ConstructionApp.DebugPanel?.init();
         return; // Stop initialization
     }
+    console.log("[Dashboard] All required managers found.");
+
+    // Initialize Debug Panel First
+    console.log("DEBUG: Initializing DebugPanel...");
+    window.ConstructionApp.DebugPanel.init();
 
     console.log("DEBUG: Calling ModuleDefinitionManager.loadModuleDefinitions...");
     window.ConstructionApp.ModuleDefinitionManager.loadModuleDefinitions().then(loadedModules => {
         console.log("DEBUG: ModuleDefinitionManager.loadModuleDefinitions COMPLETE.");
         appData.modules = loadedModules; // Store the loaded modules
 
-        // Assign the client change callback
+        // Assign the client change callback AFTER managers are ready
         console.log("DEBUG: Setting ClientManager.onClientChanged callback to updateDashboard.");
         window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
 
-        // Initialize the Dashboard Renderer, passing the loaded module data
+        // Initialize other managers, passing necessary data
         console.log("DEBUG: Initializing DashboardRenderer...");
-        window.ConstructionApp.DashboardRenderer.init(appData.modules); // Init renderer
+        window.ConstructionApp.DashboardRenderer.init(appData.modules);
 
-        console.log("DEBUG: Calling initApp...");
-        initApp(); // Determine initial client state (triggers updateDashboard if client changes)
-        console.log("DEBUG: initApp COMPLETE.");
-
-        // Initialize the Sidebar Manager
         console.log("DEBUG: Initializing SidebarManager...");
         window.ConstructionApp.SidebarManager.init(appData.modules);
 
-        // Initialize the Client UI Manager
         console.log("DEBUG: Initializing ClientUI...");
         window.ConstructionApp.ClientUI.init();
 
-        // Setup Add Module Button (Still here for now)
+        // Setup Add Module Button (Still controlled from here)
         setupAddModuleButton();
 
-        // Load client list asynchronously
+        // Determine initial client state AFTER all managers are initialized
+        console.log("DEBUG: Calling initApp...");
+        initApp(); // Triggers updateDashboard via callback if client changes
+        console.log("DEBUG: initApp COMPLETE.");
+
+
+        // Load client list asynchronously (ClientManager handles storage)
         window.ConstructionApp.ClientManager.loadClients().then(() => {
             console.log("[Dashboard] Client list loaded");
         }).catch(error => {
@@ -69,43 +98,53 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contentElement) {
              contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Error Loading Modules</h2><p>Could not load module definitions. Please check the console (F12) for details or contact support.</p><p>Error: ${error.message || 'Unknown error'}</p></div>`;
         }
+        // Update debug panel even on error
+        window.ConstructionApp.DebugPanel?.update();
     });
 });
 
 /**
- * Initializes the application state (client).
- * (No changes needed in this function)
+ * Initializes the application state (client). Called after managers are initialized.
  */
 function initApp() {
-    console.log("[Dashboard] Initializing app state");
+    console.log("[Dashboard] Initializing app state (client)");
     const navigationState = sessionStorage.getItem('navigationState');
     const storedClientStr = sessionStorage.getItem('currentClient');
     let clientToSet = null;
-    // ... Logic to determine clientToSet based on state ...
+    // Determine client based on stored data and navigation state
      try { clientToSet = JSON.parse(storedClientStr || 'null'); } catch (e) { clientToSet = null; sessionStorage.removeItem('currentClient');}
+     if (navigationState === 'manualLogout' || navigationState === 'invalidAccess') {
+         clientToSet = null; // Ensure client is null on logout/invalid access
+     }
+     sessionStorage.removeItem('navigationState'); // Clear flag after checking
 
     console.log("DEBUG: Calling ClientManager.setCurrentClient with client:", clientToSet ? clientToSet.name : 'None');
-    window.ConstructionApp.ClientManager.setCurrentClient(clientToSet); // This triggers updateDashboard via callback
+    // This triggers updateDashboard via callback if client is different or initially null/set
+    window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
 
-    sessionStorage.removeItem('navigationState');
-    updateDebugPanel();
+    window.ConstructionApp.DebugPanel?.update(); // Update debug panel
 }
 
 // --- Module Definition Loading/Saving/Defaults/Backup Functions are MOVED ---
 
 
 // --- Module Creation (Modal Setup - Listener calls ModuleDefinitionManager) ---
-// (setupAddModuleButton remains here for now)
+// (setupAddModuleButton remains here as it ties HTML button to ModuleDefManager)
 function setupAddModuleButton() {
     const addModuleBtn = document.getElementById('add-module-btn');
     const modalOverlay = document.getElementById('add-module-modal-overlay');
-    if (!addModuleBtn || !modalOverlay) { return; }
+    if (!addModuleBtn || !modalOverlay) {
+         console.warn("[Dashboard] Add module button or modal overlay not found.");
+         return;
+    }
 
     addModuleBtn.addEventListener('click', () => {
-        // Populate parent select
+        // Populate parent select using data from ModuleDefinitionManager
         const parentHeaderSelect = document.getElementById('parent-header-select');
-        parentHeaderSelect.innerHTML = '<option value="null">(Top Level / No Parent)</option>';
-        appData.modules.filter(m => m.type === 'header').sort((a, b) => a.name.localeCompare(b.name)).forEach(header => {
+        parentHeaderSelect.innerHTML = '<option value="null">(Top Level / No Parent)</option>'; // Reset
+        // Safely get modules
+        const currentModules = window.ConstructionApp.ModuleDefinitionManager?.getModuleDefinitions() || [];
+        currentModules.filter(m => m.type === 'header').sort((a, b) => a.name.localeCompare(b.name)).forEach(header => {
              const option = document.createElement('option'); option.value = header.id; option.textContent = header.name; parentHeaderSelect.appendChild(option);
         });
         // Reset form fields...
@@ -117,15 +156,17 @@ function setupAddModuleButton() {
         modalOverlay.style.display = 'flex';
     });
 
+    // Type change listener remains the same...
     const moduleTypeSelect = document.getElementById('new-module-type');
     moduleTypeSelect?.addEventListener('change', function() { document.getElementById('parent-header-group').style.display = this.value === 'regular' ? 'block' : 'none'; if (this.value === 'header') document.getElementById('parent-header-select').value = 'null'; });
 
-    // Generic close button setup
+    // Generic close button setup (could move to utils)
     const closeBtns = modalOverlay.querySelectorAll('.modal-close, .btn-cancel');
      closeBtns.forEach(btn => {
          const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn);
          newBtn.addEventListener('click', () => modalOverlay.style.display = 'none');
      });
+
     // Save Button Listener calls ModuleDefinitionManager
     const saveNewModuleBtn = document.getElementById('save-new-module-btn');
      if (saveNewModuleBtn) {
@@ -137,8 +178,12 @@ function setupAddModuleButton() {
                  parentId: document.getElementById('parent-header-select').value,
                  requiresClient: document.getElementById('new-module-requires-client').checked
             };
-            const newModule = window.ConstructionApp.ModuleDefinitionManager.addNewModuleDefinition(moduleInfo);
-            if (newModule) { modalOverlay.style.display = 'none'; alert(`Module "${newModule.name}" created successfully.`); }
+            // Call the manager to handle creation, saving, and triggering sidebar render
+            const newModule = window.ConstructionApp.ModuleDefinitionManager?.addNewModuleDefinition(moduleInfo);
+            if (newModule) {
+                 modalOverlay.style.display = 'none';
+                 alert(`Module "${newModule.name}" created successfully.`);
+            } // Else: Manager handles validation alerts/errors
         });
      }
      console.log("[Dashboard] Add Module button setup.");
@@ -147,107 +192,50 @@ function setupAddModuleButton() {
 // --- Client Management UI Functions are MOVED ---
 
 
-// --- Dashboard Content Rendering (Logic MOVED to dashboard-renderer.js) ---
+// --- Dashboard Content Rendering Functions are MOVED ---
 
 /**
  * Update the dashboard UI based on the current client.
  * This is the primary callback for ClientManager.onClientChanged.
- * It now delegates rendering the main content area to DashboardRenderer.
+ * It updates header/description elements and delegates rendering the main content area.
  * @param {object|null} client - The new client object, or null if logged out.
  */
 function updateDashboard(client) {
     console.log("DEBUG: updateDashboard START - Client:", client ? client.name : 'None');
 
-    // Get references to UI elements NOT handled by renderer (header/description)
+    // Get references to UI elements NOT handled by renderer
     const logoutBtn = document.getElementById('logout-btn');
     const clientNameDisplay = document.getElementById('client-name-display');
     const dashboardDesc = document.querySelector('.dashboard-description');
 
-    // Check if essential elements exist
-    if (!clientNameDisplay || !dashboardDesc || !logoutBtn) {
-        console.error("[Dashboard] One or more essential dashboard header/desc elements missing.");
-        // Don't return entirely, renderer might still work
-    }
-
     // Update header/description based on client
     if (client) {
-        console.log("DEBUG: updateDashboard - Updating header/desc for client.");
         if(clientNameDisplay) clientNameDisplay.textContent = `Client: ${client.name}`;
         if(dashboardDesc) dashboardDesc.textContent = `${client.address || 'No address provided'}`;
         if(logoutBtn) {
             logoutBtn.style.display = 'inline-block';
-            // Re-attach logout listener
-            const newLogoutBtn = logoutBtn.cloneNode(true);
+            const newLogoutBtn = logoutBtn.cloneNode(true); // Re-attach listener
             logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-            newLogoutBtn.addEventListener('click', () => {
-                window.ConstructionApp?.ModuleUtils?.logoutClient();
-            });
+            newLogoutBtn.addEventListener('click', () => { window.ConstructionApp?.ModuleUtils?.logoutClient(); });
         }
     } else {
-        console.log("DEBUG: updateDashboard - Clearing header/desc for no client.");
         if(clientNameDisplay) clientNameDisplay.textContent = '';
         if(dashboardDesc) dashboardDesc.textContent = 'Overview of project data.';
         if(logoutBtn) logoutBtn.style.display = 'none';
     }
 
-    // --- Delegate rendering the main content area ---
-    if (window.ConstructionApp.DashboardRenderer) {
-         console.log("DEBUG: Calling DashboardRenderer.render...");
-         window.ConstructionApp.DashboardRenderer.render(client); // Call the renderer
-    } else {
-         console.error("[Dashboard] DashboardRenderer not found! Cannot render content.");
-         const contentElement = document.getElementById('module-content');
-         if(contentElement) contentElement.innerHTML = '<p style="color: red; font-weight: bold;">Error: Dashboard Renderer failed to load.</p>';
-    }
-    // --- End delegation ---
+    // --- Delegate rendering the main content area to DashboardRenderer ---
+    console.log("DEBUG: Calling DashboardRenderer.render...");
+    window.ConstructionApp.DashboardRenderer?.render(client); // Use optional chaining
 
-    updateDebugPanel(); // Update debug info
+    // Update debug panel AFTER rendering might have changed state
+    window.ConstructionApp.DebugPanel?.update(); // Use optional chaining
     console.log("DEBUG: updateDashboard COMPLETE.");
 }
 
-// --- Functions related to rendering tiles, handling clicks, clearing data, updating total cost are MOVED ---
-
-
-// --- Debug Panel (Still here for now) ---
-
-function setupDebugPanel() {
-    const debugPanel = document.getElementById('debug-panel');
-    let toggleBtn = document.getElementById('debug-toggle-btn');
-    if (!toggleBtn && debugPanel) { /* ... create button ... */ }
-    if (toggleBtn) {
-        toggleBtn.style.display = 'block';
-        toggleBtn.removeEventListener('click', toggleDebugPanel);
-        toggleBtn.addEventListener('click', toggleDebugPanel);
-        console.log("[Dashboard] Debug panel toggle setup.");
-    }
-}
-
-function toggleDebugPanel() {
-    const debugPanel = document.getElementById('debug-panel');
-    const toggleBtn = document.getElementById('debug-toggle-btn');
-    if (!debugPanel || !toggleBtn) return;
-    const isVisible = debugPanel.style.display === 'block';
-    debugPanel.style.display = isVisible ? 'none' : 'block';
-    toggleBtn.textContent = isVisible ? 'Debug' : 'Hide Debug';
-    if (!isVisible) updateDebugPanel();
-}
-
-function updateDebugPanel() {
-    const debugPanel = document.getElementById('debug-panel');
-    if (!debugPanel || debugPanel.style.display !== 'block') return;
-    // ... Logic to gather state and update debugPanel.innerHTML ...
-    const navigationState = sessionStorage.getItem('navigationState');
-    const currentClient = window.ConstructionApp?.ClientManager?.getCurrentClient();
-    const storedClientStr = sessionStorage.getItem('currentClient');
-    const moduleOrderStr = sessionStorage.getItem('moduleOrder');
-    let storedClientParsed = null; try { storedClientParsed = JSON.parse(storedClientStr || 'null'); } catch(e){}
-    let debugInfo = `... Debug info generation ...`; // Simplified
-    debugPanel.innerHTML = debugInfo;
-}
+// --- Debug Panel Functions are MOVED ---
 
 
 // --- Expose necessary functions ---
-// Expose updateDebugPanel if other modules need it (like ClientUI, though we removed the call)
-window.ConstructionApp.Dashboard = {
-    updateDebugPanel: updateDebugPanel
-};
+// Nothing needs to be exposed globally from dashboard.js anymore
+window.ConstructionApp.Dashboard = {};
