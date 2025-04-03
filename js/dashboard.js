@@ -1,29 +1,24 @@
 // js/dashboard.js
-// Refactored: Sidebar search functions moved to js/sidebar-search.js
+// Refactored: Client Modal functions moved to js/client-modals.js
+// Sidebar search functions moved to js/sidebar-search.js
 // Debug panel functions moved to js/debug-panel.js
-// Exposes renderModuleList globally for sidebar search.
+// Exposes renderModuleList, createModuleElement, setupDragAndDrop globally.
 
 // --- Global Variables ---
-// These need to remain accessible by other modules for now
 let appData = {
-    modules: [] // Holds the structure/definitions of all available modules
+    modules: []
 };
-let globalDraggedItem = null; // Used for drag-and-drop
-let headerCollapseState = {}; // Stores collapsed state for sidebar headers { headerId: true/false }
+let globalDraggedItem = null;
+let headerCollapseState = {};
 
 // --- Global Namespace Setup ---
 window.ConstructionApp = window.ConstructionApp || {};
-window.ConstructionApp.DashboardUtils = window.ConstructionApp.DashboardUtils || {}; // Namespace for shared dashboard functions
+window.ConstructionApp.DashboardUtils = window.ConstructionApp.DashboardUtils || {};
 
 // --- Utility / Helper Functions ---
-// (setupModuleSearch function REMOVED - moved to sidebar-search.js)
+// (setupModuleSearch function REMOVED)
 
 // --- Initialization ---
-
-/**
- * Main entry point when the DOM is ready.
- * Loads modules, initializes client state, sets up UI listeners.
- */
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DEBUG: DOMContentLoaded event fired");
     console.log("[Dashboard] DOM loaded, initializing app");
@@ -40,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("DEBUG: loadAndRenderModules COMPLETE.");
 
         // Assign the client change callback
-        if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
+        if (window.ConstructionApp?.ClientManager) {
             console.log("DEBUG: Setting ClientManager.onClientChanged callback to updateDashboard.");
             window.ConstructionApp.ClientManager.onClientChanged = updateDashboard;
         } else {
@@ -52,19 +47,26 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("DEBUG: initApp COMPLETE.");
 
         // Setup other UI components by calling their setup functions
-        setupDropdownMenus();
-        setupClientManagement();
-        setupAddModuleButton();
-        // Call setup for sidebar search (function is now in sidebar-search.js)
+        setupDropdownMenus(); // Setup module item dropdowns/collapse
+        // Call setup for client modals (function is now in client-modals.js)
+        if (window.ConstructionApp?.ClientModals?.setup) {
+             console.log("DEBUG: Calling ClientModals.setup...");
+             window.ConstructionApp.ClientModals.setup();
+        } else {
+             console.warn("[Dashboard] ClientModals setup function not found.");
+        }
+        setupAddModuleButton(); // Setup add module button/modal
+        // Call setup for sidebar search
         if (window.ConstructionApp?.SidebarSearch?.setup) {
+             console.log("DEBUG: Calling SidebarSearch.setup...");
              window.ConstructionApp.SidebarSearch.setup();
         } else {
              console.warn("[Dashboard] SidebarSearch setup function not found.");
         }
-        setupDragAndDrop();
+        setupDragAndDrop(); // Setup sidebar drag/drop
 
         // Load client list asynchronously
-        if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
+        if (window.ConstructionApp?.ClientManager) {
             window.ConstructionApp.ClientManager.loadClients().then(() => {
                 console.log("[Dashboard] Client list loaded");
             }).catch(error => {
@@ -76,70 +78,38 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("[Dashboard] Critical error during module loading:", error);
         const contentElement = document.getElementById('module-content');
         if (contentElement) {
-            contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Error Loading Modules</h2><p>Could not load module definitions. Please check the console (F12) for details or contact support.</p><p>Error: ${error.message || 'Unknown error'}</p></div>`;
+            contentElement.innerHTML = `<div class="no-client-notification error"><h2>Error Loading Modules</h2><p>${error.message || 'Unknown error'}</p></div>`;
         }
     });
 });
 
-/**
- * Initializes the application state, particularly the current client,
- * based on navigation history and sessionStorage.
- */
 function initApp() {
     console.log("[Dashboard] Initializing app state");
     const navigationState = sessionStorage.getItem('navigationState');
     const storedClientStr = sessionStorage.getItem('currentClient');
     let clientToSet = null;
-
     console.log(`[Dashboard] Init: NavState='${navigationState}', StoredClient='${storedClientStr ? 'Exists' : 'None'}'`);
-
     if (navigationState === 'returningToDashboard' && storedClientStr) {
-        try {
-            clientToSet = JSON.parse(storedClientStr);
-            console.log("[Dashboard] Restoring client from sessionStorage (returning):", clientToSet?.name || 'Unknown');
-        } catch (error) {
-            console.error("[Dashboard] Error parsing stored client on return:", error);
-            sessionStorage.removeItem('currentClient');
-        }
+        try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Restoring client (returning):", clientToSet?.name); }
+        catch (e) { console.error("Error parsing stored client:", e); sessionStorage.removeItem('currentClient'); }
     } else if (navigationState === 'manualLogout' || navigationState === 'invalidAccess') {
-        console.log("[Dashboard] Manual logout or invalid access detected, ensuring no client is set.");
-        clientToSet = null;
-        sessionStorage.removeItem('currentClient');
+        console.log("[Dashboard] Manual logout/invalid access."); clientToSet = null; sessionStorage.removeItem('currentClient');
     } else if (storedClientStr) {
-        try {
-            clientToSet = JSON.parse(storedClientStr);
-            console.log("[Dashboard] Restoring client from sessionStorage (fresh load/unknown):", clientToSet?.name || 'Unknown');
-        } catch (error) {
-            console.error("[Dashboard] Error parsing stored client on fresh load:", error);
-            sessionStorage.removeItem('currentClient');
-        }
-    } else {
-        console.log("[Dashboard] No client found in sessionStorage, starting fresh.");
-    }
+        try { clientToSet = JSON.parse(storedClientStr); console.log("[Dashboard] Restoring client (fresh):", clientToSet?.name); }
+        catch (e) { console.error("Error parsing stored client:", e); sessionStorage.removeItem('currentClient'); }
+    } else { console.log("[Dashboard] No client in session."); }
 
-    if (window.ConstructionApp && window.ConstructionApp.ClientManager) {
+    if (window.ConstructionApp?.ClientManager) {
         console.log("DEBUG: Calling ClientManager.setCurrentClient with client:", clientToSet ? clientToSet.name : 'None');
-        window.ConstructionApp.ClientManager.setCurrentClient(clientToSet);
-        console.log("DEBUG: ClientManager.setCurrentClient call complete (callback should have been triggered).");
-    } else {
-        console.error("[Dashboard] ClientManager not available during initApp!");
-        updateDashboard(clientToSet); // Attempt manual update as fallback
-    }
-
+        window.ConstructionApp.ClientManager.setCurrentClient(clientToSet); // This triggers updateDashboard via callback
+        console.log("DEBUG: ClientManager.setCurrentClient call complete.");
+    } else { console.error("ClientManager unavailable!"); updateDashboard(clientToSet); }
     sessionStorage.removeItem('navigationState');
-    console.log("[Dashboard] Cleared navigation state.");
-
-    // Update debug panel using the exposed function
     window.ConstructionApp?.DebugPanel?.update();
 }
 
 // --- Module Loading and Rendering (Sidebar) ---
-
-/**
- * Loads module definitions from Firebase, with fallbacks to sessionStorage backup or defaults.
- * Renders the initial module list in the sidebar.
- */
-async function loadAndRenderModules() {
+async function loadAndRenderModules() { /* ... Keep original (including adding Notes/Reports)... */
     console.log("[Dashboard] Loading and rendering modules structure");
     let loadedModules = [];
 
@@ -188,12 +158,8 @@ async function loadAndRenderModules() {
     const notesModuleIndex = loadedModules.findIndex(m => m.id === 'notes');
     let notesModuleData = notesModuleIndex > -1 ? loadedModules.splice(notesModuleIndex, 1)[0] : {};
     notesModuleData = {
-        id: 'notes',
-        name: notesModuleData.name || 'Notes',
-        requiresClient: notesModuleData.requiresClient !== undefined ? notesModuleData.requiresClient : true,
-        type: notesModuleData.type || 'regular',
-        parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null,
-        order: -1,
+        id: 'notes', name: notesModuleData.name || 'Notes', requiresClient: notesModuleData.requiresClient !== undefined ? notesModuleData.requiresClient : true,
+        type: notesModuleData.type || 'regular', parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null, order: -1,
     };
     loadedModules.unshift(notesModuleData);
 
@@ -201,10 +167,7 @@ async function loadAndRenderModules() {
     const reportsModuleExists = loadedModules.some(m => m.id === 'reports');
     if (!reportsModuleExists) {
         console.log("[Dashboard] Adding 'Reports' module definition.");
-        const reportsModuleData = {
-            id: 'reports', name: 'Reports', requiresClient: false,
-            type: 'regular', parentId: null, order: 99
-        };
+        const reportsModuleData = { id: 'reports', name: 'Reports', requiresClient: false, type: 'regular', parentId: null, order: 99 };
         loadedModules.push(reportsModuleData);
     } else {
          const reportIndex = loadedModules.findIndex(m => m.id === 'reports');
@@ -216,25 +179,16 @@ async function loadAndRenderModules() {
 
     // Store the final module list in the global appData
     appData.modules = loadedModules.map(mod => ({
-        ...mod,
-        parentId: (mod.parentId === 'null' || mod.parentId === undefined) ? null : mod.parentId,
-        order: mod.order ?? 0,
-        renderTemplate: mod.renderTemplate || function(client) {
-            const moduleData = client?.moduleData?.[mod.id]?.data || {};
-            return `<h3>${mod.name}</h3><p>Default Content</p><pre>${JSON.stringify(moduleData, null, 2)}</pre>`;
-        },
+        ...mod, parentId: (mod.parentId === 'null' || mod.parentId === undefined) ? null : mod.parentId, order: mod.order ?? 0,
+        renderTemplate: mod.renderTemplate || function(client) { const d = client?.moduleData?.[mod.id]?.data || {}; return `<h3>${mod.name}</h3><pre>${JSON.stringify(d, null, 2)}</pre>`; },
         saveData: mod.saveData || function() { return {}; }
     }));
 
     // Render the sidebar list
-    renderModuleList(appData.modules); // This function needs to be defined below
+    renderModuleList(appData.modules);
     console.log("[Dashboard] Module structure processed and sidebar rendered.");
 }
-
-/**
- * Returns a default set of module definitions if none are loaded.
- */
-function getDefaultModules() {
+function getDefaultModules() { /* ... Keep original ... */
     console.log("[Dashboard] Providing default module set.");
     return [
         { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true, type: 'regular', parentId: null, order: 1 },
@@ -248,12 +202,7 @@ function getDefaultModules() {
         { id: 'ceilings', name: 'Ceilings', requiresClient: true, type: 'regular', parentId: null, order: 5 },
     ];
 }
-
-/**
- * Renders the hierarchical list of modules in the sidebar.
- * @param {Array} modules - The array of module objects from appData.
- */
-function renderModuleList(modules) { // Keep this function in dashboard.js for now
+function renderModuleList(modules) { /* ... Keep original ... */
     const container = document.getElementById('modules-container');
     if (!container) { console.error("[Dashboard] Sidebar modules container not found."); return; }
     container.innerHTML = '';
@@ -270,14 +219,8 @@ function renderModuleList(modules) { // Keep this function in dashboard.js for n
     renderLevel(null, 0);
     setupDragAndDrop(); // Needs setupDragAndDrop
 }
-// Expose renderModuleList for sidebar-search.js
-window.ConstructionApp.DashboardUtils.renderModuleList = renderModuleList;
-
-
-/**
- * Creates a single module list item element for the sidebar.
- */
-function createModuleElement(moduleData, level = 0) { // Keep this function in dashboard.js for now
+window.ConstructionApp.DashboardUtils.renderModuleList = renderModuleList; // EXPOSE
+function createModuleElement(moduleData, level = 0) { /* ... Keep original ... */
     const moduleElement = document.createElement('div');
     moduleElement.className = 'module-item';
     moduleElement.draggable = true;
@@ -312,16 +255,18 @@ function createModuleElement(moduleData, level = 0) { // Keep this function in d
     if (nameSpan) { nameSpan.addEventListener('click', () => { if (window.ConstructionApp?.ModuleUtils) window.ConstructionApp.ModuleUtils.navigateToModule(moduleData.id); else console.error("ModuleUtils not found!"); }); }
     return moduleElement;
 }
+window.ConstructionApp.DashboardUtils.createModuleElement = createModuleElement; // EXPOSE
 
-// --- Module Creation --- (Keep functions called by createModuleElement here for now)
+// --- Module Creation ---
 function setupAddModuleButton() { /* ... Keep original ... */ }
 function addNewModule() { /* ... Keep original ... */ }
 function saveModuleStructure() { /* ... Keep original ... */ }
 function restoreModuleOrderFromBackup() { /* ... Keep original ... */ }
 
-// --- Drag and Drop (Sidebar Modules) --- (Keep functions called by renderModuleList here for now)
+// --- Drag and Drop (Sidebar Modules) ---
 let dragOverElement = null; let dropIndicator = null;
 function setupDragAndDrop() { /* ... Keep original ... */ }
+window.ConstructionApp.DashboardUtils.setupDragAndDrop = setupDragAndDrop; // EXPOSE
 function handleDragStart(e) { /* ... Keep original ... */ }
 function handleDragOver(e) { /* ... Keep original ... */ }
 function handleDragLeave(e) { /* ... Keep original ... */ }
@@ -330,7 +275,7 @@ function handleDragEnd(e) { /* ... Keep original ... */ }
 function clearDropIndicators(element) { /* ... Keep original ... */ }
 function recalculateModuleOrder() { /* ... Keep original ... */ }
 
-// --- Other UI Functions --- (Keep functions called by createModuleElement here for now)
+// --- Other UI Functions ---
 function setupDropdownMenus() { /* ... Keep original ... */ }
 function handleMaybeCollapseToggle(e) { /* ... Keep original ... */ }
 function handleCollapseToggle(headerModuleId) { /* ... Keep original ... */ }
@@ -339,24 +284,22 @@ function closeAllDropdowns() { /* ... Keep original ... */ }
 function editModule(moduleElement) { /* ... Keep original ... */ }
 function deleteModule(moduleElement) { /* ... Keep original ... */ }
 
-// --- Client Management & Dashboard Update --- (Keep functions called by event listeners here for now)
+// --- Client Management & Dashboard Update ---
 const E = (id) => document.getElementById(id); // Define E globally or pass it around if needed
 const Q = (sel) => document.querySelector(sel);
-function setupClientManagement() { /* ... Keep original ... */ }
-function createClientModal(type) { /* ... Keep original ... */ }
-function setupModalCloseButtons(modal, overlayId) { /* ... Keep original ... */ }
-function setupClientSearch(modal) { /* ... Keep original ... */ }
-function setupClientListSelection(modal) { /* ... Keep original ... */ }
+// (setupClientManagement function REMOVED - moved to client-modals.js)
+// (createClientModal function REMOVED - moved to client-modals.js)
+// (setupModalCloseButtons function REMOVED - moved to client-modals.js)
+// (setupClientSearch function REMOVED - moved to client-modals.js)
+// (setupClientListSelection function REMOVED - moved to client-modals.js)
 
-// --- Dashboard Rendering & Update --- (Keep core update logic here)
-function renderDashboardContent(client) { console.log("DEBUG: renderDashboardContent START. Client:", client ? client.name : 'None'); const cont = E('module-content'); if (!cont) { console.error("! #module-content not found"); return; } let tiles = ''; let any = false; if (appData.modules?.length > 0) { appData.modules.forEach(mod => { if (mod.type === 'header') return; any = true; const id = mod.id, name = mod.name; let modData = null, has = false; if (client?.moduleData) { const v = client.moduleData[id]; modData = v?.data ?? v ?? null; if (modData !== null) has = true; } let cost = 0; if (has) { if (modData.totalCost !== undefined) cost = parseFloat(modData.totalCost) || 0; else if (modData.items?.length > 0) cost = window.ConstructionApp?.ModuleUtils?.calculateModuleTotal(modData.items) ?? 0; else if (id === 'notes') cost = 0; } const fmtCost = window.ConstructionApp?.ModuleUtils?.formatCurrency(cost) ?? `R${cost.toFixed(2)}`; const clear = (has && id !== 'notes') ? `<button class="clear-module-btn" title="Clear">×</button>` : ''; const dis = (!client && mod.requiresClient) ? 'disabled title="Select client"' : ''; const open = `<button class="btn module-open-btn" style="margin-top:10px;" ${dis}>Open Module</button>`; let costHtml = ''; if (id === 'notes') costHtml = '<p style="font-size:0.9em;color:#666;margin-top:10px;">(No cost)</p>'; else { const noData = !has ? ' <small style="opacity:0.7;">(No data)</small>' : ''; costHtml = `<p class="module-tile-cost">${fmtCost}${noData}</p>`; } tiles += `<div class="module-tile ${!has ? 'no-client-data' : ''}" data-module-id="${id}">${clear}<h5>${name}</h5>${costHtml}${open}</div>`; }); } let wrap = `<div style="background-color:#f8f9fa; padding:15px; border-radius:5px; margin-bottom:10px;"><h4 style="margin-bottom:15px;">Module Summaries</h4><div id="module-tiles">`; if (any) wrap += tiles; else wrap += `<div style="grid-column:1/-1; text-align:center; color:#666;"><p>No modules defined.</p></div>`; wrap += `</div></div>`; console.log("DEBUG: Updating #module-content..."); cont.innerHTML += wrap; console.log("DEBUG: #module-content update COMPLETE."); setupDashboardTileListeners(); console.log("DEBUG: renderDashboardContent COMPLETE."); } // Needs setupDashboardTileListeners
-function updateDashboard(client) { console.log("DEBUG: updateDashboard START - Client:", client ? client.name : 'None'); const logout = E('logout-btn'), content = E('module-content'), nameDisp = E('client-name-display'), desc = Q('.dashboard-description'), total = E('total-project-cost'); console.log(`DEBUG: Elements: logout=${!!logout}, content=${!!content}, name=${!!nameDisp}, desc=${!!desc}, total=${!!total}`); if (!content || !nameDisp || !desc || !logout || !total) { console.error("! Dashboard elements missing."); console.log("DEBUG: updateDashboard EXITING."); return; } if (client) { console.log("DEBUG: Client present."); nameDisp.textContent = `Client: ${client.name}`; desc.textContent = `${client.address || 'No address'}`; logout.style.display = 'inline-block'; const newLogout = logout.cloneNode(true); logout.parentNode.replaceChild(newLogout, logout); newLogout.addEventListener('click', () => window.ConstructionApp?.ModuleUtils?.logoutClient()); content.innerHTML = ''; console.log("DEBUG: Cleared #module-content."); console.log("DEBUG: Calling renderDashboardContent(client)..."); renderDashboardContent(client); console.log("DEBUG: Calling updateTotalProjectCost()..."); updateTotalProjectCost(); } else { console.log("DEBUG: No client."); nameDisp.textContent = ''; total.textContent = 'Total Project Cost: R0.00'; desc.textContent = 'Overview'; logout.style.display = 'none'; content.innerHTML = `<div class="no-client-notification" style="margin-bottom:20px;"><h2>No Client Selected</h2><p>Select or create client.</p></div>`; console.log("DEBUG: Set 'No Client' notification."); console.log("DEBUG: Calling renderDashboardContent(null)..."); renderDashboardContent(null); } window.ConstructionApp?.DebugPanel?.update(); console.log("DEBUG: updateDashboard COMPLETE."); } // Needs renderDashboardContent, updateTotalProjectCost, DebugPanel.update
-function setupDashboardTileListeners() { const c = E('module-tiles'); if (!c) return; c.removeEventListener('click', handleTileClick); c.addEventListener('click', handleTileClick); } // Needs handleTileClick
-function handleTileClick(e) { const o = e.target.closest('.module-open-btn'), c = e.target.closest('.clear-module-btn'), t = e.target.closest('.module-tile'); if (!t) return; const id = t.dataset.moduleId; if (!id) return; if (o && !o.disabled) window.ConstructionApp?.ModuleUtils?.navigateToModule(id); else if (c) { const info = appData.modules.find(m => m.id === id); const n = info ? info.name : id; if (confirm(`Clear data for "${n}"?`)) clearModuleData(id); } } // Needs clearModuleData
-function clearModuleData(id) { const cli = window.ConstructionApp?.ClientManager?.getCurrentClient(); if (!cli) { window.ConstructionApp?.ModuleUtils?.showErrorMessage("No client."); return; } if (cli.moduleData?.[id]) { console.log(`Clearing ${id}`); window.ConstructionApp.ClientManager.saveModuleData(id, null, (ok, err) => { if (ok) { console.log("Cleared."); if (cli.moduleData) { delete cli.moduleData[id]; window.ConstructionApp.ClientManager.setCurrentClient({ ...cli }); } window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`Cleared.`); } else { console.error(`Err: ${err}`); window.ConstructionApp?.ModuleUtils?.showErrorMessage(`Err: ${err}`); } }); } else window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`No data.`); }
-function updateTotalProjectCost() { let tot = 0; const cli = window.ConstructionApp?.ClientManager?.getCurrentClient(); if (cli?.moduleData) { Object.values(cli.moduleData).forEach(v => { const d = v?.data ?? v ?? {}; if (!d) return; let c = 0; if (d.totalCost !== undefined) c = parseFloat(d.totalCost) || 0; else if (d.items?.length > 0) c = window.ConstructionApp?.ModuleUtils?.calculateModuleTotal(d.items) ?? 0; tot += c; }); } const fmt = window.ConstructionApp?.ModuleUtils?.formatCurrency(tot) ?? `R${tot.toFixed(2)}`; const el = E('total-project-cost'); if (el) el.textContent = `Total: ${fmt}`; }
+// --- Dashboard Rendering & Update ---
+function renderDashboardContent(client) { /* ... Keep original ... */ }
+function updateDashboard(client) { /* ... Keep original ... */ }
+function setupDashboardTileListeners() { /* ... Keep original ... */ }
+function handleTileClick(e) { /* ... Keep original ... */ }
+function clearModuleData(id) { /* ... Keep original ... */ }
+function updateTotalProjectCost() { /* ... Keep original ... */ }
 
 // --- Debug Panel --- (Functions REMOVED - moved to debug-panel.js)
-// setupDebugPanel() -> MOVED
-// toggleDebugPanel() -> MOVED
-// updateDebugPanel() -> MOVED (but called by initApp and updateDashboard)
+
