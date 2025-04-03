@@ -12,6 +12,10 @@
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
+
+    <script src="js/debug-panel.js" defer></script> <script src="js/dashboard.js" defer></script>
+
+
     <style>
         /* General Styles */
         * {
@@ -336,7 +340,7 @@
         }
         .dashboard-content { /* Main scrolling area */
             padding: 20px;
-            background-color: #f8f9fa; /* --- CHANGED: Light gray background for content area --- */
+            background-color: #fff; /* --- White background for content area --- */
             margin: 0;
             color: #333;
             flex: 1; /* Take remaining vertical space */
@@ -346,82 +350,67 @@
         /* Custom scrollbar for main content */
         .dashboard-content::-webkit-scrollbar {
             width: 8px;
-            background-color: #e9ecef; /* Slightly darker gray for scrollbar track */
+            background-color: #f5f5f5;
         }
         .dashboard-content::-webkit-scrollbar-thumb {
-            background-color: #adb5bd; /* Mid-gray for scrollbar thumb */
+            background-color: #aaa;
             border-radius: 4px;
         }
         .dashboard-content::-webkit-scrollbar-thumb:hover {
-            background-color: #6c757d; /* Darker gray on hover */
+            background-color: #888;
         }
 
-        /* Module Tile Styles (Dashboard) */
+        /* Module Tile Styles (Dashboard) - Light Theme Version */
         .module-tile {
-            background-color: white; /* Active tiles are white */
+            background-color: white;
             padding: 15px;
             border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); /* Subtle shadow */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: relative;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             min-height: 150px;
             transition: all 0.2s ease-in-out;
-            border: 1px solid #e5e7eb; /* Default border */
+            border: 1px solid #e5e7eb; /* Light border */
         }
          .module-tile:hover {
-              transform: translateY(-3px);
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06); /* Enhanced shadow on hover */
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(0,0,0,0.15);
          }
 
         .module-tile h5 {
             margin-bottom: 10px;
             font-size: 1.1em;
-            color: #111827; /* Darker text (Tailwind gray-900) */
-            font-weight: 600; /* Slightly bolder */
+            color: #1c2639; /* Dark blue title */
+            font-weight: 600;
             flex-grow: 1;
         }
         .module-tile-cost {
             font-size: 1.4em;
             margin: 10px 0;
-            color: #10b981; /* Slightly different Green (Tailwind emerald-500) */
+            color: #4eca8b; /* Green */
             font-weight: bold;
         }
          .module-tile-cost small {
               font-size: 0.6em;
               font-weight: normal;
-              opacity: 0.8; /* Slightly more opaque */
-              color: #6b7280; /* Tailwind gray-500 */
+              opacity: 0.7;
+              color: #6b7280; /* Gray */
          }
 
         .clear-module-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: none;
-            border: none;
-            color: #ef4444; /* Tailwind red-500 */
-            cursor: pointer;
-            font-size: 18px;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            text-align: center;
-            padding: 0;
-            opacity: 0.4; /* More faded initially */
+            position: absolute; top: 8px; right: 8px;
+            background: none; border: none; color: #dc3545; /* Red */
+            cursor: pointer; font-size: 18px; border-radius: 50%;
+            width: 24px; height: 24px; line-height: 24px;
+            text-align: center; padding: 0; opacity: 0.5;
             transition: opacity 0.2s, background-color 0.2s;
         }
-        .module-tile:hover .clear-module-btn {
-            opacity: 1;
-        }
-        .clear-module-btn:hover {
-            background-color: #fee2e2; /* Tailwind red-100 */
-            color: #b91c1c; /* Tailwind red-700 */
-        }
+        .module-tile:hover .clear-module-btn { opacity: 1; }
+        .clear-module-btn:hover { background-color: #f8d7da; }
 
-        /* General Table Styles (If needed on dashboard, unlikely) */
+        /* General Table Styles */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 10px; text-align: left; }
@@ -432,40 +421,33 @@
 
         /* General Button Styles */
         .btn {
-            background-color: #10b981; /* Tailwind emerald-500 */
+            background-color: #4eca8b; /* Green */
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            text-align: center;
-            font-weight: 500; /* Medium weight */
+            border: none; padding: 8px 16px; border-radius: 4px;
+            cursor: pointer; transition: background-color 0.2s;
+            text-align: center; font-weight: 500;
         }
         .btn:hover:not(:disabled) {
-            background-color: #059669; /* Tailwind emerald-600 */
+            background-color: #3db97a; /* Darker green */
         }
-         .btn:disabled { /* --- UPDATED: Style for disabled buttons --- */
-              background-color: #e5e7eb; /* Light Gray (Tailwind gray-200) */
-              color: #9ca3af; /* Medium Gray text (Tailwind gray-400) */
+         .btn:disabled { /* Light theme disabled button */
+              background-color: #d1d5db; /* Light Gray */
+              color: #6b7280; /* Darker Gray text */
               cursor: not-allowed;
-              opacity: 0.8; /* Slightly less opaque */
+              opacity: 0.7;
          }
 
         .btn-cancel {
-            background-color: #9ca3af; /* Tailwind gray-400 */
+            background-color: #aaa;
             color: #fff;
         }
-        .btn-cancel:hover {
-            background-color: #6b7280; /* Tailwind gray-500 */
-        }
+        .btn-cancel:hover { background-color: #888; }
 
         /* Modal Styles */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.6); display: none;
+            justify-content: center; align-items: center; z-index: 1000;
         }
         .modal {
             background-color: white; padding: 25px; border-radius: 8px;
@@ -477,39 +459,21 @@
             margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;
         }
         .modal-title { font-size: 1.3em; font-weight: bold; }
-        .modal-close {
-            cursor: pointer; font-size: 1.8em; color: #aaa;
-            line-height: 1; padding: 0 5px;
-        }
+        .modal-close { cursor: pointer; font-size: 1.8em; color: #aaa; line-height: 1; padding: 0 5px; }
         .modal-close:hover { color: #333; }
         .modal-body { margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        .form-control {
-            width: 100%; padding: 10px; border: 1px solid #ccc;
-            border-radius: 4px; font-size: 1em;
-        }
-        .form-control:focus {
-            border-color: #10b981; outline: none;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); /* Emerald focus ring */
-        }
-        .modal-footer {
-            display: flex; justify-content: flex-end; padding-top: 15px;
-            border-top: 1px solid #eee; gap: 10px;
-        }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        .form-control:focus { border-color: #4eca8b; outline: none; box-shadow: 0 0 0 2px rgba(78, 202, 139, 0.2); }
+        .modal-footer { display: flex; justify-content: flex-end; padding-top: 15px; border-top: 1px solid #eee; gap: 10px; }
 
         /* Client List in Modal */
-        .client-list {
-            max-height: 300px; overflow-y: auto; border: 1px solid #ddd;
-            border-radius: 4px; margin-top: 10px;
-        }
-        .client-list-item {
-            padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer;
-            transition: background-color 0.2s;
-        }
+        .client-list { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px; }
+        .client-list-item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background-color 0.2s; }
         .client-list-item:last-child { border-bottom: none; }
         .client-list-item:hover { background-color: #f0f0f0; }
-        .client-list-item.active { background-color: #a7f3d0; font-weight: bold; } /* Tailwind emerald-100 */
+        .client-list-item.active { background-color: #e0f2e9; font-weight: bold; }
 
         /* Add Module Modal Specific Styles */
         #add-module-modal .modal-body { display: flex; flex-direction: column; gap: 15px; }
@@ -532,9 +496,7 @@
         }
         #debug-toggle-btn:hover { opacity: 1; }
 
-        /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */
-
-        /* Style for the container holding the module tiles on the dashboard */
+        /* --- Light Theme Tile Grid & No Data Styles --- */
         .dashboard-content #module-tiles {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -542,24 +504,20 @@
             padding-top: 10px;
         }
 
-        /* Style for tiles representing modules with no data for the current client */
         .module-tile.no-client-data {
-            opacity: 0.85; /* --- ADJUSTED: Slightly less faded --- */
-            background-color: #f8f9fa; /* --- ADJUSTED: Match content background --- */
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            border-color: #d1d5db; /* --- ADDED: Slightly darker border for definition --- */
+            opacity: 0.65; /* Make them slightly faded */
+            background-color: #f0f0f0; /* Slightly different background */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Less prominent shadow */
         }
 
-        /* Adjust cost text style within empty tiles */
         .module-tile.no-client-data .module-tile-cost {
-            color: #6b7280; /* Tailwind gray-500 */
+            color: #6c757d; /* Grey color for cost text */
         }
          .module-tile.no-client-data .module-tile-cost small {
-              color: #6b7280;
+              color: #6c757d;
          }
 
-
-        /* Style for the notification when no client is selected */
+        /* Notification Style for Light Theme */
         .no-client-notification {
             padding: 30px;
             background-color: #e9ecef;
@@ -578,27 +536,22 @@
             margin-bottom: 0;
             color: #6c757d;
         }
-
-        /* --- END ADDED/UPDATED CSS RULES --- */
+        /* --- END Light Theme Tile Grid & No Data Styles --- */
 
     </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-header">Construction Estimator</div>
-
         <div class="section-title">Clients</div>
         <div class="client-actions">
             <div class="client-action" id="new-client-btn" title="Create a new client project"><i>+</i> New Client</div>
             <div class="client-action" id="open-client-btn" title="Open an existing client project"><i>O</i> Open Client</div>
         </div>
-
         <div class="search-container">
             <input type="text" id="module-search-input" class="search-input" placeholder="Search modules...">
         </div>
-
         <div class="add-module-btn" id="add-module-btn" title="Add a new module or category header"><i>+</i> Add New Module</div>
-
         <div class="modules-list-container" id="modules-container">
             </div>
     </div>
@@ -612,12 +565,10 @@
                  <div class="total-cost" id="total-project-cost">Total Project Cost: R0.00</div>
             </div>
         </div>
-
         <div class="dashboard-description" id="dashboard-description">Overview of project data.</div>
-
         <div class="dashboard-content">
             <div id="module-content">
-                <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+                <div style="padding: 20px; background-color: #f8f9fa; color: #333; border-radius: 5px; margin-bottom: 20px;">
                     <h3>Loading Dashboard...</h3>
                     <p>Please wait while the application initializes.</p>
                 </div>
@@ -628,9 +579,7 @@
     <div class="debug-panel" id="debug-panel"></div>
     <button id="debug-toggle-btn" style="display: none;">Debug</button>
 
-
     <div class="modal-overlay" id="client-modal-overlay"></div>
-
     <div class="modal-overlay" id="add-module-modal-overlay">
         <div class="modal" id="add-module-modal">
             <div class="modal-header">
@@ -653,7 +602,7 @@
                     <label for="parent-header-select">Place Under Header:</label>
                     <select id="parent-header-select" class="form-control">
                         <option value="null">(Top Level / No Parent)</option>
-                        </select>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>
