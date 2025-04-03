@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Reports - Construction Estimator</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script> <script src="js/module-utils.js"></script> <script src="js/data-models.js"></script> <style>
+        /* Basic Styling - Borrowed/Adapted from index.html for consistency */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 0; /* Remove default body padding */
+            height: 100vh;
+            display: flex;
+            flex-direction: column; /* Stack header and content */
+        }
+
+        .report-header {
+            background-color: #1c2639; /* Dark header */
+            color: #fff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .report-header h1 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .report-container {
+            padding: 30px;
+            flex-grow: 1; /* Allow content to fill space */
+            overflow-y: auto; /* Scroll content if needed */
+        }
+
+        .report-controls {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap; /* Allow controls to wrap on smaller screens */
+            gap: 20px; /* Space between control groups */
+            align-items: flex-end; /* Align items to bottom */
+        }
+
+        .form-group {
+            margin-bottom: 0; /* Remove bottom margin as gap handles spacing */
+            flex: 1 1 200px; /* Allow items to grow/shrink, base width 200px */
+            min-width: 180px; /* Minimum width before wrapping */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-control { /* Input/Select style */
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            background-color: #fff; /* Ensure background for selects */
+        }
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        .filter-options label {
+            margin-right: 15px;
+            font-weight: normal;
+            color: #333;
+        }
+        .filter-options input[type="radio"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .btn {
+            background-color: #4eca8b; /* Green */
+            color: white;
+            border: none;
+            padding: 10px 20px; /* Slightly larger padding */
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 1em;
+            height: fit-content; /* Align with bottom of inputs */
+        }
+        .btn:hover:not(:disabled) {
+            background-color: #3db97a; /* Darker green */
+        }
+        .btn:disabled {
+             background-color: #a0d8bd;
+             cursor: not-allowed;
+             opacity: 0.7;
+        }
+
+        #report-output {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 200px; /* Ensure it has some height */
+        }
+        #report-output h3 { /* Module titles within report */
+            margin-top: 25px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eee;
+            font-size: 1.3em;
+            color: #1c2639;
+        }
+        #report-output h3:first-child {
+             margin-top: 0;
+        }
+
+        /* Basic table styling for report */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .report-table th,
+        .report-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .report-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .report-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .report-table tfoot td {
+            font-weight: bold;
+            background-color: #e9e9e9;
+        }
+        .currency {
+            text-align: right;
+        }
+        .report-grand-total {
+             margin-top: 30px;
+             padding-top: 15px;
+             border-top: 2px solid #333;
+             font-size: 1.2em;
+             font-weight: bold;
+             text-align: right;
+        }
+        .status-message {
+             padding: 15px;
+             text-align: center;
+             color: #666;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="report-header">
+        <h1>Client Reports</h1>
+        <a href="index.html" style="color: #ccc; text-decoration: none;">&laquo; Back to Dashboard</a>
+    </header>
+
+    <div class="report-container">
+        <div class="report-controls">
+            <div class="form-group">
+                <label for="client-select">Select Client:</label>
+                <select id="client-select" class="form-control">
+                    <option value="">-- Loading Clients --</option>
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label for="module-select">Select Report Scope:</label>
+                <select id="module-select" class="form-control" disabled>
+                    <option value="">-- Select Client First --</option>
+                    </select>
+            </div>
+
+            <div class="form-group filter-options">
+                <label>Include Items:</label>
+                <div>
+                    <input type="radio" id="filter-billable" name="filter-option" value="billable" checked>
+                    <label for="filter-billable">Billable Items Only</label>
+                </div>
+                <div>
+                    <input type="radio" id="filter-all" name="filter-option" value="all">
+                    <label for="filter-all">All Items</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>&nbsp;</label> <button id="generate-report-btn" class="btn" disabled>Generate Report</button>
+            </div>
+        </div>
+
+        <div id="report-output">
+            <p class="status-message">Please select a client and report scope above.</p>
+            </div>
+    </div>
+
+    <script src="js/reports.js" defer></script>
+
+</body>
+</html>
