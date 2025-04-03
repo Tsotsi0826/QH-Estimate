@@ -1,5 +1,6 @@
 // js/dashboard.js
 // Added 'Reports' module definition to be included in the sidebar.
+// Corrected typo in filterModules: foranEach -> forEach
 
 // --- Global Variables ---
 let appData = {
@@ -67,7 +68,7 @@ function setupModuleSearch() {
         });
 
         // Show/hide modules based on whether they are in the visible set
-        // NOTE: There was a typo here in the code you provided: 'foranEach'. Corrected to 'forEach'.
+        // NOTE: Corrected typo forEach
         allModuleElements.forEach(moduleEl => {
             const moduleId = moduleEl.dataset.moduleId;
             if (visibleModuleIds.has(moduleId)) {
