@@ -13,10 +13,7 @@ let headerCollapseState = {};
 
 // --- Global Namespace Setup ---
 window.ConstructionApp = window.ConstructionApp || {};
-window.ConstructionApp.DashboardUtils = window.ConstructionApp.DashboardUtils || {};
-
-// --- Utility / Helper Functions ---
-// (setupModuleSearch function REMOVED)
+window.ConstructionApp.DashboardUtils = window.ConstructionApp.DashboardUtils || {}; // Namespace for shared dashboard functions
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,14 +45,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Setup other UI components by calling their setup functions
         setupDropdownMenus(); // Setup module item dropdowns/collapse
+
         // Call setup for client modals (function is now in client-modals.js)
         if (window.ConstructionApp?.ClientModals?.setup) {
              console.log("DEBUG: Calling ClientModals.setup...");
-             window.ConstructionApp.ClientModals.setup();
+             window.ConstructionApp.ClientModals.setup(); // UPDATED CALL
         } else {
              console.warn("[Dashboard] ClientModals setup function not found.");
         }
+
         setupAddModuleButton(); // Setup add module button/modal
+
         // Call setup for sidebar search
         if (window.ConstructionApp?.SidebarSearch?.setup) {
              console.log("DEBUG: Calling SidebarSearch.setup...");
@@ -185,7 +185,7 @@ async function loadAndRenderModules() { /* ... Keep original (including adding N
     }));
 
     // Render the sidebar list
-    renderModuleList(appData.modules);
+    renderModuleList(appData.modules); // This function needs to be defined below
     console.log("[Dashboard] Module structure processed and sidebar rendered.");
 }
 function getDefaultModules() { /* ... Keep original ... */
@@ -257,13 +257,13 @@ function createModuleElement(moduleData, level = 0) { /* ... Keep original ... *
 }
 window.ConstructionApp.DashboardUtils.createModuleElement = createModuleElement; // EXPOSE
 
-// --- Module Creation ---
+// --- Module Creation --- (Keep functions called by createModuleElement here for now)
 function setupAddModuleButton() { /* ... Keep original ... */ }
 function addNewModule() { /* ... Keep original ... */ }
 function saveModuleStructure() { /* ... Keep original ... */ }
 function restoreModuleOrderFromBackup() { /* ... Keep original ... */ }
 
-// --- Drag and Drop (Sidebar Modules) ---
+// --- Drag and Drop (Sidebar Modules) --- (Keep functions called by renderModuleList here for now)
 let dragOverElement = null; let dropIndicator = null;
 function setupDragAndDrop() { /* ... Keep original ... */ }
 window.ConstructionApp.DashboardUtils.setupDragAndDrop = setupDragAndDrop; // EXPOSE
@@ -275,7 +275,7 @@ function handleDragEnd(e) { /* ... Keep original ... */ }
 function clearDropIndicators(element) { /* ... Keep original ... */ }
 function recalculateModuleOrder() { /* ... Keep original ... */ }
 
-// --- Other UI Functions ---
+// --- Other UI Functions --- (Keep functions called by createModuleElement here for now)
 function setupDropdownMenus() { /* ... Keep original ... */ }
 function handleMaybeCollapseToggle(e) { /* ... Keep original ... */ }
 function handleCollapseToggle(headerModuleId) { /* ... Keep original ... */ }
@@ -285,7 +285,7 @@ function editModule(moduleElement) { /* ... Keep original ... */ }
 function deleteModule(moduleElement) { /* ... Keep original ... */ }
 
 // --- Client Management & Dashboard Update ---
-const E = (id) => document.getElementById(id); // Define E globally or pass it around if needed
+const E = (id) => document.getElementById(id);
 const Q = (sel) => document.querySelector(sel);
 // (setupClientManagement function REMOVED - moved to client-modals.js)
 // (createClientModal function REMOVED - moved to client-modals.js)
