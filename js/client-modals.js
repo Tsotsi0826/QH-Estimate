@@ -5,14 +5,17 @@
     // Ensure the main app namespace exists
     window.ConstructionApp = window.ConstructionApp || {};
 
+    // Helper to get elements - assuming E might be defined globally later, else use full document.getElementById
+    const E = (id) => document.getElementById(id);
+
     /**
      * Sets up listeners for the "New Client" and "Open Client" buttons.
      */
     function setupClientManagement() {
         console.log("[ClientModals] Setting up client management buttons");
-        const newClientBtn = document.getElementById('new-client-btn');
-        const openClientBtn = document.getElementById('open-client-btn');
-        let clientModalOverlay = document.getElementById('client-modal-overlay');
+        const newClientBtn = E('new-client-btn');
+        const openClientBtn = E('open-client-btn');
+        let clientModalOverlay = E('client-modal-overlay');
 
         // Ensure the modal overlay exists in the DOM
         if (!clientModalOverlay) {
@@ -33,16 +36,12 @@
         // New Client Button
         if (newClientBtn) {
             newClientBtn.addEventListener('click', () => {
-                // Ensure overlay exists before proceeding
-                const overlay = document.getElementById('client-modal-overlay');
-                if (!overlay) {
-                    console.error("[ClientModals] Cannot open modal: Overlay not found.");
-                    return;
-                }
-                const clientModal = createClientModal('new'); // Generate modal content
-                overlay.innerHTML = ''; // Clear previous content
-                overlay.appendChild(clientModal); // Add new modal
-                overlay.style.display = 'flex'; // Show overlay
+                const overlay = E('client-modal-overlay');
+                if (!overlay) { console.error("[ClientModals] Cannot open modal: Overlay not found."); return; }
+                const clientModal = createClientModal('new');
+                overlay.innerHTML = '';
+                overlay.appendChild(clientModal);
+                overlay.style.display = 'flex';
             });
         } else {
              console.warn("[ClientModals] 'New Client' button not found.");
@@ -51,16 +50,12 @@
         // Open Client Button
         if (openClientBtn) {
             openClientBtn.addEventListener('click', () => {
-                 // Ensure overlay exists before proceeding
-                const overlay = document.getElementById('client-modal-overlay');
-                if (!overlay) {
-                    console.error("[ClientModals] Cannot open modal: Overlay not found.");
-                    return;
-                }
-                const clientModal = createClientModal('open'); // Generate modal content
-                overlay.innerHTML = ''; // Clear previous content
-                overlay.appendChild(clientModal); // Add new modal
-                overlay.style.display = 'flex'; // Show overlay
+                const overlay = E('client-modal-overlay');
+                if (!overlay) { console.error("[ClientModals] Cannot open modal: Overlay not found."); return; }
+                const clientModal = createClientModal('open');
+                overlay.innerHTML = '';
+                overlay.appendChild(clientModal);
+                overlay.style.display = 'flex';
             });
         } else {
              console.warn("[ClientModals] 'Open Client' button not found.");
@@ -75,14 +70,13 @@
     function createClientModal(type) {
         const modal = document.createElement('div');
         modal.className = 'modal';
-        const overlayId = 'client-modal-overlay'; // ID of the overlay to close
+        const overlayId = 'client-modal-overlay';
 
-        // Dependencies
+        // Dependencies from global scope
         const ClientManager = window.ConstructionApp?.ClientManager;
         const DebugPanelUpdate = window.ConstructionApp?.DebugPanel?.update;
 
         if (type === 'new') {
-            // HTML for the New Client modal
             modal.innerHTML = `
                 <div class="modal-header">
                     <h2 class="modal-title">New Client</h2>
@@ -103,66 +97,47 @@
                     <button class="btn btn-save" id="save-new-client-btn">Save Client</button>
                 </div>`;
 
-            // Attach listeners after a brief delay to ensure elements are in DOM
             setTimeout(() => {
-                setupModalCloseButtons(modal, overlayId); // Setup Cancel and X buttons
+                setupModalCloseButtons(modal, overlayId);
                 const saveBtn = modal.querySelector('#save-new-client-btn');
                 if (saveBtn) {
                     saveBtn.addEventListener('click', () => {
                         const nameInput = modal.querySelector('#client-name');
                         const addressInput = modal.querySelector('#client-address');
+                        if (!nameInput || !addressInput) return; // Element check
                         const name = nameInput.value.trim();
                         const address = addressInput.value.trim();
 
-                        if (!name) {
-                            alert('Client name is required.');
-                            nameInput.focus();
-                            return;
-                        }
+                        if (!name) { alert('Client name is required.'); nameInput.focus(); return; }
 
-                        // Prepare new client data
-                        const newClientData = {
-                            name: name,
-                            address: address,
-                            moduleData: {} // Initialize with empty module data
-                        };
-
+                        const newClientData = { name: name, address: address, moduleData: {} };
                         console.log("[ClientModals] Creating new client:", name);
 
-                        // Use ClientManager to add and set the new client
                         if (ClientManager) {
                             ClientManager.addClient(newClientData, (success, result) => {
                                  if (success) {
                                       const addedClient = result;
-                                      ClientManager.setCurrentClient(addedClient); // Set as current
-                                      if (DebugPanelUpdate) DebugPanelUpdate(); // Update debug info
+                                      ClientManager.setCurrentClient(addedClient);
+                                      if (DebugPanelUpdate) DebugPanelUpdate();
                                       alert(`Client "${name}" created and selected.`);
-                                      const overlay = document.getElementById(overlayId);
-                                      if (overlay) overlay.style.display = 'none'; // Close modal
+                                      const overlay = E(overlayId);
+                                      if (overlay) overlay.style.display = 'none';
                                  } else {
-                                      console.error("[ClientModals] Error adding client via ClientManager:", result);
+                                      console.error("[ClientModals] Error adding client:", result);
                                       alert(`Error creating client: ${result || 'Unknown error'}`);
                                  }
                             });
-                        } else {
-                             alert("Error: ClientManager is not available to save the client.");
-                        }
+                        } else { alert("Error: ClientManager is not available."); }
                     });
                 }
             }, 0);
 
         } else if (type === 'open') {
-            // HTML for the Open Client modal
             const clients = ClientManager?.getAllClients() || [];
             let clientListHTML = '';
-
             if (clients.length > 0) {
-                // Sort clients alphabetically by name
                 clients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                // Create list items
-                clientListHTML = clients.map(client =>
-                    `<div class="client-list-item" data-client-id="${client.id}">${client.name}</div>`
-                ).join('');
+                clientListHTML = clients.map(client => `<div class="client-list-item" data-client-id="${client.id}">${client.name}</div>`).join('');
             } else {
                 clientListHTML = '<div style="padding: 15px; text-align: center; color: #666;">No existing clients found.</div>';
             }
@@ -183,57 +158,44 @@
                     <button class="btn btn-cancel" data-modal-id="${overlayId}">Cancel</button>
                     </div>`;
 
-            // Attach listeners after a brief delay
             setTimeout(() => {
-                setupModalCloseButtons(modal, overlayId); // Setup Cancel and X buttons
-                setupClientListSelection(modal); // Handle clicking on a client item
-                setupClientSearch(modal); // Handle filtering the list
+                setupModalCloseButtons(modal, overlayId);
+                setupClientListSelection(modal);
+                setupClientSearch(modal);
             }, 0);
         }
-
-        return modal; // Return the created modal element
+        return modal;
     }
 
     /**
      * Attaches close listeners to Cancel and X buttons within a modal.
-     * Clones buttons to prevent duplicate listeners.
-     * @param {HTMLElement} modal - The modal element.
-     * @param {string} overlayId - The ID of the overlay element to hide.
      */
     function setupModalCloseButtons(modal, overlayId) {
         const closeBtns = modal.querySelectorAll(`.modal-close[data-modal-id="${overlayId}"], .btn-cancel[data-modal-id="${overlayId}"]`);
         closeBtns.forEach(btn => {
-            // Clone and replace to ensure only one listener is attached
             const newBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(newBtn, btn);
             newBtn.addEventListener('click', () => {
-                const overlay = document.getElementById(overlayId);
-                if (overlay) {
-                    overlay.style.display = 'none';
-                } else {
-                    console.error("[ClientModals] Overlay not found:", overlayId);
-                }
+                const overlay = E(overlayId);
+                if (overlay) overlay.style.display = 'none';
+                else console.error("[ClientModals] Overlay not found:", overlayId);
             });
         });
     }
 
     /**
      * Sets up the search functionality for the client list in the "Open Client" modal.
-     * @param {HTMLElement} modal - The modal element containing the list and search input.
      */
     function setupClientSearch(modal) {
         const searchInput = modal.querySelector('#client-search');
         const clientListContainer = modal.querySelector('.client-list');
-
         if (searchInput && clientListContainer) {
             searchInput.addEventListener('input', () => {
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const clientItems = clientListContainer.querySelectorAll('.client-list-item');
                 clientItems.forEach(item => {
-                    // Check if item represents a client (has data-client-id)
                     if (item.dataset.clientId) {
                         const clientName = item.textContent.toLowerCase();
-                        // Show item if search term is empty or matches client name
                         item.style.display = (searchTerm === '' || clientName.includes(searchTerm)) ? 'block' : 'none';
                     }
                 });
@@ -243,40 +205,32 @@
 
     /**
      * Sets up the click listener for selecting a client from the list in the "Open Client" modal.
-     * @param {HTMLElement} modal - The modal element containing the client list.
      */
     function setupClientListSelection(modal) {
         const clientListContainer = modal.querySelector('.client-list');
         if (!clientListContainer) return;
 
-        // Dependencies
         const ClientManager = window.ConstructionApp?.ClientManager;
         const DebugPanelUpdate = window.ConstructionApp?.DebugPanel?.update;
 
-
         clientListContainer.addEventListener('click', (event) => {
             const listItem = event.target.closest('.client-list-item');
-            // Ensure a valid client item was clicked
             if (listItem && listItem.dataset.clientId) {
                 const clientId = listItem.dataset.clientId;
                 const clients = ClientManager?.getAllClients() || [];
                 const selectedClient = clients.find(c => c.id === clientId);
-
                 if (selectedClient) {
                     console.log("[ClientModals] Selecting client:", selectedClient.name);
-                    // Set the selected client as current using ClientManager
                      if (ClientManager) {
                           ClientManager.setCurrentClient(selectedClient);
-                          if (DebugPanelUpdate) DebugPanelUpdate(); // Update debug info
+                          if (DebugPanelUpdate) DebugPanelUpdate();
                           const overlay = modal.closest('.modal-overlay');
-                          if (overlay) overlay.style.display = 'none'; // Close modal
+                          if (overlay) overlay.style.display = 'none';
                           alert(`Client "${selectedClient.name}" selected.`);
-                     } else {
-                          alert("Error: ClientManager not available to set the client.");
-                     }
+                     } else { alert("Error: ClientManager not available."); }
                 } else {
-                    console.error("[ClientModals] Selected client ID not found in ClientManager list:", clientId);
-                    alert("Error: Could not find the selected client's data.");
+                    console.error("[ClientModals] Selected client ID not found:", clientId);
+                    alert("Error: Could not find client data.");
                 }
             }
         });
