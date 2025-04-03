@@ -32,7 +32,9 @@
         // Filters modules based on search term
         const filterModules = () => {
             // Access global appData (defined in dashboard.js/dashboard-init.js)
-            if (typeof appData === 'undefined' || !appData.modules) {
+            // Use optional chaining for safety
+            const modules = window.appData?.modules;
+            if (typeof appData === 'undefined' || !modules) {
                 console.error("[SidebarSearch] appData or appData.modules not available.");
                 return;
             }
@@ -53,14 +55,15 @@
                 allModuleElements.forEach(moduleEl => {
                     moduleEl.style.display = 'flex';
                 });
+                // Re-render the list to ensure correct collapse icons/state are shown
                 if (renderListFunc) {
-                    renderListFunc(appData.modules); // Re-render to fix potential collapse state overrides
+                    renderListFunc(modules); // Pass the modules list
                 }
                 return;
             }
 
             // Find matching modules and their ancestors
-            appData.modules.forEach(module => {
+            modules.forEach(module => {
                 // Ensure module and name exist before searching
                 if (!module || typeof module.name !== 'string') return;
 
@@ -73,7 +76,7 @@
                     while (currentParentId && currentParentId !== 'null') {
                         visibleModuleIds.add(currentParentId);
                         // Find parent in appData.modules for safety
-                        const parentModule = appData.modules.find(m => m && m.id === currentParentId);
+                        const parentModule = modules.find(m => m && m.id === currentParentId);
                         currentParentId = parentModule ? parentModule.parentId : null;
                     }
                 }
@@ -87,14 +90,13 @@
                     // Expand parent headers if needed (basic version)
                     let parentId = moduleEl.dataset.parentId;
                     let currentEl = moduleEl;
+                    // Traverse up the DOM tree to ensure parents are visible
                     while(parentId && parentId !== 'null') {
                          const parentEl = container.querySelector(`.module-item[data-module-id="${parentId}"]`);
                          if (parentEl) {
-                              // Ensure parent is visible and potentially expand (though re-rendering on clear is better)
-                              parentEl.style.display = 'flex';
-                              // If we want search to force-expand, we'd remove 'collapsed' class here,
-                              // but that might conflict with user's manual collapsing.
-                              // Re-rendering on clear search handles this better.
+                              parentEl.style.display = 'flex'; // Ensure parent is visible
+                              // We won't force-expand here to respect user's choice
+                              // Re-rendering on clear search handles resetting the view
                               currentEl = parentEl;
                               parentId = parentEl.dataset.parentId;
                          } else {
@@ -113,6 +115,8 @@
     }
 
     // Expose the setup function on the global namespace
+    // Ensure ConstructionApp exists
+     window.ConstructionApp = window.ConstructionApp || {};
     window.ConstructionApp.SidebarSearch = {
         setup: setupModuleSearch
     };
