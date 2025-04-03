@@ -870,9 +870,10 @@ function updateDebugPanel() {
         });
         debugInfo += `<strong>Calculated Total Cost:</strong> ${window.ConstructionApp?.ModuleUtils?.formatCurrency(calculatedTotal) ?? 'N/A'}<br><hr>`;
     } else if (currentClient) {
-        debugInfo += '<strong>Client Module Data:</strong> None<br><hr>';
+        debugInfo += '<strong>Client Module Data:</strong> None<br><hr>`;
     }
     debugInfo += '<strong>Module Structure (appData - Top 5):</strong><br><pre style="max-height: 150px; overflow-y: auto; border: 1px solid #555; padding: 5px; font-size: 11px;">';
     debugInfo += JSON.stringify(appData.modules?.slice(0, 5).map(m => ({id: m.id, name: m.name, type: m.type, parentId: m.parentId, order: m.order})) || [], null, 1);
     debugInfo += '</pre>';
-    debugPanel.innerHTML = debugInfo
+    debugPanel.innerHTML = debugInfo;
+}
