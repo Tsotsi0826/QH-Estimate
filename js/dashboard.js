@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const requiredManagers = [
         'Firebase',
         'ModuleUtils',
-        'ClientManager', // Exists but doesn't need init
-        'ModuleDefinitionManager',
+        'ClientManager',
+        'ModuleDefinitionManager', // Exists but doesn't need init
         'SidebarManager',
         'ClientUI',
         'DashboardRenderer',
@@ -28,7 +28,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // 'DataModels' is used by modules, not directly by dashboard init
     ];
     // List of managers that DON'T need an external .init() function called
-    const noInitNeeded = ['Firebase', 'DataModels', 'ModuleUtils', 'ClientManager']; // <-- ADDED ClientManager HERE
+    const noInitNeeded = [
+        'Firebase',
+        'DataModels',
+        'ModuleUtils',
+        'ClientManager',
+        'ModuleDefinitionManager' // <-- ADDED ModuleDefinitionManager HERE
+    ];
 
     let missingManager = null;
     for (const managerName of requiredManagers) {
