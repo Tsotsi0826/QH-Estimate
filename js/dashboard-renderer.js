@@ -9,49 +9,137 @@
     let totalCostElement = null;        // Reference to the #total-project-cost div
     let modulesData = [];               // Local reference to module definitions
 
-    // --- Private Functions (Will be moved from dashboard.js) ---
+    // --- Private Functions (Moved from dashboard.js) ---
 
     /**
      * Renders the module tiles into the main content area based on client data.
      * @param {object|null} client - The current client object or null.
      */
     function renderDashboardContent(client) {
-        console.warn("[DashboardRenderer] renderDashboardContent needs to be moved/implemented here.");
-        // --- Placeholder ---
-        if (!dashboardContentElement) return;
+        // console.log("[DashboardRenderer] renderDashboardContent called."); // Can be noisy
+        if (!dashboardContentElement) {
+             console.error("[DashboardRenderer] Cannot render tiles, content element not found.");
+             return;
+        }
         const hasClient = !!client;
-        let tilesHTML = modulesData
-            .filter(m => m.type !== 'header') // Skip headers
-            .map(module => {
-                const hasData = hasClient && client.moduleData && client.moduleData[module.id];
-                const cost = hasData ? (client.moduleData[module.id].totalCost ?? 0) : 0; // Simplified cost logic
-                const formattedCost = `R${parseFloat(cost).toFixed(2)}`;
-                const openDisabled = (!hasClient && module.requiresClient) ? 'disabled' : '';
-                return `
-                    <div class="module-tile ${!hasData ? 'no-client-data' : ''}" data-module-id="${module.id}">
-                        <h5>${module.name}</h5>
-                        <p class="module-tile-cost">${formattedCost} ${!hasData ? '<small>(No data)</small>' : ''}</p>
-                        <button class="btn module-open-btn" ${openDisabled}>Open</button>
-                        ${hasData && module.id !== 'notes' ? '<button class="clear-module-btn">×</button>' : ''}
-                    </div>`;
-            })
-            .join('');
+        let tilesHTML = '';
+        let hasAnyRenderableModules = false;
 
-        // Create or find the #module-tiles container
+        if (modulesData && Array.isArray(modulesData)) {
+            // Sort modules by order before rendering tiles
+            const sortedModules = [...modulesData].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
+
+            sortedModules.forEach(module => {
+                // Skip headers when rendering tiles
+                if (module.type === 'header') {
+                    return;
+                }
+                hasAnyRenderableModules = true; // Found at least one module to render as a tile
+
+                const moduleId = module.id;
+                const moduleName = module.name;
+
+                // Check if the client has data for this module
+                let clientModuleData = null;
+                let hasData = false;
+                if (hasClient && client.moduleData) {
+                    const clientModuleVersionedData = client.moduleData[moduleId];
+                    clientModuleData = clientModuleVersionedData?.data ?? clientModuleVersionedData ?? null;
+                    if (clientModuleData !== null && clientModuleData !== undefined) {
+                         // Consider data present unless it's an empty object (and not an array)
+                         if (typeof clientModuleData !== 'object' || Array.isArray(clientModuleData) || Object.keys(clientModuleData).length > 0) {
+                            hasData = true;
+                         }
+                    }
+                }
+
+                // Calculate cost for this module
+                let moduleCost = 0;
+                if (hasData) {
+                    if (clientModuleData.totalCost !== undefined) {
+                        moduleCost = parseFloat(clientModuleData.totalCost) || 0;
+                    } else if (clientModuleData.items && Array.isArray(clientModuleData.items)) {
+                        if (window.ConstructionApp && window.ConstructionApp.ModuleUtils) {
+                            moduleCost = window.ConstructionApp.ModuleUtils.calculateModuleTotal(clientModuleData.items);
+                        }
+                    } else if (moduleId === 'notes') {
+                        moduleCost = 0; // Notes module has no cost
+                    }
+                }
+
+                // Format cost using utility function
+                const formattedCost = window.ConstructionApp?.ModuleUtils?.formatCurrency(moduleCost) ?? `R${moduleCost.toFixed(2)}`;
+
+                // Add clear button only if there's data and it's not the notes module
+                const clearButtonHtml = (hasData && moduleId !== 'notes') ? `<button class="clear-module-btn" title="Clear module data for this client">×</button>` : '';
+
+                // Disable open button if the module requires a client but none is selected
+                const openButtonDisabled = (!hasClient && module.requiresClient) ? 'disabled title="Select a client first"' : '';
+                const openButtonHtml = `<button class="btn module-open-btn" style="margin-top: 10px;" ${openButtonDisabled}>Open Module</button>`;
+
+                // Display cost or "No cost" for Notes
+                let costHtml = '';
+                if (moduleId === 'notes') {
+                    costHtml = '<p style="font-size: 0.9em; color: #666; margin-top: 10px;">(No cost associated)</p>';
+                } else {
+                    const noDataAnnotation = !hasData ? ' <small style="opacity: 0.7;"> (No data)</small>' : '';
+                    costHtml = `<p class="module-tile-cost">${formattedCost}${noDataAnnotation}</p>`;
+                }
+
+                // Add the 'no-client-data' class if the client doesn't have data for this module
+                tilesHTML += `
+                    <div class="module-tile ${!hasData ? 'no-client-data' : ''}" data-module-id="${moduleId}">
+                        ${clearButtonHtml}
+                        <h5>${moduleName}</h5>
+                        ${costHtml}
+                        ${openButtonHtml}
+                    </div>`;
+            });
+        }
+
+        // --- Create or find the #module-tiles container ---
         let tilesContainer = dashboardContentElement.querySelector('#module-tiles');
-        if (!tilesContainer) {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 10px;"><h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles"></div></div>`;
-            tilesContainer = wrapper.querySelector('#module-tiles');
-            // Append wrapper only if it was created
-             if (dashboardContentElement.firstChild && dashboardContentElement.firstChild.classList?.contains('no-client-notification')) {
-                 // Insert after notification if it exists
-                 dashboardContentElement.insertBefore(wrapper.firstChild, dashboardContentElement.firstChild.nextSibling);
-             } else {
-                 dashboardContentElement.appendChild(wrapper.firstChild);
+        let tilesWrapper = dashboardContentElement.querySelector('#module-tiles-wrapper'); // Use a wrapper ID
+
+        if (!tilesWrapper) {
+            // If wrapper doesn't exist, create it and the container inside
+            tilesWrapper = document.createElement('div');
+            tilesWrapper.id = 'module-tiles-wrapper'; // Give wrapper an ID
+            tilesWrapper.style.backgroundColor = '#f8f9fa'; // Styles from original dashboard.js
+            tilesWrapper.style.padding = '15px';
+            tilesWrapper.style.borderRadius = '5px';
+            tilesWrapper.style.marginBottom = '10px';
+            tilesWrapper.innerHTML = `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles"></div>`;
+            tilesContainer = tilesWrapper.querySelector('#module-tiles');
+
+            // Append wrapper to the main content area (respecting potential notification)
+            if (dashboardContentElement.firstChild && dashboardContentElement.firstChild.classList?.contains('no-client-notification')) {
+                dashboardContentElement.insertBefore(tilesWrapper, dashboardContentElement.firstChild.nextSibling);
+            } else {
+                dashboardContentElement.appendChild(tilesWrapper);
+            }
+        } else {
+             // Wrapper exists, just get the container inside it
+             tilesContainer = tilesWrapper.querySelector('#module-tiles');
+             if (!tilesContainer) {
+                  console.error("[DashboardRenderer] Tiles wrapper exists, but inner #module-tiles container not found!");
+                  // Attempt to recreate container inside wrapper
+                  tilesWrapper.innerHTML = `<h4 style="margin-bottom: 15px;">Module Summaries</h4><div id="module-tiles"></div>`;
+                  tilesContainer = tilesWrapper.querySelector('#module-tiles');
              }
         }
-        tilesContainer.innerHTML = tilesHTML || '<p>No modules defined.</p>'; // Add tiles or message
+        // --- End container handling ---
+
+
+        // Populate the tiles container
+        if (tilesContainer) {
+            if (hasAnyRenderableModules) {
+                tilesContainer.innerHTML = tilesHTML; // Add the generated tiles
+            } else {
+                // Show message if no modules are defined (other than potential headers)
+                tilesContainer.innerHTML = `<div style="background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); grid-column: 1 / -1; text-align: center; color: #666;"><p>No modules defined in the system.</p><p style="margin-top: 5px;"><small>Add modules using the sidebar.</small></p></div>`;
+            }
+        }
     }
 
     /**
@@ -59,33 +147,80 @@
      * @param {object|null} client - The current client object or null.
      */
     function updateTotalProjectCost(client) {
-        console.warn("[DashboardRenderer] updateTotalProjectCost needs to be moved/implemented here.");
-        // --- Placeholder ---
-        if (!totalCostElement) return;
+        if (!totalCostElement) {
+            console.warn("[DashboardRenderer] Total project cost display element not found.");
+            return;
+        }
+
         let totalCost = 0;
         if (client && client.moduleData) {
-            // Simplified calculation - real logic will be moved
-            totalCost = Object.values(client.moduleData)
-                              .reduce((sum, modData) => sum + (parseFloat(modData?.totalCost) || 0), 0);
+            Object.entries(client.moduleData).forEach(([moduleId, moduleVersionedData]) => {
+                 const moduleData = moduleVersionedData?.data ?? moduleVersionedData ?? null;
+                if (!moduleData) return; // Skip if no data
+
+                let costForThisModule = 0;
+                if (moduleData.totalCost !== undefined) {
+                    costForThisModule = parseFloat(moduleData.totalCost) || 0;
+                } else if (moduleData.items && Array.isArray(moduleData.items)) {
+                    // Use ModuleUtils if available
+                    costForThisModule = window.ConstructionApp?.ModuleUtils?.calculateModuleTotal(moduleData.items) ?? 0;
+                }
+                // Add to total, excluding specific modules like 'notes' if needed
+                if (moduleId !== 'notes') {
+                     totalCost += costForThisModule;
+                }
+            });
         }
-        const formattedTotal = `R${totalCost.toFixed(2)}`; // Use formatCurrency util later
+
+        // Format and display the total cost
+        const formattedTotal = window.ConstructionApp?.ModuleUtils?.formatCurrency(totalCost) ?? `R${totalCost.toFixed(2)}`;
         totalCostElement.textContent = `Total Project Cost: ${formattedTotal}`;
+        // console.log("[DashboardRenderer] Total project cost updated:", formattedTotal); // Can be noisy
     }
 
     /**
-     * Clears data for a specific module for the current client.
-     * @param {string} moduleId - The ID of the module to clear.
+     * Clears data for a specific module for the current client using ClientManager.
+     * @param {string} moduleId - The ID of the module to clear data for.
      */
     function clearModuleData(moduleId) {
-        console.warn("[DashboardRenderer] clearModuleData needs to be moved/implemented here.");
-        // --- Placeholder ---
-        // Actual logic will:
-        // 1. Get current client from ClientManager.
-        // 2. Check if data exists.
-        // 3. Call ClientManager.saveModuleData(moduleId, null, callback).
-        // 4. Handle success/error (ClientManager.setCurrentClient triggers update).
-        // 5. Show messages via ModuleUtils.
-        alert(`Placeholder: Clear data action for module ${moduleId}`);
+        const client = window.ConstructionApp?.ClientManager?.getCurrentClient();
+        if (!client) {
+            window.ConstructionApp?.ModuleUtils?.showErrorMessage("No client selected.");
+            return;
+        }
+
+        // Check if data actually exists before attempting to clear
+        if (client.moduleData && client.moduleData.hasOwnProperty(moduleId)) {
+            console.log(`[DashboardRenderer] Clearing module data for: ${moduleId} for client ${client.name}`);
+
+            // Use ClientManager to save null data for this module
+            window.ConstructionApp.ClientManager.saveModuleData(moduleId, null, (success, error) => {
+                if (success) {
+                    console.log("[DashboardRenderer] Module data clear request sent successfully via ClientManager.");
+
+                    // IMPORTANT: Update the local client state in ClientManager as well
+                    // This ensures the UI reflects the change immediately without needing a full reload
+                    if (client.moduleData) {
+                         delete client.moduleData[moduleId]; // Remove from local object
+                         const updatedClient = { ...client }; // Create a *new* object reference
+                         // Update the client in ClientManager (this will trigger updateDashboard -> render again)
+                         window.ConstructionApp.ClientManager.setCurrentClient(updatedClient);
+                         console.log("[DashboardRenderer] Updated client session after clearing module.");
+                    }
+
+                    window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`Data for "${moduleId}" cleared.`);
+                    // The re-render will happen automatically because setCurrentClient was called
+
+                } else {
+                    console.error(`[DashboardRenderer] Error clearing module data via ClientManager: ${error || 'Unknown'}`);
+                    window.ConstructionApp?.ModuleUtils?.showErrorMessage(`Error clearing data: ${error || 'Unknown'}`);
+                }
+            });
+        } else {
+            // No data existed, just inform the user
+            window.ConstructionApp?.ModuleUtils?.showSuccessMessage(`No data to clear for "${moduleId}".`);
+             console.log(`[DashboardRenderer] No data found to clear for module ${moduleId}`);
+        }
     }
 
     /**
@@ -93,34 +228,47 @@
      * @param {Event} event - The click event.
      */
     function handleTileClick(event) {
-        console.warn("[DashboardRenderer] handleTileClick needs to be moved/implemented here.");
-        // --- Placeholder ---
-        // Actual logic will:
-        // 1. Check closest '.module-open-btn' or '.clear-module-btn'.
-        // 2. Get moduleId from parent '.module-tile'.
-        // 3. Call ModuleUtils.navigateToModule or local clearModuleData.
         const openBtn = event.target.closest('.module-open-btn');
         const clearBtn = event.target.closest('.clear-module-btn');
         const tile = event.target.closest('.module-tile');
-        if (tile) {
-            const moduleId = tile.dataset.moduleId;
-            if (openBtn && !openBtn.disabled) alert(`Placeholder: Navigate to ${moduleId}`);
-            else if (clearBtn) alert(`Placeholder: Confirm clear for ${moduleId}`);
+
+        if (!tile) return; // Click wasn't inside a tile
+
+        const moduleId = tile.dataset.moduleId;
+        if (!moduleId) return; // Tile doesn't have a module ID
+
+        // Handle Open Button Click
+        if (openBtn && !openBtn.disabled) {
+            console.log("[DashboardRenderer] Open button clicked for module:", moduleId);
+            // Use ModuleUtils for navigation
+            if (window.ConstructionApp && window.ConstructionApp.ModuleUtils) {
+                window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+            } else { console.error("[DashboardRenderer] ModuleUtils not available for navigation!"); }
+        }
+        // Handle Clear Button Click
+        else if (clearBtn) {
+            console.log("[DashboardRenderer] Clear button clicked for module:", moduleId);
+            const moduleInfo = modulesData.find(m => m.id === moduleId);
+            const moduleName = moduleInfo ? moduleInfo.name : moduleId; // Get name for confirmation
+
+            if (confirm(`Are you sure you want to clear all data entered for "${moduleName}" for the current client? This cannot be undone.`)) {
+                clearModuleData(moduleId); // Call the local function to handle clearing
+            }
         }
     }
 
     /**
      * Sets up the delegated event listener for the tiles container.
+     * Attaches listener to the main content element for robustness.
      */
     function setupDashboardTileListeners() {
-        console.warn("[DashboardRenderer] setupDashboardTileListeners needs to be moved/implemented here.");
-         // --- Placeholder ---
          if (!dashboardContentElement) {
              console.error("[DashboardRenderer] Cannot setup listeners, content element not found.");
              return;
          }
-         // Use event delegation on the main content element
-         dashboardContentElement.removeEventListener('click', handleTileClick); // Prevent duplicates
+         // Use event delegation on the main content element (#module-content)
+         // Remove first to prevent duplicates if render is called multiple times without page reload
+         dashboardContentElement.removeEventListener('click', handleTileClick);
          dashboardContentElement.addEventListener('click', handleTileClick);
          console.log("[DashboardRenderer] Tile listeners setup on #module-content.");
     }
