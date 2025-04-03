@@ -12,6 +12,7 @@
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
+
     <style>
         /* General Styles */
         * {
@@ -157,10 +158,17 @@
         }
 
         /* Indentation based on data-level attribute (set by JS) */
-        .module-item[data-level="1"] { padding-left: 35px; }
-        .module-item[data-level="2"] { padding-left: 50px; }
-        .module-item[data-level="3"] { padding-left: 65px; }
+        /* Using CSS Custom Properties for easier management */
+        :root {
+            --indent-base: 20px;
+            --indent-step: 15px;
+        }
+        .module-item[data-level="0"] { padding-left: var(--indent-base); }
+        .module-item[data-level="1"] { padding-left: calc(var(--indent-base) + var(--indent-step)); }
+        .module-item[data-level="2"] { padding-left: calc(var(--indent-base) + 2 * var(--indent-step)); }
+        .module-item[data-level="3"] { padding-left: calc(var(--indent-base) + 3 * var(--indent-step)); }
         /* Add more levels if needed */
+
 
         /* Styles for Collapse/Expand Icon */
         .collapse-icon {
@@ -171,6 +179,7 @@
             transition: transform 0.2s ease-in-out;
             color: #aaa; /* Subtler color for icon */
             flex-shrink: 0; /* Prevent icon shrinking */
+            cursor: pointer; /* Make icon clickable */
         }
         /* Rotate icon when header is collapsed */
         .module-item.collapsed .collapse-icon {
@@ -182,6 +191,15 @@
             font-weight: bold;
             color: #4eca8b; /* Green color for headers */
         }
+         /* Make header items clickable for collapse/expand */
+         .module-item[data-module-type="header"] {
+             cursor: pointer;
+         }
+         /* Regular items should navigate */
+         .module-item[data-module-type="regular"] .module-name {
+             cursor: pointer;
+         }
+
 
         /* Drag and Drop Visual Feedback */
         .module-item.dragging {
@@ -208,6 +226,8 @@
             display: inline-block;
             flex-shrink: 0;
             color: #aaa; /* Icon color */
+            font-family: monospace; /* Use monospace for '...' */
+            line-height: 1;
         }
          .module-icon:hover {
              color: #fff;
@@ -224,6 +244,7 @@
             padding: 0 5px;
             flex-shrink: 0;
             color: #aaa; /* Handle color */
+            font-size: 1.2em; /* Make handle slightly larger */
         }
         .module-item:hover .module-drag-handle {
             opacity: 0.7; /* Show handle on hover */
@@ -253,6 +274,7 @@
             left: 0; /* Align with icon */
             top: 100%; /* Position below icon */
             color: #333; /* Text color for dropdown items */
+            margin-top: 2px; /* Small gap */
         }
         .dropdown-item {
             padding: 10px 12px;
@@ -268,13 +290,7 @@
         }
 
         /* Indicator for non-client-required modules */
-        .module-item[data-requires-client="false"] .module-name::after {
-            content: " ⚙️"; /* Gear emoji */
-            font-size: 14px;
-            opacity: 0.7;
-            display: inline-block; /* Keep it inline */
-            margin-left: 5px;
-        }
+        /* Moved icon to be generated in JS for better control */
 
 
         /* Main Content Area Styles */
@@ -336,7 +352,7 @@
         }
         .dashboard-content { /* Main scrolling area */
             padding: 20px;
-            background-color: #f8f9fa; /* --- CHANGED: Light gray background for content area --- */
+            background-color: #f8f9fa; /* Light gray background for content area */
             margin: 0;
             color: #333;
             flex: 1; /* Take remaining vertical space */
@@ -371,9 +387,9 @@
             border: 1px solid #e5e7eb; /* Default border */
         }
          .module-tile:hover {
-              transform: translateY(-3px);
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06); /* Enhanced shadow on hover */
-         }
+             transform: translateY(-3px);
+             box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06); /* Enhanced shadow on hover */
+        }
 
         .module-tile h5 {
             margin-bottom: 10px;
@@ -389,11 +405,11 @@
             font-weight: bold;
         }
          .module-tile-cost small {
-              font-size: 0.6em;
-              font-weight: normal;
-              opacity: 0.8; /* Slightly more opaque */
-              color: #6b7280; /* Tailwind gray-500 */
-         }
+             font-size: 0.6em;
+             font-weight: normal;
+             opacity: 0.8; /* Slightly more opaque */
+             color: #6b7280; /* Tailwind gray-500 */
+        }
 
         .clear-module-btn {
             position: absolute;
@@ -445,12 +461,12 @@
         .btn:hover:not(:disabled) {
             background-color: #059669; /* Tailwind emerald-600 */
         }
-         .btn:disabled { /* --- UPDATED: Style for disabled buttons --- */
-              background-color: #e5e7eb; /* Light Gray (Tailwind gray-200) */
-              color: #9ca3af; /* Medium Gray text (Tailwind gray-400) */
-              cursor: not-allowed;
-              opacity: 0.8; /* Slightly less opaque */
-         }
+         .btn:disabled { /* Style for disabled buttons */
+             background-color: #e5e7eb; /* Light Gray (Tailwind gray-200) */
+             color: #9ca3af; /* Medium Gray text (Tailwind gray-400) */
+             cursor: not-allowed;
+             opacity: 0.8; /* Slightly less opaque */
+        }
 
         .btn-cancel {
             background-color: #9ca3af; /* Tailwind gray-400 */
@@ -528,26 +544,24 @@
             position: fixed; bottom: 10px; right: 10px; z-index: 10000;
             padding: 5px 10px; background: #333; color: white; border: none;
             border-radius: 3px; cursor: pointer; opacity: 0.8; font-size: 12px;
-            display: none;
+            display: none; /* Initially hidden, shown by JS */
         }
         #debug-toggle-btn:hover { opacity: 1; }
 
-        /* --- ADDED/UPDATED CSS RULES for Dashboard Tiles --- */
-
-        /* Style for the container holding the module tiles on the dashboard */
-        .dashboard-content #module-tiles {
+        /* Dashboard Tiles Container */
+        #module-tiles { /* Target the ID specifically */
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 15px;
-            padding-top: 10px;
+            padding-top: 10px; /* Add some space above tiles */
         }
 
         /* Style for tiles representing modules with no data for the current client */
         .module-tile.no-client-data {
-            opacity: 0.85; /* --- ADJUSTED: Slightly less faded --- */
-            background-color: #f8f9fa; /* --- ADJUSTED: Match content background --- */
+            opacity: 0.85;
+            background-color: #f8f9fa; /* Match content background */
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            border-color: #d1d5db; /* --- ADDED: Slightly darker border for definition --- */
+            border-color: #d1d5db; /* Slightly darker border for definition */
         }
 
         /* Adjust cost text style within empty tiles */
@@ -555,16 +569,15 @@
             color: #6b7280; /* Tailwind gray-500 */
         }
          .module-tile.no-client-data .module-tile-cost small {
-              color: #6b7280;
-         }
-
+             color: #6b7280;
+        }
 
         /* Style for the notification when no client is selected */
         .no-client-notification {
             padding: 30px;
             background-color: #e9ecef;
             border-radius: 8px;
-            margin-bottom: 20px;
+            /* margin-bottom: 20px; */ /* Removed margin-bottom here */
             text-align: center;
             border: 1px solid #ced4da;
         }
@@ -578,8 +591,6 @@
             margin-bottom: 0;
             color: #6c757d;
         }
-
-        /* --- END ADDED/UPDATED CSS RULES --- */
 
     </style>
 </head>
@@ -606,30 +617,23 @@
     <div class="main-content">
         <div class="dashboard-header">
             <div class="dashboard-title"><i>D</i> Dashboard</div>
-            <div id="client-name-display" style="margin-left: 20px; font-weight: bold;"></div>
-            <div class="header-actions">
+            <div id="client-name-display" style="margin-left: 20px; font-weight: bold;"></div> <div class="header-actions">
                  <button id="logout-btn" class="btn btn-small" style="display: none;" title="Close the current client project">Logout Client</button>
-                 <div class="total-cost" id="total-project-cost">Total Project Cost: R0.00</div>
-            </div>
+                 <div class="total-cost" id="total-project-cost">Total Project Cost: R0.00</div> </div>
         </div>
 
-        <div class="dashboard-description" id="dashboard-description">Overview of project data.</div>
-
-        <div class="dashboard-content">
+        <div class="dashboard-description" id="dashboard-description">Overview of project data.</div> <div class="dashboard-content">
             <div id="module-content">
                 <div style="padding: 20px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
                     <h3>Loading Dashboard...</h3>
                     <p>Please wait while the application initializes.</p>
                 </div>
-            </div>
+                </div>
         </div>
     </div>
 
     <div class="debug-panel" id="debug-panel"></div>
-    <button id="debug-toggle-btn" style="display: none;">Debug</button>
-
-
-    <div class="modal-overlay" id="client-modal-overlay"></div>
+    <button id="debug-toggle-btn" style="display: none;">Debug</button> <div class="modal-overlay" id="client-modal-overlay"></div>
 
     <div class="modal-overlay" id="add-module-modal-overlay">
         <div class="modal" id="add-module-modal">
@@ -669,7 +673,12 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js" defer></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+
+    <script src="js/sidebar-manager.js" defer></script> <script src="js/dashboard.js" defer></script>
 
 </body>
 </html>
