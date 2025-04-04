@@ -433,6 +433,9 @@
     <!-- Debug panel for troubleshooting -->
     <div class="debug-panel" id="debug-panel"></div>
 
+    <!-- Debug panel script -->
+    <script src="js/debug-panel.js" defer></script>
+
     <script>
         // Module settings - CUSTOMIZED FOR P&G'S MODULE
         const MODULE = {
@@ -813,4 +816,346 @@
             document.getElementById('table-total').textContent = 
                 window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
             
-            document.getElementById('total
+            document.getElementById('total-module-cost').textContent = 
+                `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
+                
+            // Update debug panel if enabled
+            if (DEBUG) {
+                updateDebugPanel();
+            }
+        }
+        
+        // Add a new custom item
+        function addCustomItem() {
+            // Generate unique ID
+            const newId = 'custom-' + Date.now();
+            
+            // Create new item
+            const newItem = {
+                id: newId,
+                description: 'New P&G Item',
+                rate: 0,
+                unit: 'Weeks',
+                checked: false,
+                qty: 0,
+                isDefault: false,
+                custom: true
+            };
+            
+            // Add to module data
+            moduleData.items.push(newItem);
+            
+            // Add to UI
+            addTableRow(newItem);
+            
+            // Mark as unsaved
+            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+            
+            // Update totals
+            calculateTotals();
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Save buttons
+            document.getElementById('save-btn').addEventListener('click', function() {
+                saveModuleData();
+            });
+            
+            document.getElementById('save-module-data').addEventListener('click', function(e) {
+                e.preventDefault();
+                saveModuleData();
+            });
+            
+            // Return to dashboard
+            document.getElementById('return-btn').addEventListener('click', returnToDashboard);
+            document.getElementById('return-to-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToDashboard();
+            });
+            
+            // Add custom item buttons
+            document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
+            document.getElementById('add-custom-item').addEventListener('click', function(e) {
+                e.preventDefault();
+                addCustomItem();
+            });
+        }
+        
+        // Setup table sorting
+        function setupTableSorting() {
+            const sortHeaders = document.querySelectorAll('.sort-header');
+            sortHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const sortBy = this.getAttribute('data-sort');
+                    sortTable(sortBy, this);
+                });
+            });
+        }
+        
+        // Sort the table by column
+        function sortTable(sortBy, header) {
+            // Determine sort direction
+            let sortAsc = true;
+            if (header.classList.contains('sorted-asc')) {
+                sortAsc = false;
+                header.classList.remove('sorted-asc');
+                header.classList.add('sorted-desc');
+            } else {
+                // Remove sorted class from all headers
+                document.querySelectorAll('.sort-header').forEach(h => {
+                    h.classList.remove('sorted-asc');
+                    h.classList.remove('sorted-desc');
+                });
+                header.classList.add('sorted-asc');
+            }
+            
+            // Sort items
+            moduleData.items.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch (sortBy) {
+                    case 'description':
+                        aValue = a.description.toLowerCase();
+                        bValue = b.description.toLowerCase();
+                        break;
+                    case 'qty':
+                        aValue = a.qty;
+                        bValue = b.qty;
+                        break;
+                    case 'rate':
+                        aValue = a.rate;
+                        bValue = b.rate;
+                        break;
+                    case 'total':
+                        aValue = a.qty > 0 ? (a.qty * a.rate) : 0;
+                        bValue = b.qty > 0 ? (b.qty * b.rate) : 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (aValue < bValue) return sortAsc ? -1 : 1;
+                if (aValue > bValue) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            
+            // Update UI
+            updateUI();
+        }
+        
+        // Get numeric value from formatted currency string
+        function getNumericValue(value) {
+            if (typeof value === 'number') return value;
+            
+            // Remove currency symbol and spaces
+            let numericString = value.toString().replace(/[R\s]/g, '');
+            
+            // Replace comma with period for decimal
+            numericString = numericString.replace(/,/g, '.');
+            
+            return parseFloat(numericString) || 0;
+        }
+        
+        // Save module data with enhanced error handling
+        function saveModuleData(isAutoSave = false) {
+            // Update module data timestamps
+            moduleData.lastModified = new Date().toISOString();
+            
+            // Show saving indicator
+            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
+            
+            // IMPORTANT: Get current client and directly update its moduleData
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (client) {
+                // Ensure moduleData exists
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Store updated module data directly in the client object
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update client's lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // CRITICAL: Update client in both the ClientManager and sessionStorage
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+                
+                console.log(`[${MODULE.id}] Directly updated client object with module data, total cost: ${moduleData.totalCost}`);
+            }
+            
+            // Also save using the ClientManager's API for Firebase persistence
+            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
+                if (success) {
+                    const message = isAutoSave ? 'Auto-saved' : 'Saved';
+                    window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
+                    
+                    // Show success message (only for manual saves)
+                    if (!isAutoSave) {
+                        window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
+                    }
+                } else {
+                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
+                    
+                    // Show error message
+                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving data: ${error || 'Unknown error'}`);
+                }
+            });
+        }
+        
+        // Return to dashboard with improved client preservation
+        function returnToDashboard() {
+            // Check if there are unsaved changes
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Ask user if they want to save before returning
+                const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
+                if (shouldSave) {
+                    // Save first - but don't navigate in the callback to avoid timing issues
+                    saveModuleData();
+                    
+                    // We'll use a short delay to make sure saving completes
+                    setTimeout(() => navigateToDashboard(), 300);
+                    return;
+                }
+            }
+            
+            // If no changes or user doesn't want to save, navigate immediately
+            navigateToDashboard();
+        }
+        
+        // Navigate to dashboard with proper state preservation
+        function navigateToDashboard() {
+            console.log(`[${MODULE.id}] Navigating to dashboard`);
+            
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // Get the current client
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            
+            if (client) {
+                // CRITICAL: Update client's module data even if we didn't save
+                // This ensures the data is available when returning to the dashboard
+                if (!client.moduleData) {
+                    client.moduleData = {};
+                }
+                
+                // Always update the moduleData with the latest values
+                client.moduleData[MODULE.id] = {...moduleData};
+                
+                // Update lastModified timestamp
+                client.lastModified = new Date().toISOString();
+                
+                // Store client directly in sessionStorage (reliable backup approach)
+                sessionStorage.setItem('currentClient', JSON.stringify(client));
+                console.log(`[${MODULE.id}] Client data saved to sessionStorage before navigation`);
+                
+                // IMPORTANT: Force a client update through the client manager
+                // This ensures any listeners (like the dashboard) are notified
+                window.ConstructionApp.ClientManager.setCurrentClient(client);
+            }
+            
+            // IMPORTANT: Set navigation state to explicitly indicate returning from a module
+            // This tells the dashboard that it should restore the client
+            sessionStorage.setItem('navigationState', 'returningToDashboard');
+            console.log(`[${MODULE.id}] Navigation state set to: returningToDashboard`);
+            
+            // Navigate back to the dashboard
+            window.location.href = 'index.html';
+        }
+        
+        // Setup debug panel
+        function setupDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = 'Debug';
+            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
+            document.body.appendChild(toggleBtn);
+            
+            // Toggle debug panel on click
+            toggleBtn.addEventListener('click', function() {
+                const isVisible = debugPanel.style.display === 'block';
+                debugPanel.style.display = isVisible ? 'none' : 'block';
+                
+                if (!isVisible) {
+                    updateDebugPanel();
+                }
+            });
+        }
+        
+        // Update debug panel
+        function updateDebugPanel() {
+            const debugPanel = document.getElementById('debug-panel');
+            
+            // Get client data
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            const sessionClient = sessionStorage.getItem('currentClient');
+            let sessionClientData = null;
+            try {
+                if (sessionClient) {
+                    sessionClientData = JSON.parse(sessionClient);
+                }
+            } catch (e) {
+                console.error("Error parsing session client:", e);
+            }
+            
+            // Get navigation state
+            const navigationState = sessionStorage.getItem('navigationState');
+            
+            // Create debug info
+            let debugInfo = `
+                <strong>Module ID:</strong> ${MODULE.id}<br>
+                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
+                <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
+                <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
+                <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
+                <strong>Module Items:</strong> ${moduleData.items.length}<br>
+                <strong>Items with Qty > 0:</strong> ${moduleData.items.filter(item => item.qty > 0).length}<br>
+                <strong>Marked Items (Pc):</strong> ${moduleData.items.filter(item => item.checked).length}<br>
+                <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
+                <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
+                <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
+            `;
+            
+            // Add sample of module data
+            debugInfo += '<strong>Module Data Sample:</strong><br>';
+            const activeItems = moduleData.items.filter(item => item.qty > 0);
+            if (activeItems.length > 0) {
+                const sampleItem = activeItems[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}, Total: ${sampleItem.qty * sampleItem.rate}<br>`;
+            } else if (moduleData.items.length > 0) {
+                const sampleItem = moduleData.items[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
+            } else {
+                debugInfo += '- No items<br>';
+            }
+            
+            // Update panel
+            debugPanel.innerHTML = debugInfo;
+        }
+        
+        // Clean up when leaving page
+        window.addEventListener('beforeunload', function(e) {
+            // Cancel auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
+            
+            // If we have unsaved changes, warn user
+            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
+                // Store client data in sessionStorage to prevent loss
+                const client = window.ConstructionApp.ClientManager.getCurrentClient();
+                if (client) {
+                    sessionStorage.setItem('currentClient', JSON.stringify(client));
+                }
+                
+                // This will trigger the browser's "unsaved changes" warning
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = message;
+                return message;
+            }
+        });
+    </script>
+</body>
+</html>
