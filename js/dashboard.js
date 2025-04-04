@@ -1,6 +1,8 @@
-// js/dashboard.js - Final Refactored Version: Initializes managers and handles core callback.
+// js/dashboard.js - Updated Version with Add Module Button Diagnostics
 
 // --- Global Variables ---
+// Keep appData here temporarily to hold the loaded modules from the definition manager
+// and pass them to other managers during initialization.
 let appData = {
     modules: []
 };
@@ -17,25 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Ensure ALL required managers are available before proceeding
     const requiredManagers = [
-        'Firebase',
-        'ModuleUtils',
-        'ClientManager',
-        'ModuleDefinitionManager', // Exists but doesn't need init
-        'SidebarManager',
-        'ClientUI',
-        'DashboardRenderer',
-        'DebugPanel'
-        // 'DataModels' is used by modules, not directly by dashboard init
+        'Firebase', 'ModuleUtils', 'ClientManager', 'ModuleDefinitionManager',
+        'SidebarManager', 'ClientUI', 'DashboardRenderer', 'DebugPanel'
     ];
-    // List of managers that DON'T need an external .init() function called
     const noInitNeeded = [
-        'Firebase',
-        'DataModels',
-        'ModuleUtils',
-        'ClientManager',
-        'ModuleDefinitionManager' // <-- ADDED ModuleDefinitionManager HERE
+        'Firebase', 'DataModels', 'ModuleUtils', 'ClientManager', 'ModuleDefinitionManager'
     ];
-
     let missingManager = null;
     for (const managerName of requiredManagers) {
         const manager = window.ConstructionApp[managerName];
@@ -82,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.ConstructionApp.ClientUI.init();
 
         // Setup Add Module Button
-        setupAddModuleButton();
+        setupAddModuleButton(); // Call the updated setup function
 
         // Determine initial client state AFTER all managers are initialized
         console.log("DEBUG: Calling initApp...");
@@ -102,7 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("DEBUG: ModuleDefinitionManager.loadModuleDefinitions FAILED.", error);
         console.error("[Dashboard] Critical error during module definition loading:", error);
         const contentElement = document.getElementById('module-content');
-        if (contentElement) { /* ... Display error message ... */ }
+        if (contentElement) {
+             contentElement.innerHTML = `<div class="no-client-notification" style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;"><h2>Initialization Error</h2><p>A critical error occurred loading module definitions. Please check the console (F12) or contact support.</p></div>`;
+        }
         window.ConstructionApp.DebugPanel?.update();
     });
 });
@@ -126,28 +117,153 @@ function initApp() {
 }
 
 /**
- * Sets up the listener for the 'Add New Module' button.
+ * Sets up the listener for the 'Add New Module' button - UPDATED WITH DIAGNOSTICS.
  */
 function setupAddModuleButton() {
+    console.log("DEBUG AddModule: setupAddModuleButton START"); // DIAGNOSTIC LOG
+
+    // --- Get references to ALL required elements ---
     const addModuleBtn = document.getElementById('add-module-btn');
     const modalOverlay = document.getElementById('add-module-modal-overlay');
-    if (!addModuleBtn || !modalOverlay) { /* ... warning ... */ return; }
-
-    addModuleBtn.addEventListener('click', () => { /* ... show modal, populate parents ... */ });
+    const parentHeaderSelect = document.getElementById('parent-header-select');
+    const moduleNameInput = document.getElementById('new-module-name');
     const moduleTypeSelect = document.getElementById('new-module-type');
-    moduleTypeSelect?.addEventListener('change', function() { /* ... toggle parent select ... */ });
-    const closeBtns = modalOverlay.querySelectorAll('.modal-close, .btn-cancel');
-     closeBtns.forEach(btn => { /* ... setup close ... */ });
+    const parentHeaderGroup = document.getElementById('parent-header-group');
+    const requiresClientCheckbox = document.getElementById('new-module-requires-client');
     const saveNewModuleBtn = document.getElementById('save-new-module-btn');
-     if (saveNewModuleBtn) {
-        const newSaveBtn = saveNewModuleBtn.cloneNode(true); saveNewModuleBtn.parentNode.replaceChild(newSaveBtn, saveNewModuleBtn);
-        newSaveBtn.addEventListener('click', () => {
-            const moduleInfo = { /* ... gather info ... */ };
-            const newModule = window.ConstructionApp.ModuleDefinitionManager?.addNewModuleDefinition(moduleInfo);
-            if (newModule) { /* ... close modal, alert success ... */ }
-        });
-     }
-     console.log("[Dashboard] Add Module button setup.");
+    const closeBtns = modalOverlay ? modalOverlay.querySelectorAll('.modal-close, .btn-cancel') : null; // Get close buttons only if overlay exists
+
+    // --- Log found elements for debugging ---
+    console.log("DEBUG AddModule: addModuleBtn found:", addModuleBtn);
+    console.log("DEBUG AddModule: modalOverlay found:", modalOverlay);
+    console.log("DEBUG AddModule: parentHeaderSelect found:", parentHeaderSelect);
+    console.log("DEBUG AddModule: moduleNameInput found:", moduleNameInput);
+    console.log("DEBUG AddModule: moduleTypeSelect found:", moduleTypeSelect);
+    console.log("DEBUG AddModule: parentHeaderGroup found:", parentHeaderGroup);
+    console.log("DEBUG AddModule: requiresClientCheckbox found:", requiresClientCheckbox);
+    console.log("DEBUG AddModule: saveNewModuleBtn found:", saveNewModuleBtn);
+    console.log("DEBUG AddModule: closeBtns found:", closeBtns ? closeBtns.length : 'null/0');
+
+
+    // --- Check if ALL essential elements exist before attaching listeners ---
+    const missingElements = [];
+    if (!addModuleBtn) missingElements.push('add-module-btn');
+    if (!modalOverlay) missingElements.push('add-module-modal-overlay');
+    if (!parentHeaderSelect) missingElements.push('parent-header-select');
+    if (!moduleNameInput) missingElements.push('new-module-name');
+    if (!moduleTypeSelect) missingElements.push('new-module-type');
+    if (!parentHeaderGroup) missingElements.push('parent-header-group');
+    if (!requiresClientCheckbox) missingElements.push('new-module-requires-client');
+    if (!saveNewModuleBtn) missingElements.push('save-new-module-btn');
+    if (!closeBtns || closeBtns.length === 0) missingElements.push('.modal-close or .btn-cancel'); // Check if close buttons were found
+
+    if (missingElements.length > 0) {
+        // Log a more specific error indicating which element(s) are missing
+        console.error(`[Dashboard] Add Module Setup Error: Cannot find required HTML element(s) with ID(s)/selector(s): ${missingElements.join(', ')}. Button listener will NOT be attached.`);
+        console.log("DEBUG AddModule: Exiting setup early - element(s) missing.");
+        // Display an error to the user?
+        // alert("Error setting up the 'Add New Module' feature. Required page elements are missing.");
+        return; // Stop setup
+    }
+    console.log("DEBUG AddModule: All required elements found.");
+
+    // Use clone/replace to prevent potential duplicate listeners on the main button
+    const newAddBtn = addModuleBtn.cloneNode(true);
+    addModuleBtn.parentNode.replaceChild(newAddBtn, addModuleBtn);
+
+    console.log("DEBUG AddModule: Attaching click listener to button..."); // DIAGNOSTIC LOG
+    // --- Attach the CLICK LISTENER to show modal ---
+    newAddBtn.addEventListener('click', () => {
+        console.log("DEBUG AddModule: Add New Module button CLICKED!"); // DIAGNOSTIC LOG
+        try {
+            // --- Populate parent select ---
+            console.log("DEBUG AddModule: Populating parent select..."); // DIAGNOSTIC LOG
+            parentHeaderSelect.innerHTML = '<option value="null">(Top Level / No Parent)</option>'; // Reset
+            const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
+            if (!ModuleDefManager || typeof ModuleDefManager.getModuleDefinitions !== 'function') {
+                console.error("Cannot populate parent headers: ModuleDefinitionManager not available.");
+                alert("Error preparing Add Module dialog.");
+                return;
+            }
+            const currentModules = ModuleDefManager.getModuleDefinitions() || [];
+            const headerModules = currentModules.filter(m => m.type === 'header');
+            headerModules.sort((a, b) => a.name.localeCompare(b.name)).forEach(header => {
+                const option = document.createElement('option');
+                option.value = header.id;
+                option.textContent = header.name;
+                parentHeaderSelect.appendChild(option);
+            });
+            console.log("DEBUG AddModule: Parent select populated."); // DIAGNOSTIC LOG
+
+            // --- Reset form fields ---
+            moduleNameInput.value = '';
+            moduleTypeSelect.value = 'regular';
+            parentHeaderGroup.style.display = 'block';
+            parentHeaderSelect.value = 'null';
+            requiresClientCheckbox.checked = true;
+            console.log("DEBUG AddModule: Form fields reset."); // DIAGNOSTIC LOG
+
+            // --- Show the modal ---
+            modalOverlay.style.display = 'flex';
+            console.log("DEBUG AddModule: Modal display set to 'flex'."); // DIAGNOSTIC LOG
+
+        } catch (error) {
+            console.error("Error inside Add Module button click listener:", error);
+            alert("An error occurred while trying to open the Add Module dialog. Please check the console.");
+        }
+    });
+    // --- End of CLICK LISTENER ---
+
+    // Type change listener
+    moduleTypeSelect.addEventListener('change', function() {
+        parentHeaderGroup.style.display = this.value === 'regular' ? 'block' : 'none';
+        if (this.value === 'header') {
+            parentHeaderSelect.value = 'null'; // Force top-level if type is header
+        }
+    });
+
+    // Generic close button setup (using the found closeBtns)
+    // Use clone/replace to avoid duplicate listeners if setup runs multiple times (though it shouldn't)
+     closeBtns.forEach(btn => {
+         const newBtn = btn.cloneNode(true);
+         btn.parentNode.replaceChild(newBtn, btn);
+         newBtn.addEventListener('click', () => {
+            console.log("DEBUG AddModule: Close/Cancel button clicked."); // DIAGNOSTIC LOG
+            modalOverlay.style.display = 'none';
+         });
+     });
+
+    // Save Button Listener calls ModuleDefinitionManager
+    // Use clone/replace to avoid duplicate listeners
+    const newSaveBtn = saveNewModuleBtn.cloneNode(true);
+    saveNewModuleBtn.parentNode.replaceChild(newSaveBtn, saveNewModuleBtn);
+    newSaveBtn.addEventListener('click', () => {
+         console.log("DEBUG AddModule: Save button clicked."); // DIAGNOSTIC LOG
+         const moduleInfo = {
+             name: moduleNameInput.value,
+             type: moduleTypeSelect.value,
+             parentId: parentHeaderSelect.value,
+             requiresClient: requiresClientCheckbox.checked
+         };
+         console.log("DEBUG AddModule: Gathered moduleInfo:", moduleInfo); // DIAGNOSTIC LOG
+
+         const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
+         if (!ModuleDefManager || typeof ModuleDefManager.addNewModuleDefinition !== 'function') {
+             console.error("Cannot save module: ModuleDefinitionManager or addNewModuleDefinition not available.");
+             alert("Error: Cannot save module definition.");
+             return;
+         }
+         console.log("DEBUG AddModule: Calling addNewModuleDefinition..."); // DIAGNOSTIC LOG
+         const newModule = ModuleDefManager.addNewModuleDefinition(moduleInfo);
+         console.log("DEBUG AddModule: addNewModuleDefinition returned:", newModule); // DIAGNOSTIC LOG
+
+         if (newModule) { // Manager returns null on validation failure now
+             modalOverlay.style.display = 'none';
+             alert(`Module "${newModule.name}" created successfully.`);
+         } // Else: Manager handles validation alerts/errors
+     });
+
+     console.log("[Dashboard] Add Module button setup complete."); // Final confirmation
 }
 
 
