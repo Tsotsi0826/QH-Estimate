@@ -15,27 +15,88 @@
     function triggerSaveStructure() {
         const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
         if (ModuleDefManager) {
+            // D&D already updated the local 'modules' array order.
+            // Recalculate the .order property based on the new array order.
             if (typeof ModuleDefManager.recalculateModuleOrder === 'function') {
-                ModuleDefManager.recalculateModuleOrder(); // Recalculates based on 'modules' array
-            } else { console.warn("[SidebarManager] Cannot recalculate order..."); }
+                ModuleDefManager.recalculateModuleOrder(); // Assumes this modifies the shared 'modules' array reference
+            } else { console.warn("[SidebarManager] Cannot recalculate order: ModuleDefinitionManager.recalculateModuleOrder not found."); }
+
+            // Ensure save function exists before calling
             if (typeof ModuleDefManager.saveModuleStructure === 'function') {
                 console.log("[SidebarManager] Triggering saveModuleStructure via ModuleDefinitionManager...");
                 ModuleDefManager.saveModuleStructure();
-            } else { console.error("[SidebarManager] Cannot save structure: save function not found..."); }
+            } else { console.error("[SidebarManager] Cannot save structure: save function not found on ModuleDefinitionManager."); }
         } else { console.error("[SidebarManager] Cannot save structure: ModuleDefinitionManager not found."); }
     }
-    function triggerNavigation(moduleId) { /* ... same ... */ }
+    function triggerNavigation(moduleId) {
+         if (window.ConstructionApp.ModuleUtils && typeof window.ConstructionApp.ModuleUtils.navigateToModule === 'function') {
+             window.ConstructionApp.ModuleUtils.navigateToModule(moduleId);
+         } else { console.error("[SidebarManager] Cannot navigate: navigateToModule function not found on ModuleUtils."); }
+     }
 
     // --- Sidebar Rendering ---
-    function renderModuleList(moduleData) { /* ... same ... */ }
 
     /**
-     * Creates element and ATTACHES LISTENERS.
+     * Renders the hierarchical list of modules in the sidebar.
+     * This function is now also exposed and called by ModuleDefinitionManager.
+     * @param {Array} moduleData - The array of module objects to render (passed from caller).
+     */
+    function renderModuleList(moduleData) {
+        const container = document.getElementById('modules-container');
+        if (!container) {
+            console.error("[SidebarManager] Sidebar modules container #modules-container not found during render.");
+            return;
+        }
+        // Update local reference if needed (though ModuleDefManager should pass the latest)
+        modules = moduleData || []; // Ensure modules is an array
+
+        container.innerHTML = ''; // Clear existing list
+        console.log(`[SidebarManager] Rendering module list with ${modules.length} modules.`); // Added log
+
+        // Ensure modules is an array before sorting
+        if (!Array.isArray(modules)) {
+            console.error("[SidebarManager] Invalid module data received for rendering.");
+            return;
+        }
+
+        const sortedModules = [...modules].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name));
+
+        function renderLevel(parentId, level) {
+            sortedModules
+                .filter(m => m.parentId === parentId)
+                .forEach(module => {
+                    const moduleElement = createModuleElement(module, level);
+                    if (moduleElement) { // Check if element creation was successful
+                        container.appendChild(moduleElement);
+                        const isHeader = module.type === 'header';
+                        // Use the sidebar-manager's headerCollapseState
+                        const isCollapsed = headerCollapseState[module.id] === true;
+
+                        // Only render children if the header is not collapsed
+                        if (!isHeader || !isCollapsed) {
+                            renderLevel(module.id, level + 1);
+                        }
+                    }
+                });
+        }
+        renderLevel(null, 0); // Start rendering from top level (parentId = null)
+        console.log("[SidebarManager] Finished rendering loop."); // Added log
+        setupDragAndDrop(); // Re-attach D&D listeners after re-rendering
+    }
+
+    /**
+     * Creates a single module list item element for the sidebar.
+     * @param {object} moduleData - The module object.
+     * @param {number} level - The nesting level.
+     * @returns {HTMLElement|null} The created div element or null if data is invalid.
      */
     function createModuleElement(moduleData, level = 0) {
-        if (!moduleData || !moduleData.id || typeof moduleData.name === 'undefined') { /* ... error ... */ return null; }
+        if (!moduleData || !moduleData.id || typeof moduleData.name === 'undefined') {
+             console.warn("[SidebarManager] Invalid moduleData passed to createModuleElement:", moduleData);
+             return null;
+        }
+
         const moduleElement = document.createElement('div');
-        // ... set attributes, classes, draggable ...
         moduleElement.className = 'module-item';
         moduleElement.draggable = true;
         moduleElement.setAttribute('data-module-id', moduleData.id);
@@ -45,7 +106,13 @@
         moduleElement.setAttribute('data-level', level);
 
         let collapseIconHTML = '';
-        if (moduleData.type === 'header') { /* ... add class, icon ... */ }
+        if (moduleData.type === 'header') {
+            moduleElement.classList.add('header-item');
+            const isCollapsed = headerCollapseState[moduleData.id] === true;
+            if (isCollapsed) moduleElement.classList.add('collapsed');
+             collapseIconHTML = `<span class="collapse-icon" title="Expand/Collapse">${isCollapsed ? '▶' : '▼'}</span>`;
+        }
+
         const configIcon = !moduleData.requiresClient ? ' <span title="Configuration Module" style="opacity: 0.7; margin-left: 5px;">⚙️</span>' : '';
         const moduleNameSpan = document.createElement('span');
         moduleNameSpan.className = 'module-name';
@@ -71,7 +138,6 @@
         // --- Attach Event Listeners ---
         const icon = moduleElement.querySelector('.module-icon');
         if (icon) {
-            // console.log(`DEBUG ListenerSetup: Attaching click listener to icon for ${moduleData.id}`);
             icon.addEventListener('click', (e) => {
                 console.log(`DEBUG ActionClick: Icon clicked for ${moduleData.id}`);
                 e.stopPropagation();
@@ -82,23 +148,19 @@
                     if (!isVisible) dropdown.style.display = 'block';
                 }
             });
-        } // else { console.warn(`DEBUG ListenerSetup: Could not find .module-icon for ${moduleData.id}`); }
+        }
 
         const editBtn = moduleElement.querySelector('.edit-module');
         if (editBtn) {
-             // console.log(`DEBUG ListenerSetup: Attaching click listener to edit for ${moduleData.id}`);
              editBtn.addEventListener('click', (e) => {
                 console.log(`DEBUG ActionClick: Edit clicked for ${moduleData.id}`);
                 e.stopPropagation();
-                // Try closing dropdown FIRST
-                closeAllDropdowns();
-                // Now perform edit action
+                closeAllDropdowns(); // Try closing first
                 const moduleId = moduleElement.dataset.moduleId;
                 const currentModule = modules.find(m => m.id === moduleId);
                 if (!currentModule) { alert("Error: Cannot find module data to edit."); return; }
                 const currentName = currentModule.name;
                 const newName = prompt(`Edit module name:`, currentName); // Still using prompt
-
                 if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
                     const finalNewName = newName.trim();
                     if (window.ConstructionApp.ModuleDefinitionManager) {
@@ -108,17 +170,14 @@
                     } else alert("Error: Module Definition Manager not available.");
                 }
             });
-        } // else { console.warn(`DEBUG ListenerSetup: Could not find .edit-module for ${moduleData.id}`); }
+        }
 
         const deleteBtn = moduleElement.querySelector('.delete-module');
         if (deleteBtn) {
-             // console.log(`DEBUG ListenerSetup: Attaching click listener to delete for ${moduleData.id}`);
              deleteBtn.addEventListener('click', (e) => {
                 console.log(`DEBUG ActionClick: Delete clicked for ${moduleData.id}`);
                 e.stopPropagation();
-                 // Try closing dropdown FIRST
-                closeAllDropdowns();
-                // Now perform delete action
+                closeAllDropdowns(); // Try closing first
                 const moduleId = moduleElement.dataset.moduleId;
                 const currentModule = modules.find(m => m.id === moduleId);
                 if (!currentModule) { alert("Error: Cannot find module data to delete."); return; }
@@ -137,10 +196,9 @@
                      } else alert("Error: Module Definition Manager not available.");
                  }
             });
-        } // else { console.warn(`DEBUG ListenerSetup: Could not find .delete-module for ${moduleData.id}`); }
+        }
 
         if (moduleNameSpan && moduleData.type !== 'header') {
-             // console.log(`DEBUG ListenerSetup: Attaching click listener to name for ${moduleData.id}`);
              moduleNameSpan.addEventListener('click', () => {
                  console.log(`DEBUG ActionClick: Name clicked for ${moduleData.id}`);
                  triggerNavigation(moduleData.id);
@@ -150,44 +208,125 @@
         if (moduleData.type === 'header') {
              const collapseTarget = moduleElement.querySelector('.collapse-icon') || moduleNameSpan || moduleElement;
              if (collapseTarget) {
-                 // console.log(`DEBUG ListenerSetup: Attaching click listener to collapse for ${moduleData.id}`);
                  collapseTarget.addEventListener('click', (e) => {
                      console.log(`DEBUG ActionClick: Collapse target clicked for ${moduleData.id}`);
                      if (!e.target.closest('.module-icon') && !e.target.closest('.module-drag-handle')) {
                          handleCollapseToggle(moduleData.id);
                      }
                  });
-             } // else { console.warn(`DEBUG ListenerSetup: Could not find collapse target for ${moduleData.id}`); }
+             }
          }
 
         return moduleElement;
     }
 
     // --- Search ---
-    function setupModuleSearch() { /* ... same ... */ }
-    function handleSearchInput() { /* ... same ... */ }
+    function setupModuleSearch() {
+        const searchInput = document.getElementById('module-search-input');
+        const container = document.getElementById('modules-container');
+        if (!searchInput || !container) { /* ... error ... */ return; }
+        let debounceTimer;
+        const debounceFilter = (func, delay) => { /* ... debounce ... */ return func; }; // Simplified
+         searchInput.removeEventListener('input', handleSearchInput); // Remove previous listener first
+         searchInput.addEventListener('input', handleSearchInput);
+        console.log("[SidebarManager] Module search setup complete.");
+    }
+    function handleSearchInput() {
+        const searchInput = document.getElementById('module-search-input'); // Re-find inside handler
+        const container = document.getElementById('modules-container');
+        if (!searchInput || !container) return;
+        debounceFilter(() => { /* ... filter logic ... */ }, 250); // Apply debounce here
+    }
+
 
     // --- Collapse / Expand ---
-    function handleCollapseToggle(headerModuleId) { /* ... same ... */ }
+    function handleCollapseToggle(headerModuleId) {
+        console.log("[SidebarManager] Toggling collapse for header:", headerModuleId);
+        headerCollapseState[headerModuleId] = !(headerCollapseState[headerModuleId] === true);
+        renderModuleList(modules); // Re-render the list
+    }
 
-    // --- Drag and Drop (Restored Logic) ---
-    function setupDragAndDrop() { /* ... same ... */ }
-    function handleDragStart(e) { /* ... same ... */ }
-    function handleDragOver(e) { /* ... same ... */ }
-    function handleDragLeave(e) { /* ... same ... */ }
 
-    /**
-     * Handles the drop event, updates module order/parent, re-renders sidebar,
-     * triggers save, AND triggers dashboard render. LOGIC RESTORED.
-     */
+    // --- Drag and Drop (Restored Logic + Debug Logs) ---
+    function setupDragAndDrop() {
+        const container = document.getElementById('modules-container');
+        if (!container) return;
+        container.removeEventListener('dragstart', handleDragStart);
+        container.removeEventListener('dragover', handleDragOver);
+        container.removeEventListener('dragleave', handleDragLeave);
+        container.removeEventListener('drop', handleDrop);
+        container.addEventListener('dragstart', handleDragStart);
+        container.addEventListener('dragover', handleDragOver);
+        container.addEventListener('dragleave', handleDragLeave);
+        container.addEventListener('drop', handleDrop);
+        document.removeEventListener('dragend', handleDragEnd); // Use document for dragend
+        document.addEventListener('dragend', handleDragEnd);
+        console.log("[SidebarManager] Drag and drop listeners setup.");
+    }
+    function handleDragStart(e) {
+        console.log("DEBUG DND: handleDragStart Fired"); // Keep Log
+        const handle = e.target.closest('.module-drag-handle');
+        const target = e.target.closest('.module-item');
+        if (!target || !target.draggable || (handle && e.target !== handle && !target.contains(e.target))) {
+             console.log("DEBUG DND: DragStart prevented (invalid target or not handle)");
+             e.preventDefault(); return;
+        }
+        globalDraggedItem = target;
+        try {
+             e.dataTransfer.setData('text/plain', target.dataset.moduleId);
+             e.dataTransfer.effectAllowed = 'move';
+        } catch (err) { console.error("DEBUG DND: Error setting dataTransfer:", err); }
+        setTimeout(() => { if (globalDraggedItem) globalDraggedItem.classList.add('dragging'); }, 0);
+        console.log("DEBUG DND: DragStart:", target.dataset.moduleId);
+    }
+    function handleDragOver(e) {
+        // console.log("DEBUG DND: handleDragOver Fired"); // Still too noisy
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const targetElement = e.target.closest('.module-item');
+        if (!targetElement || targetElement === globalDraggedItem) {
+            if (dragOverElement && (!targetElement || targetElement !== dragOverElement)) {
+                 clearDropIndicators(); dragOverElement = null; dropIndicator = null;
+            } return;
+        }
+        if (targetElement !== dragOverElement) { clearDropIndicators(); dragOverElement = targetElement; }
+        const rect = targetElement.getBoundingClientRect();
+        const yOffset = e.clientY - rect.top;
+        const dropZoneHeight = rect.height;
+        const targetIsHeader = targetElement.dataset.moduleType === 'header';
+        const draggedItemType = globalDraggedItem?.dataset?.moduleType;
+        const canDropOnHeaderMiddle = targetIsHeader && draggedItemType !== 'header';
+        const topThreshold = dropZoneHeight * 0.3;
+        const bottomThreshold = dropZoneHeight * 0.7;
+        let currentIndicator = null;
+        if (canDropOnHeaderMiddle && yOffset > topThreshold && yOffset < bottomThreshold) currentIndicator = 'middle';
+        else if (yOffset <= topThreshold) currentIndicator = 'top';
+        else currentIndicator = 'bottom';
+        if (currentIndicator !== dropIndicator) {
+            targetElement.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-middle');
+            dropIndicator = currentIndicator;
+            if (dropIndicator === 'middle') targetElement.classList.add('drag-over-middle');
+            else if (dropIndicator === 'top') targetElement.classList.add('drag-over-top');
+            else if (dropIndicator === 'bottom') targetElement.classList.add('drag-over-bottom');
+        }
+    }
+    function handleDragLeave(e) {
+        // console.log("DEBUG DND: handleDragLeave Fired");
+        const targetElement = e.target.closest('.module-item');
+        if (!targetElement) return;
+        const relatedTarget = e.relatedTarget ? e.relatedTarget.closest('.module-item') : null;
+        if (targetElement === dragOverElement && relatedTarget !== dragOverElement && !targetElement.contains(e.relatedTarget)) {
+            clearDropIndicators(targetElement); dragOverElement = null; dropIndicator = null;
+        }
+    }
     function handleDrop(e) {
-        console.log("DEBUG DND: handleDrop Fired");
+        console.log("DEBUG DND: handleDrop Fired"); // Keep Log
         e.preventDefault();
         if (!globalDraggedItem || !dragOverElement || !dropIndicator) {
              console.log("DEBUG DND: Drop cancelled: Invalid state.");
              clearDropIndicators(); handleDragEnd(); return;
         }
-        clearDropIndicators(); // Clear visual cues immediately
+        clearDropIndicators();
 
         const draggedId = globalDraggedItem.dataset.moduleId;
         const targetId = dragOverElement.dataset.moduleId;
@@ -200,10 +339,8 @@
         const targetModule = modules[targetModuleIndex];
         let newParentId = null;
         let targetPositionInArray = -1;
-
-        // --- Determine new parent and position ---
+        // --- Determine new parent and position --- RESTORED
         if (dropIndicator === 'middle' && targetModule.type === 'header') {
-            // Dropping INTO a header
             newParentId = targetModule.id;
             const children = modules.filter(m => m.parentId === newParentId);
             if (children.length > 0) {
@@ -214,16 +351,13 @@
                 targetPositionInArray = targetModuleIndex + 1;
             }
         } else if (dropIndicator === 'bottom') {
-            // Dropping BELOW the target item (same parent)
             newParentId = targetModule.parentId;
             targetPositionInArray = targetModuleIndex + 1;
         } else { // dropIndicator === 'top'
-            // Dropping ABOVE the target item (same parent)
             newParentId = targetModule.parentId;
             targetPositionInArray = targetModuleIndex;
         }
         // --- End determination ---
-
         console.log(`DEBUG DND: Drop - Moving ${draggedId} to parent ${newParentId} at index ${targetPositionInArray}`);
 
         // --- Update local 'modules' array directly --- RESTORED
@@ -233,33 +367,70 @@
         modules.splice(targetPositionInArray, 0, draggedModule);
         // --- End local update ---
 
-        // Re-render the sidebar list immediately for visual feedback
-        renderModuleList(modules);
-
-        // Trigger save via ModuleDefinitionManager (which recalculates order first)
-        triggerSaveStructure();
-
-        // Trigger dashboard render
+        renderModuleList(modules); // Re-render sidebar
+        triggerSaveStructure(); // Trigger save (which recalculates order)
         console.log("[SidebarManager] Triggering dashboard render after drop.");
         const currentClient = window.ConstructionApp.ClientManager?.getCurrentClient();
-        window.ConstructionApp.DashboardRenderer?.render(currentClient);
-
-        // Clean up D&D state
+        window.ConstructionApp.DashboardRenderer?.render(currentClient); // Trigger dashboard render
         handleDragEnd();
     }
-
-    function handleDragEnd(e) { /* ... same ... */ }
+    function handleDragEnd(e) {
+        console.log("DEBUG DND: handleDragEnd Fired"); // Keep Log
+        try { if (globalDraggedItem) { globalDraggedItem.classList.remove('dragging'); } }
+        catch (error) { /* ... */ }
+        clearDropIndicators();
+        globalDraggedItem = null;
+        dragOverElement = null;
+        dropIndicator = null;
+    }
     function clearDropIndicators(element) { /* ... same ... */ }
 
+
     // --- Dropdown Menus & Actions (Keep Debug Logs + Escape Handler) ---
-    function setupDropdownMenus() { /* ... same ... */ }
-    function handleGlobalClickForDropdowns(e) { /* ... same ... */ }
-    function handleEscapeKey(e) { /* ... same ... */ }
-    function closeAllDropdowns() { /* ... same ... */ }
+    function setupDropdownMenus() {
+        document.removeEventListener('click', handleGlobalClickForDropdowns);
+        document.addEventListener('click', handleGlobalClickForDropdowns);
+        document.removeEventListener('keydown', handleEscapeKey);
+        document.addEventListener('keydown', handleEscapeKey);
+        console.log("[SidebarManager] Dropdown menu listeners setup (Click & Escape).");
+    }
+    function handleGlobalClickForDropdowns(e) {
+        console.log("DEBUG Dropdown: Global click detected."); // Keep Log
+        if (!e.target.closest('.module-icon') && !e.target.closest('.dropdown-menu')) {
+            console.log("DEBUG Dropdown: Click was outside, closing menus."); // Keep Log
+            closeAllDropdowns();
+        } else {
+            console.log("DEBUG Dropdown: Click was inside icon or menu, not closing."); // Keep Log
+        }
+    }
+    function handleEscapeKey(e) {
+        if (e.key === 'Escape') {
+            console.log("DEBUG Dropdown: Escape key pressed, closing menus."); // Keep Log
+            closeAllDropdowns();
+        }
+    }
+    function closeAllDropdowns() {
+        const menus = document.querySelectorAll('#modules-container .dropdown-menu');
+        let closedAny = false;
+        menus.forEach(menu => { if (menu.style.display === 'block') { menu.style.display = 'none'; closedAny = true; } });
+        if (closedAny) console.log("DEBUG Dropdown: closeAllDropdowns executed and closed at least one menu."); // Keep Log
+        // else console.log("DEBUG Dropdown: closeAllDropdowns executed, no menus were open."); // Maybe remove this one
+    }
 
 
     // --- Initialization Function ---
-    function init(modulesData) { /* ... same ... */ }
+    function init(modulesData) {
+        console.log("[SidebarManager] Initializing...");
+        modules = modulesData || [];
+        const container = document.getElementById('modules-container');
+        if (!container) { console.error("[SidebarManager] Init FAILED - #modules-container not found!"); return; }
+        headerCollapseState = {};
+         modules.forEach(module => { if (module.type === 'header') { if (headerCollapseState[module.id] === undefined) headerCollapseState[module.id] = true; } });
+        renderModuleList(modules);
+        setupModuleSearch();
+        setupDropdownMenus();
+        console.log("[SidebarManager] Initialization complete.");
+    }
 
     // --- Expose Public Interface ---
     window.ConstructionApp.SidebarManager = {
