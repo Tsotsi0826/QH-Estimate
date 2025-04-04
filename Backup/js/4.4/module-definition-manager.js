@@ -1,4 +1,4 @@
-// js/module-definition-manager.js
+// js/module-definition-manager.js - UPDATED VERSION
 (function() {
     'use strict';
 
@@ -82,41 +82,41 @@
     }
 
      /**
-      * Restores the module structure from sessionStorage backup.
-      * (Code moved from dashboard.js)
-      * @returns {Array|null} The restored module array or null.
-      */
-    function restoreModuleOrderFromBackup() {
-        const savedOrder = sessionStorage.getItem('moduleOrder');
-        if (savedOrder) {
-            try {
-                const orderData = JSON.parse(savedOrder);
-                if (!Array.isArray(orderData)) {
-                    throw new Error("Backup data is not an array.");
-                }
-                console.log("[ModuleDefManager] Restoring structure from backup:", orderData.length, "modules");
-                // Ensure basic properties exist on restore
-                return orderData.map(mod => ({
-                    ...mod,
-                    type: mod.type || 'regular',
-                    parentId: (mod.parentId === undefined || mod.parentId === 'null') ? null : mod.parentId,
-                    order: mod.order ?? 0,
-                    // Add default render/save placeholders if missing from backup
-                    renderTemplate: mod.renderTemplate || function(client) { return `<h3>${mod.name}</h3><p>Default Content</p>`; },
-                    saveData: mod.saveData || function() { return {}; }
-                }));
-            } catch (error) {
-                console.error("[ModuleDefManager] Error parsing module structure backup:", error);
-                sessionStorage.removeItem('moduleOrder'); // Clear corrupted backup
-            }
-        } else {
-            console.warn("[ModuleDefManager] No module structure backup found in sessionStorage.");
-        }
-        return null; // Return null if no valid backup
-    }
+       * Restores the module structure from sessionStorage backup.
+       * (Code moved from dashboard.js)
+       * @returns {Array|null} The restored module array or null.
+       */
+     function restoreModuleOrderFromBackup() {
+         const savedOrder = sessionStorage.getItem('moduleOrder');
+         if (savedOrder) {
+             try {
+                 const orderData = JSON.parse(savedOrder);
+                 if (!Array.isArray(orderData)) {
+                     throw new Error("Backup data is not an array.");
+                 }
+                 console.log("[ModuleDefManager] Restoring structure from backup:", orderData.length, "modules");
+                 // Ensure basic properties exist on restore
+                 return orderData.map(mod => ({
+                     ...mod,
+                     type: mod.type || 'regular',
+                     parentId: (mod.parentId === undefined || mod.parentId === 'null') ? null : mod.parentId,
+                     order: mod.order ?? 0,
+                     // Add default render/save placeholders if missing from backup
+                     renderTemplate: mod.renderTemplate || function(client) { return `<h3>${mod.name}</h3><p>Default Content</p>`; },
+                     saveData: mod.saveData || function() { return {}; }
+                 }));
+             } catch (error) {
+                 console.error("[ModuleDefManager] Error parsing module structure backup:", error);
+                 sessionStorage.removeItem('moduleOrder'); // Clear corrupted backup
+             }
+         } else {
+             console.warn("[ModuleDefManager] No module structure backup found in sessionStorage.");
+         }
+         return null; // Return null if no valid backup
+     }
 
     /**
-     * Triggers the SidebarManager to re-render its list.
+     * Triggers the SidebarManager to re-render its list using the current master list.
      */
     function triggerSidebarRender() {
         // Use setTimeout to allow current execution stack to clear before rendering
@@ -133,7 +133,7 @@
 
     /**
      * Recalculates the 'order' property for all modules based on their position
-     * within their parent group in the 'modules' array.
+     * within their parent group in the master 'modules' array.
      * (Moved from sidebar-manager as it modifies the core data)
      */
     function recalculateModuleOrder() {
@@ -323,13 +323,13 @@
     }
 
      /**
-      * Edits an existing module definition (e.g., renames).
-      * (Logic moved from sidebar-manager.js's editModule, adapted)
-      * @param {string} moduleId - The ID of the module to edit.
-      * @param {object} updatedInfo - Object with properties to update (e.g., { name: "New Name" }).
-      * @returns {boolean} True if successful, false otherwise.
-      */
-    function editModuleDefinition(moduleId, updatedInfo) {
+       * Edits an existing module definition (e.g., renames).
+       * (Logic moved from sidebar-manager.js's editModule, adapted)
+       * @param {string} moduleId - The ID of the module to edit.
+       * @param {object} updatedInfo - Object with properties to update (e.g., { name: "New Name" }).
+       * @returns {boolean} True if successful, false otherwise.
+       */
+     function editModuleDefinition(moduleId, updatedInfo) {
          if (!moduleId || !updatedInfo || !updatedInfo.name) {
              console.error("[ModuleDefManager] Invalid arguments for editModuleDefinition.");
              return false;
@@ -363,7 +363,7 @@
          triggerSidebarRender();
 
          return true; // Indicate success
-    }
+     }
 
     /**
      * Deletes a module definition and its descendants.
@@ -372,58 +372,140 @@
      * @returns {boolean} True if successful, false otherwise.
      */
     function deleteModuleDefinition(moduleId) {
-         // Prevent deleting the essential 'notes' module
-         if (!moduleId || moduleId === 'notes') {
-             console.warn("[ModuleDefManager] Attempted to delete invalid or protected module:", moduleId);
-             // Provide user feedback if trying to delete notes
-             if (moduleId === 'notes') alert('The Notes module cannot be deleted.');
-             return false;
-         }
+        // Prevent deleting the essential 'notes' module
+        if (!moduleId || moduleId === 'notes') {
+            console.warn("[ModuleDefManager] Attempted to delete invalid or protected module:", moduleId);
+            // Provide user feedback if trying to delete notes
+            if (moduleId === 'notes') alert('The Notes module cannot be deleted.');
+            return false;
+        }
 
-         // Find the module in the local 'modules' array
-         const moduleIndex = modules.findIndex(m => m.id === moduleId);
-         if (moduleIndex === -1) {
-             console.error("[ModuleDefManager] Delete Error: Module not found:", moduleId);
-             alert("Error: Module to delete was not found."); // User feedback
-             return false;
-         }
+        // Find the module in the local 'modules' array
+        const moduleIndex = modules.findIndex(m => m.id === moduleId);
+        if (moduleIndex === -1) {
+            console.error("[ModuleDefManager] Delete Error: Module not found:", moduleId);
+            alert("Error: Module to delete was not found."); // User feedback
+            return false;
+        }
 
-         console.log(`[ModuleDefManager] Deleting module ${moduleId} and descendants.`);
+        console.log(`[ModuleDefManager] Deleting module ${moduleId} and descendants.`);
 
-         // Find all IDs to delete (the module itself and all descendants)
-         const idsToDelete = new Set([moduleId]);
-         const queue = [moduleId]; // Start with the module to delete
+        // Find all IDs to delete (the module itself and all descendants)
+        const idsToDelete = new Set([moduleId]);
+        const queue = [moduleId]; // Start with the module to delete
 
-         while (queue.length > 0) {
-             const currentParentId = queue.shift();
-             // Find children of the current parent in the current 'modules' list
-             modules.forEach(module => {
-                 if (module.parentId === currentParentId && !idsToDelete.has(module.id)) {
-                     idsToDelete.add(module.id);
-                     queue.push(module.id); // Add child to the queue to find its descendants
-                 }
-             });
-         }
+        while (queue.length > 0) {
+            const currentParentId = queue.shift();
+            // Find children of the current parent in the current 'modules' list
+            modules.forEach(module => {
+                if (module.parentId === currentParentId && !idsToDelete.has(module.id)) {
+                    idsToDelete.add(module.id);
+                    queue.push(module.id); // Add child to the queue to find its descendants
+                }
+            });
+        }
 
-         // Filter the local 'modules' array, keeping only those NOT in idsToDelete
-         const initialLength = modules.length;
-         modules = modules.filter(module => !idsToDelete.has(module.id));
-         const deletedCount = initialLength - modules.length;
+        // Filter the local 'modules' array, keeping only those NOT in idsToDelete
+        const initialLength = modules.length;
+        modules = modules.filter(module => !idsToDelete.has(module.id));
+        const deletedCount = initialLength - modules.length;
 
-         if (deletedCount > 0) {
-             console.log(`[ModuleDefManager] ${deletedCount} module(s) removed.`);
-             // Recalculate order and save the modified structure
-             recalculateModuleOrder(); // Recalculate order for remaining modules
-             saveModuleStructure();
+        if (deletedCount > 0) {
+            console.log(`[ModuleDefManager] ${deletedCount} module(s) removed.`);
+            // Recalculate order and save the modified structure
+            recalculateModuleOrder(); // Recalculate order for remaining modules
+            saveModuleStructure();
 
-             // Trigger sidebar re-render
-             triggerSidebarRender();
-             return true; // Indicate success
-         } else {
-             console.warn("[ModuleDefManager] Delete operation did not remove any modules (maybe already deleted?).");
-             return false; // Indicate nothing changed
-         }
+            // Trigger sidebar re-render
+            triggerSidebarRender();
+            return true; // Indicate success
+        } else {
+            console.warn("[ModuleDefManager] Delete operation did not remove any modules (maybe already deleted?).");
+            return false; // Indicate nothing changed
+        }
     }
+
+    // --- NEW FUNCTION TO HANDLE DRAG AND DROP ---
+    /**
+     * Handles moving a module based on drag-and-drop actions from the sidebar.
+     * Updates the internal module list, recalculates order, saves, and triggers UI refresh.
+     * @param {string} draggedId - The ID of the module being moved.
+     * @param {string} targetId - The ID of the module being dropped onto/relative to.
+     * @param {'top'|'middle'|'bottom'} dropIndicator - Where the drop occurred relative to the target.
+     * @returns {boolean} True if the move was processed successfully, false otherwise.
+     */
+    function handleModuleMove(draggedId, targetId, dropIndicator) {
+        console.log(`[ModuleDefManager] Handling move request: dragged=${draggedId}, target=${targetId}, position=${dropIndicator}`);
+
+        // Find the indices of the dragged and target modules in the master 'modules' array
+        const draggedIndex = modules.findIndex(m => m.id === draggedId);
+        const targetIndex = modules.findIndex(m => m.id === targetId);
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+            console.error(`[ModuleDefManager] Move Error: Dragged module (${draggedId}) or target module (${targetId}) not found.`);
+            return false; // Indicate failure
+        }
+
+        const draggedModule = modules[draggedIndex];
+        const targetModule = modules[targetIndex];
+
+        // --- Determine New Parent and Target Index for Insertion ---
+        let newParentId = null;
+        let insertionIndex = -1;
+
+        if (dropIndicator === 'middle' && targetModule.type === 'header') {
+            // Dropping INTO a header
+            newParentId = targetModule.id;
+            // We want to insert it as the first child within that header group in the array
+            // Find the index immediately after the header itself
+            insertionIndex = targetIndex + 1;
+            // (recalculateModuleOrder will fix the actual .order property later)
+
+        } else if (dropIndicator === 'top') {
+            // Dropping ABOVE the target module (becomes sibling)
+            newParentId = targetModule.parentId; // Same parent as target
+            insertionIndex = targetIndex; // Insert right before the target
+
+        } else { // dropIndicator === 'bottom'
+            // Dropping BELOW the target module (becomes sibling)
+            newParentId = targetModule.parentId; // Same parent as target
+            insertionIndex = targetIndex + 1; // Insert right after the target
+        }
+
+        console.log(`[ModuleDefManager] Calculated new parent: ${newParentId}, insertion index: ${insertionIndex}`);
+
+        // --- Update the Master 'modules' Array ---
+
+        // 1. Update the parentId of the dragged module
+        draggedModule.parentId = newParentId;
+
+        // 2. Remove the dragged module from its original position
+        //    Must be done before calculating the final insertion index if moving within the same list
+        const [removedModule] = modules.splice(draggedIndex, 1);
+
+        // 3. Adjust insertion index if the removal affected it
+        //    If the item was removed from *before* the target insertion point, the index needs to decrease.
+        if (draggedIndex < insertionIndex) {
+            insertionIndex--;
+        }
+
+        // 4. Insert the module at the new position
+        modules.splice(insertionIndex, 0, removedModule);
+
+        // --- Recalculate Order, Save, and Update UI ---
+        console.log("[ModuleDefManager] Recalculating order after move...");
+        recalculateModuleOrder(); // Update .order properties based on new array positions
+
+        console.log("[ModuleDefManager] Saving structure after move...");
+        saveModuleStructure(); // Save the updated structure to Firebase/backup
+
+        console.log("[ModuleDefManager] Triggering sidebar render after move...");
+        triggerSidebarRender(); // Update the UI
+
+        return true; // Indicate success
+    }
+    // --- END OF NEW FUNCTION ---
+
 
     /**
      * Gets the current list of module definitions managed by this module.
@@ -442,10 +524,12 @@
         addNewModuleDefinition: addNewModuleDefinition,
         editModuleDefinition: editModuleDefinition,
         deleteModuleDefinition: deleteModuleDefinition,
-        // Expose save function for Drag & Drop in SidebarManager
+        // Expose save function for potential external use (though D&D now uses handleModuleMove)
         saveModuleStructure: saveModuleStructure,
-        // Expose recalculate order as D&D needs it before saving
-        recalculateModuleOrder: recalculateModuleOrder
+        // Expose recalculate order for potential external use (though D&D now uses handleModuleMove)
+        recalculateModuleOrder: recalculateModuleOrder,
+        // Expose the new function for handling drag/drop moves
+        handleModuleMove: handleModuleMove
     };
 
 })();
