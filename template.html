@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Template - Construction Estimator</title>
+    <title>Module Template - Construction Estimator</title>
     
     <!-- Firebase Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
@@ -202,48 +202,55 @@
 
         .module-table th, 
         .module-table td {
-            padding: 10px;
+            padding: 8px 10px; /* Reduced vertical padding for tighter spacing */
             text-align: left;
             border: 1px solid #ddd;
             overflow: hidden; /* Prevent content from breaking layout */
+            font-size: 1.04em; /* Slightly reduced from 1.1em */
+            font-weight: 500; /* Keep slightly bolder than normal */
         }
 
-        /* Column width adjustments */
+        /* Table header styling */
+        .module-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: relative;
+        }
+
+        /* Column width adjustments for P&G's */
         .module-table th:nth-child(1),
         .module-table td:nth-child(1) {
-            width: 45%; /* Description column - increased width */
+            width: 40%; /* Description column */
         }
 
         .module-table th:nth-child(2),
         .module-table td:nth-child(2) {
-            width: 6%; /* Pc column */
+            width: 5%; /* Pc column */
             text-align: center;
         }
 
         .module-table th:nth-child(3),
         .module-table td:nth-child(3) {
-            width: 6%; /* Qty column - reduced width */
+            width: 10%; /* Qty column */
+            text-align: center;
         }
 
         .module-table th:nth-child(4),
         .module-table td:nth-child(4) {
             width: 15%; /* Rate column */
+            text-align: right;
         }
 
         .module-table th:nth-child(5),
         .module-table td:nth-child(5) {
-            width: 3%; /* Empty column */
+            width: 10%; /* Unit column */
+            text-align: center;
         }
 
         .module-table th:nth-child(6),
         .module-table td:nth-child(6) {
             width: 15%; /* Total column */
-        }
-
-        .module-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            position: relative;
+            text-align: right;
         }
 
         .module-table tr:nth-child(even) {
@@ -256,9 +263,11 @@
 
         .module-table input {
             width: 100%;
-            padding: 5px;
+            padding: 4px; /* Reduced padding to match reduced line height */
             border: 1px solid transparent;
             background-color: transparent;
+            font-size: 1em; /* Consistent text size with parent */
+            font-weight: inherit; /* Inherit font weight from parent */
         }
 
         .module-table input:focus {
@@ -280,6 +289,10 @@
             background-color: #e9e9e9;
         }
 
+        .module-table .footer-row td {
+            font-weight: bold; /* Ensure footer is bold */
+        }
+
         .module-table .qty-cell {
             background-color: #f0faf3;
         }
@@ -290,8 +303,8 @@
         }
         
         .item-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
         }
 
@@ -400,7 +413,7 @@
                         <th>Pc</th>
                         <th class="sort-header" data-sort="qty">Qty</th>
                         <th class="sort-header" data-sort="rate">Rate</th>
-                        <th></th>
+                        <th>Unit</th>
                         <th class="sort-header" data-sort="total">Total</th>
                     </tr>
                 </thead>
@@ -422,16 +435,25 @@
     <!-- Debug panel for troubleshooting -->
     <div class="debug-panel" id="debug-panel"></div>
 
+    <!-- Debug panel script -->
+    <script src="js/debug-panel.js" defer></script>
+
     <script>
-        // Module settings - CUSTOMIZE THIS FOR EACH MODULE
+        // Module settings - TEMPLATE FOR NEW MODULES
         const MODULE = {
-            id: 'template', // Change to actual module ID (must match filename without .html)
-            title: 'Template', // Change to actual module title
-            defaultItems: [  // Customize these items for each module
-                { id: 'item1', description: 'Item 1', qty: 0, rate: 0, checked: false, editable: true },
-                { id: 'item2', description: 'Item 2', qty: 0, rate: 0, checked: false, editable: true },
-                { id: 'item3', description: 'Item 3', qty: 0, rate: 0, checked: false, editable: true },
-                // Add more default items as needed for each module
+            id: 'module-template', // Module ID matching filename - CHANGE THIS
+            title: 'Template', // Module title - CHANGE THIS
+            defaultItems: [  // Default items - REPLACE WITH YOUR MODULE'S ITEMS
+                { id: 'item-1', description: 'Item 1 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-2', description: 'Item 2 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-3', description: 'Item 3 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-4', description: 'Item 4 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-5', description: 'Item 5 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-6', description: 'Item 6 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-7', description: 'Item 7 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-8', description: 'Item 8 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-9', description: 'Item 9 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true },
+                { id: 'item-10', description: 'Item 10 Description', rate: 0.00, unit: '@', checked: false, qty: 0, isDefault: true }
             ]
         };
         
@@ -535,8 +557,9 @@
                 updateUI();
             } else {
                 console.log(`[${MODULE.id}] No saved data found, using defaults`);
-                // Initialize with default items
+                // Initialize with default items from this module
                 moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); // Deep copy
+                console.log(`[${MODULE.id}] Loaded default items:`, moduleData.items.length);
                 updateUI();
             }
         }
@@ -564,8 +587,9 @@
                         ...savedItem,
                         // These properties should always match the default
                         description: defaultItem.description,
-                        editable: defaultItem.editable,
-                        custom: defaultItem.custom
+                        unit: defaultItem.unit,
+                        rate: defaultItem.rate,
+                        isDefault: true
                     });
                     // Remove from map so we know it's been processed
                     delete savedItemsMap[defaultItem.id];
@@ -617,11 +641,11 @@
                 item.qty > 0 ? (item.qty * item.rate) : 0
             );
             
-            // Create row content
+            // Create row content - kept the Pc checkbox for reference only
             row.innerHTML = `
                 <td>
                     <input type="text" class="description-input" value="${item.description}" 
-                           ${item.editable ? '' : 'readonly'}>
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
                 <td class="checkbox-cell">
                     <input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}>
@@ -631,9 +655,11 @@
                 </td>
                 <td>
                     <input type="text" class="rate-input currency" value="${rateFormatted}" 
-                           ${item.editable ? '' : 'readonly'}>
+                           ${item.isDefault ? 'readonly' : ''}>
                 </td>
-                <td></td>
+                <td>
+                    ${item.unit}
+                </td>
                 <td class="total-cell currency">${totalFormatted}</td>
             `;
             
@@ -654,7 +680,7 @@
                 });
             }
             
-            // Checkbox input - doesn't affect calculation, just for reporting
+            // Checkbox input - for reference only, doesn't affect calculation
             const checkbox = row.querySelector('.item-checkbox');
             if (checkbox) {
                 checkbox.addEventListener('change', function() {
@@ -663,7 +689,7 @@
                 });
             }
             
-            // Quantity input
+            // Quantity input - this affects the calculation
             const qtyInput = row.querySelector('.qty-input');
             if (qtyInput) {
                 qtyInput.addEventListener('input', function() {
@@ -709,25 +735,25 @@
                 const qtyInput = row.querySelector('.qty-input');
                 const rateInput = row.querySelector('.rate-input');
                 
-                if (descInput && item.editable) {
+                if (descInput && !item.isDefault) {
                     item.description = descInput.value;
                 }
                 
                 if (checkbox) {
-                    item.checked = checkbox.checked;
+                    item.checked = checkbox.checked; // Store checkbox state for reference
                 }
                 
                 if (qtyInput) {
                     item.qty = parseInt(qtyInput.value) || 0;
                 }
                 
-                if (rateInput && item.editable) {
+                if (rateInput && !item.isDefault) {
                     item.rate = getNumericValue(rateInput.value);
                 }
             }
         }
         
-        // Calculate total for a row
+        // Calculate total for a row - based on qty only, not checkbox
         function calculateRowTotal(row) {
             const itemId = row.getAttribute('data-item-id');
             const item = moduleData.items.find(i => i.id === itemId);
@@ -747,11 +773,11 @@
             return 0;
         }
         
-        // Calculate all totals and update module data
+        // Calculate all totals and update module data - based on qty only
         function calculateTotals() {
             let totalCost = 0;
             
-            // Sum all item totals (only items with qty > 0)
+            // Sum all item totals (only items with qty > 0, regardless of checkbox)
             moduleData.items.forEach(item => {
                 if (item.qty > 0) {
                     totalCost += item.qty * item.rate;
@@ -783,10 +809,11 @@
             const newItem = {
                 id: newId,
                 description: 'New Item',
-                qty: 0,
                 rate: 0,
+                unit: '@',
                 checked: false,
-                editable: true,
+                qty: 0,
+                isDefault: false,
                 custom: true
             };
             
@@ -1061,6 +1088,8 @@
                 <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
                 <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
                 <strong>Module Items:</strong> ${moduleData.items.length}<br>
+                <strong>Items with Qty > 0:</strong> ${moduleData.items.filter(item => item.qty > 0).length}<br>
+                <strong>Marked Items (Pc):</strong> ${moduleData.items.filter(item => item.checked).length}<br>
                 <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
                 <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
                 <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
@@ -1068,9 +1097,13 @@
             
             // Add sample of module data
             debugInfo += '<strong>Module Data Sample:</strong><br>';
-            if (moduleData.items.length > 0) {
+            const activeItems = moduleData.items.filter(item => item.qty > 0);
+            if (activeItems.length > 0) {
+                const sampleItem = activeItems[0];
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}, Total: ${sampleItem.qty * sampleItem.rate}<br>`;
+            } else if (moduleData.items.length > 0) {
                 const sampleItem = moduleData.items[0];
-                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
+                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
             } else {
                 debugInfo += '- No items<br>';
             }
