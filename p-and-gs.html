@@ -206,13 +206,15 @@
             text-align: left;
             border: 1px solid #ddd;
             overflow: hidden; /* Prevent content from breaking layout */
+            font-size: 1.1em; /* Increased text size for all cells */
+            font-weight: 500; /* Slightly bolder than normal for all text */
         }
 
-        /* Increased description text size */
-        .module-table td:first-child input,
-        .module-table .description-input {
-            font-size: 1.1em;  /* Increase from default size */
-            font-weight: 500;  /* Slightly bolder than normal */
+        /* Table header styling */
+        .module-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: relative;
         }
 
         /* Column width adjustments for P&G's */
@@ -251,12 +253,6 @@
             text-align: right;
         }
 
-        .module-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            position: relative;
-        }
-
         .module-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -270,6 +266,8 @@
             padding: 5px;
             border: 1px solid transparent;
             background-color: transparent;
+            font-size: 1em; /* Consistent text size with parent */
+            font-weight: inherit; /* Inherit font weight from parent */
         }
 
         .module-table input:focus {
@@ -289,6 +287,10 @@
         .module-table .footer-row {
             font-weight: bold;
             background-color: #e9e9e9;
+        }
+
+        .module-table .footer-row td {
+            font-weight: bold; /* Ensure footer is bold */
         }
 
         .module-table .qty-cell {
