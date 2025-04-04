@@ -1,4 +1,4 @@
-// js/sidebar-manager.js
+// js/sidebar-manager.js - UPDATED VERSION
 (function() {
     'use strict'; // Helps catch common coding mistakes
 
@@ -11,23 +11,12 @@
     let dragOverElement = null;   // Tracks the element being dragged over
     let dropIndicator = null;     // Tracks where the drop indicator line should appear ('top', 'bottom', 'middle')
 
-    // Stores a reference to the main module list passed during initialization
+    // Stores a reference to the main module list passed during initialization or update
     let modules = [];
 
     // --- Helper Functions ---
 
-    /**
-     * Saves the module structure by calling the function exposed by the main dashboard script.
-     * NOTE: Assumes saveModuleStructure is exposed via window.ConstructionApp.Dashboard
-     */
-    function triggerSaveStructure() {
-        if (window.ConstructionApp.Dashboard && typeof window.ConstructionApp.Dashboard.saveModuleStructure === 'function') {
-            console.log("[SidebarManager] Triggering saveModuleStructure...");
-            window.ConstructionApp.Dashboard.saveModuleStructure();
-        } else {
-            console.error("[SidebarManager] Cannot save structure: saveModuleStructure function not found on window.ConstructionApp.Dashboard.");
-        }
-    }
+    // REMOVED triggerSaveStructure() - No longer needed, saving is handled by ModuleDefinitionManager
 
     /**
      * Navigates to a module page.
@@ -45,7 +34,8 @@
 
     /**
      * Renders the hierarchical list of modules in the sidebar.
-     * @param {Array} moduleData - The array of module objects to render.
+     * Called by init and by ModuleDefinitionManager when the master list changes.
+     * @param {Array} moduleData - The array of module objects to render (expects the master list).
      */
     function renderModuleList(moduleData) {
         const container = document.getElementById('modules-container');
@@ -56,8 +46,11 @@
         container.innerHTML = ''; // Clear existing list
         console.log("[SidebarManager] Rendering module list with", moduleData.length, "modules.");
 
-        // Use the modules reference stored during init
-        const sortedModules = [...moduleData].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name));
+        // Update the local reference (important if called externally)
+        modules = moduleData;
+
+        // Sort based on order, then name (using the updated master list)
+        const sortedModules = [...modules].sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name));
 
         function renderLevel(parentId, level) {
             sortedModules
@@ -147,7 +140,7 @@
         if (editBtn) {
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                editModule(moduleElement); // Call edit function (moved below)
+                editModule(moduleElement); // Call corrected edit function
                 closeAllDropdowns();
             });
         }
@@ -157,7 +150,7 @@
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                deleteModule(moduleElement); // Call delete function (moved below)
+                deleteModule(moduleElement); // Call corrected delete function
                 closeAllDropdowns();
             });
         }
@@ -175,7 +168,7 @@
              collapseTarget.addEventListener('click', (e) => {
                  // Prevent navigation if clicking the name part of a header
                  if (e.target.classList.contains('module-name')) {
-                      e.stopPropagation();
+                     e.stopPropagation();
                  }
                  // Avoid toggling if clicking the action icon or drag handle
                  if (!e.target.closest('.module-icon') && !e.target.closest('.module-drag-handle')) {
@@ -225,7 +218,7 @@
                 return;
             }
 
-            // Find matching modules and their ancestors
+            // Find matching modules and their ancestors (using the local 'modules' reference)
             modules.forEach(module => {
                 const moduleName = module.name.toLowerCase();
                 const isMatch = moduleName.includes(searchTerm);
@@ -269,7 +262,7 @@
         console.log("[SidebarManager] Toggling collapse for header:", headerModuleId);
         // Use the sidebar-manager's headerCollapseState
         headerCollapseState[headerModuleId] = !(headerCollapseState[headerModuleId] === true);
-        // Re-render the list to show/hide children
+        // Re-render the list to show/hide children using the current 'modules' data
         renderModuleList(modules);
     }
 
@@ -295,7 +288,7 @@
         container.addEventListener('dragleave', handleDragLeave);
         container.addEventListener('drop', handleDrop);
         container.addEventListener('dragend', handleDragEnd);
-        console.log("[SidebarManager] Drag and drop listeners setup.");
+        // console.log("[SidebarManager] Drag and drop listeners setup."); // Reduce console noise
     }
 
     function handleDragStart(e) {
@@ -303,14 +296,16 @@
         const handle = e.target.closest('.module-drag-handle');
         const target = e.target.closest('.module-item');
 
-        if (!target || !target.draggable || (handle && e.target !== handle)) {
-             if (!handle && target === e.target) {
-                 // Allow dragging item if handle isn't the specific target
-             } else {
-                e.preventDefault();
-                return;
-             }
+        // Simplified drag start condition: must be a module-item and draggable=true
+        if (!target || !target.draggable) {
+            e.preventDefault();
+            return;
         }
+        // Optional: Only allow drag from handle if it exists
+        // if (handle && e.target !== handle) {
+        //    e.preventDefault();
+        //    return;
+        // }
 
         globalDraggedItem = target;
         e.dataTransfer.setData('text/plain', target.dataset.moduleId);
@@ -320,7 +315,7 @@
         setTimeout(() => {
             if (globalDraggedItem) globalDraggedItem.classList.add('dragging');
         }, 0);
-         console.log("[SidebarManager] DragStart:", target.dataset.moduleId);
+         // console.log("[SidebarManager] DragStart:", target.dataset.moduleId); // Reduce noise
     }
 
     function handleDragOver(e) {
@@ -382,19 +377,22 @@
         const targetElement = e.target.closest('.module-item');
         if (!targetElement) return;
 
-        // Check if the mouse truly left the element vs moving over a child
+         // Check if the mouse truly left the element vs moving over a child
          const relatedTarget = e.relatedTarget ? e.relatedTarget.closest('.module-item') : null;
 
-         // If leaving the current dragOverElement and not entering a child of it
-        if (targetElement === dragOverElement && relatedTarget !== dragOverElement) {
-             if (!targetElement.contains(e.relatedTarget)) {
-                clearDropIndicators(targetElement);
-                dragOverElement = null;
-                dropIndicator = null;
-             }
-        }
+          // If leaving the current dragOverElement and not entering a child of it
+         if (targetElement === dragOverElement && relatedTarget !== dragOverElement) {
+              if (!targetElement.contains(e.relatedTarget)) {
+                 clearDropIndicators(targetElement);
+                 dragOverElement = null;
+                 dropIndicator = null;
+              }
+         }
     }
 
+    /**
+     * Handles the drop event, delegating the actual move and save to ModuleDefinitionManager.
+     */
     function handleDrop(e) {
         e.preventDefault();
         clearDropIndicators(); // Clear visual cues immediately
@@ -408,71 +406,25 @@
         const draggedId = globalDraggedItem.dataset.moduleId;
         const targetId = dragOverElement.dataset.moduleId;
 
-        // Find modules in our local 'modules' array
-        const draggedModuleIndex = modules.findIndex(m => m.id === draggedId);
-        const targetModuleIndex = modules.findIndex(m => m.id === targetId);
+        // --- DELEGATE MOVE/REORDER TO ModuleDefinitionManager ---
+        // It needs to know the dragged item, the target item, and the drop position (top/middle/bottom)
+        console.log(`[SidebarManager] Requesting move of ${draggedId} relative to ${targetId} (position: ${dropIndicator})`);
 
-        if (draggedModuleIndex === -1 || targetModuleIndex === -1) {
-            console.error("[SidebarManager] DnD Error: Dragged or target module not found in local modules array.");
-            handleDragEnd();
-            return;
+        const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
+        if (ModuleDefManager && typeof ModuleDefManager.handleModuleMove === 'function') {
+            // Call the manager function (which needs to be implemented in module-definition-manager.js)
+            // This function should handle updating the master list, recalculating order,
+            // saving to Firebase, and triggering a re-render of the sidebar.
+            ModuleDefManager.handleModuleMove(draggedId, targetId, dropIndicator);
+        } else {
+            console.error("[SidebarManager] Cannot handle drop: ModuleDefinitionManager.handleModuleMove function not found!");
+            alert("Error: Could not process module reordering. Please check console.");
+            // Optionally, re-render the list in its current state if the move fails?
+            // renderModuleList(modules);
         }
 
-        const draggedModule = modules[draggedModuleIndex];
-        const targetModule = modules[targetModuleIndex];
-
-        let newParentId = null;
-        let targetPositionInArray = -1; // Index where the dragged item should be inserted
-
-        if (dropIndicator === 'middle' && targetModule.type === 'header') {
-            // Dropping INTO a header
-            newParentId = targetModule.id;
-            // Find where to insert within the children (or just after header if no children)
-             const children = modules.filter(m => m.parentId === newParentId);
-             if (children.length > 0) {
-                 // Find the index of the last child in the main array
-                 const lastChild = children.sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).pop();
-                 const lastChildIndex = modules.findIndex(m => m.id === lastChild.id);
-                 targetPositionInArray = lastChildIndex + 1;
-             } else {
-                 // Insert right after the header
-                 targetPositionInArray = targetModuleIndex + 1;
-             }
-
-        } else if (dropIndicator === 'bottom') {
-            // Dropping BELOW the target item (same parent)
-            newParentId = targetModule.parentId;
-            targetPositionInArray = targetModuleIndex + 1;
-        } else { // dropIndicator === 'top'
-            // Dropping ABOVE the target item (same parent)
-            newParentId = targetModule.parentId;
-            targetPositionInArray = targetModuleIndex;
-        }
-
-        console.log(`[SidebarManager] Drop: Moving ${draggedId} to parent ${newParentId} at index ${targetPositionInArray}`);
-
-        // Update parentId
-        draggedModule.parentId = newParentId;
-
-        // Remove from old position
-        modules.splice(draggedModuleIndex, 1);
-
-        // Adjust target index if necessary after removal
-        if (draggedModuleIndex < targetPositionInArray) {
-            targetPositionInArray--;
-        }
-
-        // Insert into new position
-        modules.splice(targetPositionInArray, 0, draggedModule);
-
-        // Recalculate 'order' property for all modules
-        recalculateModuleOrder();
-
-        // Re-render the list with new structure
-        renderModuleList(modules);
-
-        // Save the new structure
-        triggerSaveStructure();
+        // REMOVED: Local array manipulation (splice), local order recalc, local render, and incorrect save call.
+        // The ModuleDefinitionManager should trigger the re-render after success.
 
         // Clean up D&D state
         handleDragEnd();
@@ -503,32 +455,7 @@
         });
     }
 
-    /**
-     * Recalculates the 'order' property for all modules based on their position
-     * within their parent group in the 'modules' array.
-     */
-    function recalculateModuleOrder() {
-        const modulesByParent = {};
-
-        // Group modules by parentId
-        modules.forEach(module => {
-            const parentKey = module.parentId === null ? 'null' : module.parentId;
-            if (!modulesByParent[parentKey]) {
-                modulesByParent[parentKey] = [];
-            }
-            // Add based on current array order
-            modulesByParent[parentKey].push(module);
-        });
-
-        // Assign order within each group
-        Object.values(modulesByParent).forEach(group => {
-            group.forEach((module, index) => {
-                module.order = index;
-            });
-        });
-         console.log("[SidebarManager] Module order recalculated.");
-    }
-
+    // REMOVED local recalculateModuleOrder() - This logic belongs in ModuleDefinitionManager
 
     // --- Dropdown Menus & Actions ---
 
@@ -565,116 +492,116 @@
     }
 
     /**
-     * Handles editing a module's name (via prompt).
+     * Handles editing a module's name, delegating save to ModuleDefinitionManager.
      * @param {HTMLElement} moduleElement - The sidebar element of the module being edited.
      */
     function editModule(moduleElement) {
         const moduleId = moduleElement?.dataset?.moduleId;
-        if (!moduleId) {
-            console.error("[SidebarManager] Edit Error: Could not get module ID from element.");
+        const currentName = moduleElement.querySelector('.module-name')?.textContent;
+
+        if (!moduleId || currentName === undefined) {
+            console.error("[SidebarManager] Edit Error: Could not get module ID or current name from element.");
             alert("Error: Could not identify the module to edit.");
             return;
         }
 
-        // Find the module in our local 'modules' array
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex === -1) {
-            console.error("[SidebarManager] Edit Error: Module not found in local modules array:", moduleId);
-            alert(`Error: Module "${moduleId}" not found.`);
-            return;
-        }
-
-        const currentModule = modules[moduleIndex];
-        const currentName = currentModule.name;
         const newName = prompt(`Edit module name:`, currentName);
 
         if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
             const finalNewName = newName.trim();
-            console.log(`[SidebarManager] Renaming module ${moduleId} to "${finalNewName}"`);
-            currentModule.name = finalNewName; // Update local data
+            console.log(`[SidebarManager] Requesting rename of module ${moduleId} to "${finalNewName}"`);
 
-            // Update the displayed name directly
-            const nameSpan = moduleElement.querySelector('.module-name');
-            if (nameSpan) {
-                nameSpan.textContent = finalNewName;
+            // --- DELEGATE EDITING AND SAVING TO ModuleDefinitionManager ---
+            const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
+            if (ModuleDefManager && typeof ModuleDefManager.editModuleDefinition === 'function') {
+                 // Manager handles updating master list, saving, and triggering re-render
+                const editSuccess = ModuleDefManager.editModuleDefinition(moduleId, { name: finalNewName });
+                if (editSuccess) {
+                     console.log("[SidebarManager] Rename request sent successfully.");
+                     // alert(`Module renamed to "${finalNewName}"`); // Feedback likely handled by manager or re-render
+                 } else {
+                     console.warn("[SidebarManager] ModuleDefinitionManager reported edit failed (e.g., validation error).");
+                     // Alert might already be shown by ModuleDefinitionManager
+                 }
             } else {
-                // Fallback to re-rendering if span not found (shouldn't happen)
-                renderModuleList(modules);
+                 console.error("[SidebarManager] Cannot handle edit: ModuleDefinitionManager.editModuleDefinition function not found!");
+                 alert("Error: Could not process module rename. Please check console.");
             }
 
-            // Save the updated structure
-            triggerSaveStructure();
-            alert(`Module renamed to "${finalNewName}"`);
+            // REMOVED: Direct local update, direct DOM update, and incorrect save call.
+            // The re-render triggered by the manager will show the new name.
         }
     }
 
     /**
-     * Handles deleting a module (and its descendants).
+     * Handles deleting a module, delegating action to ModuleDefinitionManager.
      * @param {HTMLElement} moduleElement - The sidebar element of the module being deleted.
      */
     function deleteModule(moduleElement) {
         const moduleId = moduleElement?.dataset?.moduleId;
+        const moduleName = moduleElement.querySelector('.module-name')?.textContent || moduleId; // Get name for prompt
 
-        // Prevent deleting the essential 'notes' module
+        // Prevent deleting the essential 'notes' module (check delegated to manager, but good here too)
         if (!moduleId || moduleId === 'notes') {
             if (moduleId === 'notes') alert('The Notes module cannot be deleted.');
             else alert("Error: Could not identify the module to delete.");
             return;
         }
 
-        // Find the module in our local 'modules' array
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex === -1) {
-            alert(`Error: Module "${moduleId}" not found.`);
-            return;
+        // Find module type and children info *from the manager's data* for the prompt
+        let isHeader = false;
+        let directChildrenCount = 0;
+        const ModuleDefManager = window.ConstructionApp.ModuleDefinitionManager;
+        if (ModuleDefManager && typeof ModuleDefManager.getModuleDefinitions === 'function') {
+            const masterModules = ModuleDefManager.getModuleDefinitions();
+            const moduleToDeleteData = masterModules.find(m => m.id === moduleId);
+            if (moduleToDeleteData) {
+                isHeader = moduleToDeleteData.type === 'header';
+                if (isHeader) {
+                    directChildrenCount = masterModules.filter(m => m.parentId === moduleId).length;
+                }
+            } else {
+                 console.warn("[SidebarManager] Could not find module data in manager for delete confirmation prompt:", moduleId);
+                 // Proceed with deletion attempt anyway, manager will handle 'not found'
+            }
+        } else {
+             console.warn("[SidebarManager] ModuleDefinitionManager not available for delete confirmation prompt.");
+             // Attempt deletion anyway
         }
 
-        const moduleToDelete = modules[moduleIndex];
-        const moduleName = moduleToDelete.name;
-        const isHeader = moduleToDelete.type === 'header';
-
-        // Find direct children to warn user if deleting a header with children
-        const directChildren = modules.filter(m => m.parentId === moduleId);
 
         let confirmMessage = `Are you sure you want to delete the "${moduleName}" module?`;
-        if (isHeader && directChildren.length > 0) {
-            confirmMessage += `\n\nWARNING: This is a header with ${directChildren.length} direct sub-module(s). Deleting it will also delete ALL descendants.`;
+        if (isHeader && directChildrenCount > 0) {
+            confirmMessage += `\n\nWARNING: This is a header with ${directChildrenCount} direct sub-module(s). Deleting it will also delete ALL descendants.`;
         }
         confirmMessage += `\n\nThis action cannot be undone.`;
 
         const confirmed = confirm(confirmMessage);
 
         if (confirmed) {
-            console.log(`[SidebarManager] Deleting module ${moduleId} (${moduleName}) and descendants.`);
+            console.log(`[SidebarManager] Requesting deletion of module ${moduleId} (${moduleName}) from ModuleDefinitionManager.`);
 
-            // Find all IDs to delete (the module itself and all descendants)
-            const idsToDelete = new Set([moduleId]);
-            const queue = [moduleId]; // Start with the module to delete
+            // --- DELEGATE DELETION AND SAVING TO THE MANAGER ---
+            // ModuleDefinitionManager will handle updating the master list,
+            // saving to Firebase, and triggering the sidebar re-render.
+            if (ModuleDefManager && typeof ModuleDefManager.deleteModuleDefinition === 'function') {
+                const deleteSuccess = ModuleDefManager.deleteModuleDefinition(moduleId);
 
-            while (queue.length > 0) {
-                const currentParentId = queue.shift();
-                // Find children of the current parent
-                modules.forEach(module => {
-                    if (module.parentId === currentParentId && !idsToDelete.has(module.id)) {
-                        idsToDelete.add(module.id);
-                        queue.push(module.id); // Add child to the queue to find its descendants
-                    }
-                });
+                // Optional: Provide feedback based on whether the manager reported success
+                // Note: The alert inside ModuleDefinitionManager might already handle this.
+                if (deleteSuccess) {
+                    console.log("[SidebarManager] Deletion request sent successfully.");
+                    // alert(`Module "${moduleName}" deletion processed.`); // Maybe remove this alert
+                } else {
+                    console.warn("[SidebarManager] ModuleDefinitionManager reported deletion failed (e.g., module not found or protected).");
+                    // Alert might already be shown by ModuleDefinitionManager
+                }
+            } else {
+                 console.error("[SidebarManager] Cannot handle delete: ModuleDefinitionManager.deleteModuleDefinition function not found!");
+                 alert("Error: Could not process module deletion. Please check console.");
             }
 
-            // Filter the local 'modules' array, keeping only those NOT in idsToDelete
-            modules = modules.filter(module => !idsToDelete.has(module.id));
-
-            console.log("[SidebarManager] Modules filtered. Remaining:", modules.length);
-
-            // Recalculate order and re-render
-            recalculateModuleOrder();
-            renderModuleList(modules);
-
-            // Save the modified structure
-            triggerSaveStructure();
-
-            alert(`Module "${moduleName}" ${idsToDelete.size > 1 ? 'and its descendants ' : ''}deleted successfully.`);
+            // REMOVED: Local filtering, local order recalc, local render, and incorrect save call.
         }
     }
 
@@ -684,9 +611,6 @@
     function init(modulesData) {
         console.log("[SidebarManager] Initializing...");
 
-        // Store the module data passed from the main script
-        modules = modulesData; // Store the reference
-
         // Find the sidebar container element
         const container = document.getElementById('modules-container');
         if (!container) {
@@ -694,34 +618,32 @@
             return;
         }
 
-        // Initialize header collapse state based on loaded modules
+        // Initialize header collapse state based on initial modules
         headerCollapseState = {}; // Reset first
-         modules.forEach(module => {
+         modulesData.forEach(module => {
              if (module.type === 'header') {
-                 // Default to collapsed, unless state was somehow preserved (e.g., via sessionStorage - not implemented here)
+                 // Default to collapsed, unless state was somehow preserved
                  if (headerCollapseState[module.id] === undefined) {
-                     headerCollapseState[module.id] = true;
+                     headerCollapseState[module.id] = true; // Default headers to collapsed
                  }
              }
          });
 
         // Call the actual setup functions
-        renderModuleList(modules);      // Initial render
-        setupModuleSearch();            // Setup search input
-        setupDragAndDrop();             // Setup drag & drop listeners
-        setupDropdownMenus();           // Setup global click listener for dropdowns
+        renderModuleList(modulesData);    // Initial render with passed data
+        setupModuleSearch();          // Setup search input
+        setupDragAndDrop();           // Setup drag & drop listeners
+        setupDropdownMenus();         // Setup global click listener for dropdowns
         // Collapse listeners are now added directly in createModuleElement
 
         console.log("[SidebarManager] Initialization complete.");
     }
 
     // --- Expose Public Interface ---
-    // Make the 'init' function available for dashboard.js to call
+    // Make the 'init' and 'renderModuleList' functions available
     window.ConstructionApp.SidebarManager = {
         init: init,
-        // Expose render function in case other parts need to trigger a re-render
-        // (e.g., after module definitions are added/deleted if that logic moves elsewhere)
-        renderModuleList: renderModuleList
+        renderModuleList: renderModuleList // Allow ModuleDefinitionManager to trigger re-renders
     };
 
 })(); // Immediately invoke the function to set everything up
