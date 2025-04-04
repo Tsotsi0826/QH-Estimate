@@ -1,4 +1,4 @@
-// js/module-definition-manager.js - UPDATED VERSION
+// js/module-definition-manager.js - UPDATED VERSION (Triggers Dashboard Render)
 (function() {
     'use strict';
 
@@ -12,12 +12,9 @@
     /**
      * Saves the current module structure (from the local 'modules' array)
      * to Firebase and sessionStorage backup.
-     * (Code moved from dashboard.js)
      */
     async function saveModuleStructure() {
         console.log("[ModuleDefManager] Saving module structure");
-
-        // Create simplified objects for saving, using the local 'modules' array
         const modulesToSave = modules.map(module => ({
             id: module.id,
             name: module.name,
@@ -26,11 +23,8 @@
             parentId: module.parentId,
             order: module.order ?? 0
         }));
-
         console.log("[ModuleDefManager] Modules prepared for saving:", modulesToSave.length);
-
         let firebaseSuccess = false;
-        // Save to Firebase
         if (window.ConstructionApp && window.ConstructionApp.Firebase) {
             try {
                 firebaseSuccess = await window.ConstructionApp.Firebase.saveModules(modulesToSave);
@@ -41,31 +35,25 @@
                 }
             } catch (error) {
                  console.error("[ModuleDefManager] Error saving module structure to Firebase:", error);
-                 firebaseSuccess = false; // Ensure it's false on error
+                 firebaseSuccess = false;
             }
         } else {
             console.warn("[ModuleDefManager] Firebase not available, cannot save structure to Firebase.");
         }
-
-        // Always try to save backup to sessionStorage
         try {
             sessionStorage.setItem('moduleOrder', JSON.stringify(modulesToSave));
             console.log("[ModuleDefManager] Module structure backup saved to sessionStorage.");
         } catch (storageError) {
             console.error("[ModuleDefManager] Error saving structure backup to sessionStorage:", storageError);
         }
-
-        return firebaseSuccess; // Return status of Firebase save attempt
+        return firebaseSuccess;
     }
 
     /**
      * Gets the default set of modules.
-     * (Code moved from dashboard.js)
-     * @returns {Array} Default module definitions.
      */
     function getDefaultModules() {
         console.log("[ModuleDefManager] Providing default module set.");
-        // Added 'notes' to the default set
         return [
             { id: 'notes', name: 'Notes', requiresClient: true, type: 'regular', parentId: null, order: 0 },
             { id: 'p-and-gs', name: 'P&G\'s', requiresClient: true, type: 'regular', parentId: null, order: 1 },
@@ -77,53 +65,44 @@
             { id: 'brickwork', name: 'Brickwork', requiresClient: true, type: 'regular', parentId: 'structure', order: 0 },
             { id: 'demolish', name: 'Demolish', requiresClient: true, type: 'regular', parentId: null, order: 4 },
             { id: 'ceilings', name: 'Ceilings', requiresClient: true, type: 'regular', parentId: null, order: 5 },
-             // Add other default modules as needed
         ];
     }
 
      /**
        * Restores the module structure from sessionStorage backup.
-       * (Code moved from dashboard.js)
-       * @returns {Array|null} The restored module array or null.
        */
      function restoreModuleOrderFromBackup() {
          const savedOrder = sessionStorage.getItem('moduleOrder');
          if (savedOrder) {
              try {
                  const orderData = JSON.parse(savedOrder);
-                 if (!Array.isArray(orderData)) {
-                     throw new Error("Backup data is not an array.");
-                 }
+                 if (!Array.isArray(orderData)) { throw new Error("Backup data is not an array."); }
                  console.log("[ModuleDefManager] Restoring structure from backup:", orderData.length, "modules");
-                 // Ensure basic properties exist on restore
                  return orderData.map(mod => ({
                      ...mod,
                      type: mod.type || 'regular',
                      parentId: (mod.parentId === undefined || mod.parentId === 'null') ? null : mod.parentId,
                      order: mod.order ?? 0,
-                     // Add default render/save placeholders if missing from backup
                      renderTemplate: mod.renderTemplate || function(client) { return `<h3>${mod.name}</h3><p>Default Content</p>`; },
                      saveData: mod.saveData || function() { return {}; }
                  }));
              } catch (error) {
                  console.error("[ModuleDefManager] Error parsing module structure backup:", error);
-                 sessionStorage.removeItem('moduleOrder'); // Clear corrupted backup
+                 sessionStorage.removeItem('moduleOrder');
              }
          } else {
              console.warn("[ModuleDefManager] No module structure backup found in sessionStorage.");
          }
-         return null; // Return null if no valid backup
+         return null;
      }
 
     /**
      * Triggers the SidebarManager to re-render its list using the current master list.
      */
     function triggerSidebarRender() {
-        // Use setTimeout to allow current execution stack to clear before rendering
         setTimeout(() => {
-            if (window.ConstructionApp.SidebarManager && typeof window.ConstructionApp.SidebarManager.renderModuleList === 'function') {
+            if (window.ConstructionApp.SidebarManager?.renderModuleList) {
                 console.log("[ModuleDefManager] Triggering sidebar re-render.");
-                // Pass the current, updated 'modules' array from this manager
                 window.ConstructionApp.SidebarManager.renderModuleList(modules);
             } else {
                 console.warn("[ModuleDefManager] SidebarManager.renderModuleList not found. Cannot trigger re-render.");
@@ -132,27 +111,38 @@
     }
 
     /**
+     * Triggers the DashboardRenderer to re-render the main content area.
+     * Needs the current client context.
+     */
+    function triggerDashboardRender() {
+         setTimeout(() => {
+             const ClientManager = window.ConstructionApp.ClientManager;
+             const DashboardRenderer = window.ConstructionApp.DashboardRenderer;
+             if (ClientManager?.getCurrentClient && DashboardRenderer?.render) {
+                 console.log("[ModuleDefManager] Triggering dashboard content re-render.");
+                 const currentClient = ClientManager.getCurrentClient();
+                 // Pass the current modules from this manager to ensure renderer uses latest order
+                 DashboardRenderer.render(currentClient, modules);
+             } else {
+                 console.warn("[ModuleDefManager] ClientManager or DashboardRenderer not available. Cannot trigger dashboard re-render.");
+             }
+         }, 0); // Use setTimeout like triggerSidebarRender
+    }
+
+
+    /**
      * Recalculates the 'order' property for all modules based on their position
      * within their parent group in the master 'modules' array.
-     * (Moved from sidebar-manager as it modifies the core data)
      */
     function recalculateModuleOrder() {
         const modulesByParent = {};
-
-        // Group modules by parentId based on current 'modules' array order
         modules.forEach(module => {
             const parentKey = module.parentId === null ? 'null' : module.parentId;
-            if (!modulesByParent[parentKey]) {
-                modulesByParent[parentKey] = [];
-            }
+            if (!modulesByParent[parentKey]) { modulesByParent[parentKey] = []; }
             modulesByParent[parentKey].push(module);
         });
-
-        // Assign sequential order within each group
         Object.values(modulesByParent).forEach(group => {
-            group.forEach((module, index) => {
-                module.order = index;
-            });
+            group.forEach((module, index) => { module.order = index; });
         });
          console.log("[ModuleDefManager] Module order recalculated.");
     }
@@ -163,25 +153,20 @@
     /**
      * Loads module definitions from Firebase/backup/defaults, processes them,
      * stores them in the local 'modules' array, and returns them.
-     * (Code adapted from dashboard.js's loadAndRenderModules)
-     * @returns {Promise<Array>} A promise that resolves with the loaded module definitions array.
      */
     async function loadModuleDefinitions() {
-        console.log("[ModuleDefManager] Loading modules structure"); // Changed log message
+        console.log("[ModuleDefManager] Loading modules structure");
         let loadedModules = [];
         let source = "Unknown";
-
         try {
             if (!window.ConstructionApp?.Firebase) throw new Error("Firebase module not available");
             loadedModules = await window.ConstructionApp.Firebase.loadModules();
             source = "Firebase";
             console.log("[ModuleDefManager] Attempted load from Firebase. Found:", loadedModules?.length || 0);
-
             if (!Array.isArray(loadedModules)) {
                 console.warn("[ModuleDefManager] Firebase loadModules did not return an array.");
-                loadedModules = []; // Reset to trigger backup/defaults
+                loadedModules = [];
             }
-
             if (loadedModules.length === 0) {
                 console.warn("[ModuleDefManager] No modules in Firebase or invalid data, trying backup.");
                 source = "Backup";
@@ -192,9 +177,9 @@
                     console.warn("[ModuleDefManager] Backup empty or failed. Using defaults.");
                     source = "Defaults";
                     loadedModules = getDefaultModules();
-                    // Attempt to save defaults back to Firebase if loaded from defaults
-                    // Use the local saveModuleStructure which now handles Firebase/backup
-                    await saveModuleStructure(); // This will save the 'loadedModules' (defaults)
+                    // Save defaults back immediately if using them
+                    modules = loadedModules; // Temporarily set 'modules' so save works
+                    await saveModuleStructure();
                     console.log("[ModuleDefManager] Saved default modules.");
                 }
             }
@@ -208,13 +193,13 @@
                 console.warn("[ModuleDefManager] Backup failed/empty after Firebase error. Using defaults.");
                 source = "Defaults (after error)";
                 loadedModules = getDefaultModules();
-                try {
-                     // Attempt to save defaults back using the local function
-                     await saveModuleStructure(); // This will save the 'loadedModules' (defaults)
+                 try {
+                     modules = loadedModules; // Temporarily set 'modules' so save works
+                     await saveModuleStructure();
                      console.log("[ModuleDefManager] Saved default modules after initial load error.");
-                } catch (saveError) {
+                 } catch (saveError) {
                     console.error("[ModuleDefManager] Failed to save default modules after Firebase load error:", saveError);
-                }
+                 }
             }
         }
 
@@ -222,298 +207,179 @@
         const notesModuleIndex = loadedModules.findIndex(m => m.id === 'notes');
         let notesModuleData = notesModuleIndex > -1 ? loadedModules.splice(notesModuleIndex, 1)[0] : {};
         notesModuleData = {
-            id: 'notes',
-            name: notesModuleData.name || 'Notes',
+            id: 'notes', name: notesModuleData.name || 'Notes',
             requiresClient: notesModuleData.requiresClient !== undefined ? notesModuleData.requiresClient : true,
-            type: notesModuleData.type || 'regular',
-            parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null,
-            order: -1, // Ensure it comes first visually if sort uses order
+            type: notesModuleData.type || 'regular', parentId: notesModuleData.parentId !== undefined ? notesModuleData.parentId : null,
+            order: -1,
             renderTemplate: notesModuleData.renderTemplate || function(client) { return `<h3>Notes</h3><p>Client notes area.</p>`; },
             saveData: notesModuleData.saveData || function() { return {}; }
         };
-        loadedModules.unshift(notesModuleData); // Add notes to the beginning
+        loadedModules.unshift(notesModuleData);
 
         // Store the final processed list in the local 'modules' variable
         modules = loadedModules.map((mod, index) => ({
             ...mod,
             parentId: (mod.parentId === 'null' || mod.parentId === undefined) ? null : mod.parentId,
-            order: mod.order ?? index, // Assign order if missing
-            // Ensure placeholders exist if missing from loaded data
+            order: mod.order ?? index,
             renderTemplate: mod.renderTemplate || function(client) { return `<h3>${mod.name}</h3><p>Default Content</p>`; },
             saveData: mod.saveData || function() { return {}; }
         }));
 
-        // Ensure order is calculated correctly after processing
         recalculateModuleOrder();
-        // Final sort based on calculated order
         modules.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
 
         console.log(`[ModuleDefManager] Module structure processed. Final count: ${modules.length}. Source: ${source}`);
-        return modules; // Return the processed list
+        return modules;
     }
 
     /**
      * Adds a new module definition based on input info.
-     * (Logic moved from dashboard.js's addNewModule)
-     * @param {object} moduleInfo - Object containing name, type, parentId, requiresClient.
-     * @returns {object|null} The newly created module object or null if failed.
      */
     function addNewModuleDefinition(moduleInfo) {
-         // --- Validation ---
          const moduleName = moduleInfo.name?.trim();
-         if (!moduleName) {
-             alert("Module name is required.");
-             return null;
-         }
+         if (!moduleName) { alert("Module name is required."); return null; }
          const moduleType = moduleInfo.type || 'regular';
-         // Convert 'null' string from select to actual null
          const parentId = moduleType === 'header' ? null : (moduleInfo.parentId === 'null' ? null : moduleInfo.parentId);
          const requiresClient = moduleInfo.requiresClient !== undefined ? moduleInfo.requiresClient : true;
-
-         // Generate a simple ID
          const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-         if (!moduleId) {
-             alert("Could not generate a valid ID from the module name.");
-             return null;
-         }
+         if (!moduleId) { alert("Could not generate a valid ID from the module name."); return null; }
+         if (modules.some(m => m.id === moduleId)) { alert(`Module ID "${moduleId}" already exists or is invalid.`); return null; }
 
-         // Check for duplicate ID in the current 'modules' array
-         if (modules.some(m => m.id === moduleId)) {
-             alert(`Module ID "${moduleId}" already exists or is invalid. Please choose a different name.`);
-             return null;
-         }
-         // --- End Validation ---
-
-         // Calculate order (append to the end of its parent group)
          let order = 0;
          const siblings = modules.filter(m => m.parentId === parentId);
-         if (siblings.length > 0) {
-             order = Math.max(...siblings.map(m => m.order ?? -1)) + 1;
-         }
+         if (siblings.length > 0) { order = Math.max(...siblings.map(m => m.order ?? -1)) + 1; }
 
-         // Create the new module object
          const newModuleData = {
-             id: moduleId,
-             name: moduleName,
-             requiresClient: requiresClient,
-             type: moduleType,
-             parentId: parentId,
-             order: order,
-             // Add default render/save placeholders
+             id: moduleId, name: moduleName, requiresClient: requiresClient, type: moduleType,
+             parentId: parentId, order: order,
              renderTemplate: function(client) { return `<h3>${moduleName}</h3><p>Default content.</p>`; },
              saveData: function() { return {}; }
          };
-
          console.log("[ModuleDefManager] Adding new module:", newModuleData);
-
-         // Add to the local 'modules' array
          modules.push(newModuleData);
-         // Ensure order is correct after adding
          recalculateModuleOrder();
          modules.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
 
+         saveModuleStructure().then(() => { // Ensure save completes before triggering renders
+             triggerSidebarRender();
+             triggerDashboardRender(); // <-- ADDED: Trigger dashboard render
+         });
 
-         // Save the updated structure (async but don't necessarily wait)
-         saveModuleStructure();
-
-         // Trigger sidebar re-render with the updated list
-         triggerSidebarRender();
-
-         return newModuleData; // Return the created module
+         return newModuleData;
     }
 
      /**
        * Edits an existing module definition (e.g., renames).
-       * (Logic moved from sidebar-manager.js's editModule, adapted)
-       * @param {string} moduleId - The ID of the module to edit.
-       * @param {object} updatedInfo - Object with properties to update (e.g., { name: "New Name" }).
-       * @returns {boolean} True if successful, false otherwise.
        */
      function editModuleDefinition(moduleId, updatedInfo) {
-         if (!moduleId || !updatedInfo || !updatedInfo.name) {
-             console.error("[ModuleDefManager] Invalid arguments for editModuleDefinition.");
-             return false;
-         }
+         if (!moduleId || !updatedInfo || !updatedInfo.name) { console.error("[ModuleDefManager] Invalid arguments for editModuleDefinition."); return false; }
          const newName = updatedInfo.name.trim();
-         if (newName === '') {
-             console.error("[ModuleDefManager] New module name cannot be empty.");
-             alert("Module name cannot be empty."); // User feedback
-             return false;
-         }
-
-         // Find module by moduleId in local 'modules' array
+         if (newName === '') { alert("Module name cannot be empty."); return false; }
          const moduleIndex = modules.findIndex(m => m.id === moduleId);
-         if (moduleIndex === -1) {
-             console.error("[ModuleDefManager] Edit Error: Module not found:", moduleId);
-             alert("Error: Module to edit was not found."); // User feedback
-             return false;
-         }
+         if (moduleIndex === -1) { alert("Error: Module to edit was not found."); return false; }
 
-         // Check if new name causes ID conflict (if ID generation depends on name - currently it does only on creation)
-         // For simplicity, we are only changing the name, not the ID here.
-
-         // Update the name in the local 'modules' array
          console.log(`[ModuleDefManager] Renaming module ${moduleId} to "${newName}"`);
          modules[moduleIndex].name = newName;
 
-         // Save the updated structure (async but don't necessarily wait)
-         saveModuleStructure();
+         saveModuleStructure().then(() => { // Ensure save completes before triggering renders
+             triggerSidebarRender();
+             triggerDashboardRender(); // <-- ADDED: Trigger dashboard render
+         });
 
-         // Trigger sidebar re-render to show the new name
-         triggerSidebarRender();
-
-         return true; // Indicate success
+         return true;
      }
 
     /**
      * Deletes a module definition and its descendants.
-     * (Logic moved from sidebar-manager.js's deleteModule, adapted)
-     * @param {string} moduleId - The ID of the module to delete.
-     * @returns {boolean} True if successful, false otherwise.
      */
     function deleteModuleDefinition(moduleId) {
-        // Prevent deleting the essential 'notes' module
         if (!moduleId || moduleId === 'notes') {
-            console.warn("[ModuleDefManager] Attempted to delete invalid or protected module:", moduleId);
-            // Provide user feedback if trying to delete notes
             if (moduleId === 'notes') alert('The Notes module cannot be deleted.');
             return false;
         }
-
-        // Find the module in the local 'modules' array
         const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex === -1) {
-            console.error("[ModuleDefManager] Delete Error: Module not found:", moduleId);
-            alert("Error: Module to delete was not found."); // User feedback
-            return false;
-        }
+        if (moduleIndex === -1) { alert("Error: Module to delete was not found."); return false; }
 
         console.log(`[ModuleDefManager] Deleting module ${moduleId} and descendants.`);
-
-        // Find all IDs to delete (the module itself and all descendants)
         const idsToDelete = new Set([moduleId]);
-        const queue = [moduleId]; // Start with the module to delete
-
+        const queue = [moduleId];
         while (queue.length > 0) {
             const currentParentId = queue.shift();
-            // Find children of the current parent in the current 'modules' list
             modules.forEach(module => {
                 if (module.parentId === currentParentId && !idsToDelete.has(module.id)) {
                     idsToDelete.add(module.id);
-                    queue.push(module.id); // Add child to the queue to find its descendants
+                    queue.push(module.id);
                 }
             });
         }
 
-        // Filter the local 'modules' array, keeping only those NOT in idsToDelete
         const initialLength = modules.length;
         modules = modules.filter(module => !idsToDelete.has(module.id));
         const deletedCount = initialLength - modules.length;
 
         if (deletedCount > 0) {
             console.log(`[ModuleDefManager] ${deletedCount} module(s) removed.`);
-            // Recalculate order and save the modified structure
-            recalculateModuleOrder(); // Recalculate order for remaining modules
-            saveModuleStructure();
+            recalculateModuleOrder();
 
-            // Trigger sidebar re-render
-            triggerSidebarRender();
-            return true; // Indicate success
+            saveModuleStructure().then(() => { // Ensure save completes before triggering renders
+                triggerSidebarRender();
+                triggerDashboardRender(); // <-- ADDED: Trigger dashboard render
+            });
+            return true;
         } else {
-            console.warn("[ModuleDefManager] Delete operation did not remove any modules (maybe already deleted?).");
-            return false; // Indicate nothing changed
+            console.warn("[ModuleDefManager] Delete operation did not remove any modules.");
+            return false;
         }
     }
 
-    // --- NEW FUNCTION TO HANDLE DRAG AND DROP ---
     /**
      * Handles moving a module based on drag-and-drop actions from the sidebar.
-     * Updates the internal module list, recalculates order, saves, and triggers UI refresh.
-     * @param {string} draggedId - The ID of the module being moved.
-     * @param {string} targetId - The ID of the module being dropped onto/relative to.
-     * @param {'top'|'middle'|'bottom'} dropIndicator - Where the drop occurred relative to the target.
-     * @returns {boolean} True if the move was processed successfully, false otherwise.
      */
     function handleModuleMove(draggedId, targetId, dropIndicator) {
         console.log(`[ModuleDefManager] Handling move request: dragged=${draggedId}, target=${targetId}, position=${dropIndicator}`);
-
-        // Find the indices of the dragged and target modules in the master 'modules' array
         const draggedIndex = modules.findIndex(m => m.id === draggedId);
         const targetIndex = modules.findIndex(m => m.id === targetId);
-
-        if (draggedIndex === -1 || targetIndex === -1) {
-            console.error(`[ModuleDefManager] Move Error: Dragged module (${draggedId}) or target module (${targetId}) not found.`);
-            return false; // Indicate failure
-        }
+        if (draggedIndex === -1 || targetIndex === -1) { console.error(`[ModuleDefManager] Move Error: Dragged or target module not found.`); return false; }
 
         const draggedModule = modules[draggedIndex];
         const targetModule = modules[targetIndex];
-
-        // --- Determine New Parent and Target Index for Insertion ---
         let newParentId = null;
         let insertionIndex = -1;
 
         if (dropIndicator === 'middle' && targetModule.type === 'header') {
-            // Dropping INTO a header
             newParentId = targetModule.id;
-            // We want to insert it as the first child within that header group in the array
-            // Find the index immediately after the header itself
             insertionIndex = targetIndex + 1;
-            // (recalculateModuleOrder will fix the actual .order property later)
-
         } else if (dropIndicator === 'top') {
-            // Dropping ABOVE the target module (becomes sibling)
-            newParentId = targetModule.parentId; // Same parent as target
-            insertionIndex = targetIndex; // Insert right before the target
-
-        } else { // dropIndicator === 'bottom'
-            // Dropping BELOW the target module (becomes sibling)
-            newParentId = targetModule.parentId; // Same parent as target
-            insertionIndex = targetIndex + 1; // Insert right after the target
+            newParentId = targetModule.parentId;
+            insertionIndex = targetIndex;
+        } else { // bottom
+            newParentId = targetModule.parentId;
+            insertionIndex = targetIndex + 1;
         }
-
         console.log(`[ModuleDefManager] Calculated new parent: ${newParentId}, insertion index: ${insertionIndex}`);
 
-        // --- Update the Master 'modules' Array ---
-
-        // 1. Update the parentId of the dragged module
         draggedModule.parentId = newParentId;
-
-        // 2. Remove the dragged module from its original position
-        //    Must be done before calculating the final insertion index if moving within the same list
         const [removedModule] = modules.splice(draggedIndex, 1);
-
-        // 3. Adjust insertion index if the removal affected it
-        //    If the item was removed from *before* the target insertion point, the index needs to decrease.
-        if (draggedIndex < insertionIndex) {
-            insertionIndex--;
-        }
-
-        // 4. Insert the module at the new position
+        if (draggedIndex < insertionIndex) { insertionIndex--; }
         modules.splice(insertionIndex, 0, removedModule);
 
-        // --- Recalculate Order, Save, and Update UI ---
         console.log("[ModuleDefManager] Recalculating order after move...");
-        recalculateModuleOrder(); // Update .order properties based on new array positions
+        recalculateModuleOrder();
 
         console.log("[ModuleDefManager] Saving structure after move...");
-        saveModuleStructure(); // Save the updated structure to Firebase/backup
+        saveModuleStructure().then(() => { // Ensure save completes before triggering renders
+            triggerSidebarRender();
+            triggerDashboardRender(); // <-- ADDED: Trigger dashboard render
+        });
 
-        console.log("[ModuleDefManager] Triggering sidebar render after move...");
-        triggerSidebarRender(); // Update the UI
-
-        return true; // Indicate success
+        return true;
     }
-    // --- END OF NEW FUNCTION ---
-
 
     /**
      * Gets the current list of module definitions managed by this module.
-     * @returns {Array} The array of module definitions.
      */
     function getModuleDefinitions() {
-        // Return a copy to prevent accidental modification from outside
-        return [...modules];
+        return [...modules]; // Return a copy
     }
 
 
@@ -524,12 +390,10 @@
         addNewModuleDefinition: addNewModuleDefinition,
         editModuleDefinition: editModuleDefinition,
         deleteModuleDefinition: deleteModuleDefinition,
-        // Expose save function for potential external use (though D&D now uses handleModuleMove)
-        saveModuleStructure: saveModuleStructure,
-        // Expose recalculate order for potential external use (though D&D now uses handleModuleMove)
-        recalculateModuleOrder: recalculateModuleOrder,
-        // Expose the new function for handling drag/drop moves
+        saveModuleStructure: saveModuleStructure, // Keep exposed if needed elsewhere
+        recalculateModuleOrder: recalculateModuleOrder, // Keep exposed if needed elsewhere
         handleModuleMove: handleModuleMove
+        // Note: triggerSidebarRender and triggerDashboardRender are internal helpers
     };
 
 })();
