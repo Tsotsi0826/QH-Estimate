@@ -220,12 +220,14 @@
         /* Table header and data cells */
         .module-table th,
         .module-table td {
-            padding: 10px;
+            padding: 8px 10px; /* Reduced padding for tighter spacing */
             text-align: left;
             border: 1px solid #ddd;
             overflow: hidden; /* Prevent content overflow */
             white-space: nowrap; /* Prevent text wrapping */
             text-overflow: ellipsis; /* Show ellipsis (...) if text overflows */
+            font-size: 1.04em; /* Slightly larger text */
+            font-weight: 500; /* Slightly bolder than normal */
         }
 
         /* Column width definitions */
@@ -237,34 +239,32 @@
 
         .module-table th:nth-child(2), /* Pc (Checkbox) */
         .module-table td:nth-child(2) {
-            width: 6%;
+            width: 5%;
             text-align: center;
         }
 
         .module-table th:nth-child(3), /* Qty */
         .module-table td:nth-child(3) {
-            width: 6%;
+            width: 10%;
+            text-align: center;
         }
 
         .module-table th:nth-child(4), /* Rate */
         .module-table td:nth-child(4) {
             width: 15%;
+            text-align: right;
         }
 
-        .module-table th:nth-child(5), /* Empty Spacer */
+        .module-table th:nth-child(5), /* Unit */
         .module-table td:nth-child(5) {
-            width: 3%;
-            border-left: none; /* Hide borders for spacer */
-            border-right: none;
+            width: 10%;
+            text-align: center;
         }
-         .module-table th:nth-child(5) { /* Header specific border */
-             border-bottom: 1px solid #ddd;
-         }
-
 
         .module-table th:nth-child(6), /* Total */
         .module-table td:nth-child(6) {
             width: 15%;
+            text-align: right;
         }
 
         /* Table header specific styling */
@@ -287,19 +287,13 @@
         /* Input fields within table cells */
         .module-table input {
             width: 100%;
-            padding: 5px;
+            padding: 4px; /* Reduced padding to match reduced line height */
             border: 1px solid transparent; /* Invisible border */
             background-color: transparent; /* Blend with cell */
-            font-size: inherit; /* Match cell font size */
+            font-size: 1em; /* Match cell font size */
             font-family: inherit;
+            font-weight: inherit; /* Inherit font weight from parent */
         }
-        /* Style for read-only inputs (though none should be readonly now for rate/desc) */
-        .module-table input:read-only {
-             color: #555; /* Slightly dimmer text */
-             cursor: default;
-             /* background-color: #eee; */ /* Optional: subtle background */
-        }
-
 
         /* Input focus styling */
         .module-table input:focus {
@@ -324,6 +318,10 @@
             background-color: #e9e9e9; /* Slightly darker gray */
         }
 
+        .module-table .footer-row td {
+            font-weight: bold; /* Ensure footer is bold */
+        }
+
         /* Specific styling for the quantity cell background */
         .module-table .qty-cell {
             background-color: #f0faf3; /* Light green background */
@@ -337,8 +335,8 @@
 
         /* Checkbox styling */
         .item-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
             vertical-align: middle; /* Align with text if any */
         }
@@ -480,7 +478,7 @@
                         <th>Pc</th> 
                         <th class="sort-header" data-sort="qty">Qty</th>
                         <th class="sort-header" data-sort="rate">Rate</th>
-                        <th></th> 
+                        <th>Unit</th> 
                         <th class="sort-header" data-sort="total">Total</th>
                     </tr>
                 </thead>
@@ -515,21 +513,21 @@
             id: 'ceilings', // Unique ID for this module (matches filename)
             title: 'Ceilings', // User-facing title
             defaultItems: [ // Items specific to the Ceilings module based on screenshot
-                { id: 'ceil-project-quoted', description: 'Project Quoted', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-board-batten', description: 'Board Batten and Skim', qty: 0, rate: 480.00, checked: false, editable: true },
-                { id: 'ceil-skimmed-concrete', description: 'Skimmed Concrete Ceilings', qty: 0, rate: 320.00, checked: false, editable: true },
-                { id: 'ceil-pvc', description: 'PVC Ceilings', qty: 0, rate: 260.00, checked: false, editable: true },
-                { id: 'ceil-iso-board', description: 'Iso Board Ceilings', qty: 0, rate: 500.00, checked: false, editable: true },
-                { id: 'ceil-dropped', description: 'Dropped Ceilings', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-nutech', description: 'Nutech Ceilings', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-buldheads', description: 'Buldheads', qty: 0, rate: 350.00, checked: false, editable: true },
-                { id: 'ceil-light-trowes', description: 'Light Trowes', qty: 0, rate: 350.00, checked: false, editable: true },
-                { id: 'ceil-cornices', description: 'Cornice\'s', qty: 0, rate: 140.00, checked: false, editable: true },
-                { id: 'ceil-isotherm', description: 'Isotherm', qty: 0, rate: 200.00, checked: false, editable: true },
-                { id: 'ceil-tung-groove', description: 'Tung and Groove Wood', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-demolish', description: 'Ceiling Demolsh and Remove', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-skim-walls', description: 'Skim Walls', qty: 0, rate: 0.00, checked: false, editable: true },
-                { id: 'ceil-other', description: 'Ceilings Other', qty: 0, rate: 0.00, checked: false, editable: true }
+                { id: 'ceil-project-quoted', description: 'Project Quoted', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-board-batten', description: 'Board Batten and Skim', qty: 0, rate: 480.00, checked: false, unit: 'm²' },
+                { id: 'ceil-skimmed-concrete', description: 'Skimmed Concrete Ceilings', qty: 0, rate: 320.00, checked: false, unit: 'm²' },
+                { id: 'ceil-pvc', description: 'PVC Ceilings', qty: 0, rate: 260.00, checked: false, unit: 'm²' },
+                { id: 'ceil-iso-board', description: 'Iso Board Ceilings', qty: 0, rate: 500.00, checked: false, unit: 'm²' },
+                { id: 'ceil-dropped', description: 'Dropped Ceilings', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-nutech', description: 'Nutech Ceilings', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-buldheads', description: 'Buldheads', qty: 0, rate: 350.00, checked: false, unit: 'm' },
+                { id: 'ceil-light-trowes', description: 'Light Trowes', qty: 0, rate: 350.00, checked: false, unit: 'm' },
+                { id: 'ceil-cornices', description: 'Cornice\'s', qty: 0, rate: 140.00, checked: false, unit: 'm' },
+                { id: 'ceil-isotherm', description: 'Isotherm', qty: 0, rate: 200.00, checked: false, unit: 'm²' },
+                { id: 'ceil-tung-groove', description: 'Tung and Groove Wood', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-demolish', description: 'Ceiling Demolsh and Remove', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-skim-walls', description: 'Skim Walls', qty: 0, rate: 0.00, checked: false, unit: 'm²' },
+                { id: 'ceil-other', description: 'Ceilings Other', qty: 0, rate: 0.00, checked: false, unit: '@' }
             ]
         };
 
@@ -694,21 +692,26 @@
             const total = (item.qty > 0) ? (item.qty * item.rate) : 0; // Calculate initial total
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(total);
 
-            // Determine if inputs should be read-only based on item.editable
-            const readonlyAttribute = item.editable ? '' : 'readonly';
-
              // Set the inner HTML of the row with table cells (<td>)
-             // Uses template literals for easier HTML construction
+             // All inputs are now editable - removed readonly attributes
             row.innerHTML = `
-                <td> <input type="text" class="description-input" value="${item.description || ''}" ${readonlyAttribute}>
+                <td>
+                    <input type="text" class="description-input" value="${item.description || ''}">
                 </td>
-                <td class="checkbox-cell"> <input type="checkbox" class="item-checkbox" data-item-id="${item.id}" ${item.checked ? 'checked' : ''}>
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="item-checkbox" data-item-id="${item.id}" ${item.checked ? 'checked' : ''}>
                 </td>
-                <td class="qty-cell"> <input type="number" class="qty-input" value="${item.qty}" min="0" step="1" data-item-id="${item.id}">
+                <td class="qty-cell">
+                    <input type="number" class="qty-input" value="${item.qty}" min="0" step="1" data-item-id="${item.id}">
                 </td>
-                <td> <input type="text" class="rate-input currency" value="${rateFormatted}" ${readonlyAttribute} data-item-id="${item.id}">
+                <td>
+                    <input type="text" class="rate-input currency" value="${rateFormatted}" data-item-id="${item.id}">
                 </td>
-                <td></td> <td class="total-cell currency"> ${totalFormatted}
+                <td>
+                    <input type="text" class="unit-input" value="${item.unit || '@'}">
+                </td>
+                <td class="total-cell currency">
+                    ${totalFormatted}
                 </td>
             `;
 
@@ -773,12 +776,11 @@
             MODULE.defaultItems.forEach(defaultItem => {
                 const savedItem = savedItemsMap.get(defaultItem.id);
                 if (savedItem) {
-                    // Use saved item, but ensure critical default properties (like description, editable status) are preserved
+                    // Use saved item values for all properties - don't override description or unit
                     mergedItems.push({
-                        ...savedItem, // Take most properties from saved
-                        description: defaultItem.description, // Ensure description matches default
-                        editable: defaultItem.editable,     // Ensure editable status matches default
-                        custom: false // Mark explicitly as not custom
+                        ...defaultItem, // Get defaults first
+                        ...savedItem,   // Override with saved values
+                        custom: false   // Mark explicitly as not custom
                     });
                     savedItemsMap.delete(defaultItem.id); // Remove from map as it's processed
                 } else {
@@ -820,8 +822,8 @@
                 description: 'New Custom Item', // Default description
                 qty: 0,
                 rate: 0,
+                unit: 'm²', // Default unit
                 checked: false,
-                editable: true, // Custom items are always editable
                 custom: true    // Mark as a custom item
             };
 
@@ -858,10 +860,19 @@
          * @param {object} item - The corresponding item object from moduleData.
          */
         function setupRowInputHandlers(row, item) {
-            // --- Description Input (only if editable) ---
+            // --- Description Input ---
             const descInput = row.querySelector('.description-input');
-            if (descInput && item.editable) {
+            if (descInput) {
                 descInput.addEventListener('input', () => {
+                    updateItemFromRow(row, item); // Update data model
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
+                });
+            }
+
+            // --- Unit Input ---
+            const unitInput = row.querySelector('.unit-input');
+            if (unitInput) {
+                unitInput.addEventListener('input', () => {
                     updateItemFromRow(row, item); // Update data model
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges(); // Mark changes
                 });
@@ -887,9 +898,9 @@
                 });
             }
 
-            // --- Rate Input (only if editable) ---
+            // --- Rate Input ---
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && item.editable) {
+            if (rateInput) {
                 // On focus: Show raw number for easier editing
                 rateInput.addEventListener('focus', function() {
                     this.value = getNumericValue(this.value);
@@ -920,13 +931,17 @@
         function updateItemFromRow(row, item) {
             // Find inputs within the row
             const descInput = row.querySelector('.description-input');
+            const unitInput = row.querySelector('.unit-input');
             const checkbox = row.querySelector('.item-checkbox');
             const qtyInput = row.querySelector('.qty-input');
             const rateInput = row.querySelector('.rate-input');
 
-            // Update item properties from input values, respecting editability
-            if (descInput && item.editable) {
+            // Update item properties from input values
+            if (descInput) {
                 item.description = descInput.value;
+            }
+            if (unitInput) {
+                item.unit = unitInput.value;
             }
             if (checkbox) {
                 item.checked = checkbox.checked;
@@ -934,7 +949,7 @@
             if (qtyInput) {
                 item.qty = Math.max(0, parseInt(qtyInput.value, 10) || 0);
             }
-            if (rateInput && item.editable) {
+            if (rateInput) {
                 item.rate = getNumericValue(rateInput.value);
             }
 
@@ -997,7 +1012,7 @@
             }
             const numericString = value
                 .replace(/R|\s/g, '')
-                .replace(/,/g, '');
+                .replace(/,/g, '.');
             const number = parseFloat(numericString);
             return isNaN(number) ? 0 : number;
         }
