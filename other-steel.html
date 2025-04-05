@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Other Steel - Construction Estimator</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/client-manager.js"></script>
+    <script src="js/module-utils.js"></script>
+    <script src="js/data-models.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: #f5f5f5; }
+        .sidebar { width: 25%; background-color: #1c2639; color: #fff; height: 100%; overflow-y: auto; border-right: 1px solid #333; }
+        .main-content { width: 75%; height: 100%; overflow: hidden; background-color: white; color: #333; position: relative; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; border-bottom: 1px solid #333; }
+        .section-title { padding: 20px; font-size: 1.2em; font-weight: bold; }
+        .module-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; background-color: #1c2639; color: #fff; }
+        .module-title { font-size: 1.5em; font-weight: bold; display: flex; align-items: center; }
+        .module-title i { margin-right: 10px; }
+        .module-description { padding: 10px 20px; color: #aaa; background-color: #1c2639; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333;}
+        .module-content { padding: 20px; background-color: #fff; margin: 0; color: #333; flex: 1; overflow-y: auto; overflow-x: hidden; }
+        .module-content::-webkit-scrollbar { width: 8px; background-color: #f5f5f5; }
+        .module-content::-webkit-scrollbar-thumb { background-color: #aaa; border-radius: 4px; }
+        .module-content::-webkit-scrollbar-thumb:hover { background-color: #888; }
+        .sidebar-content { padding: 20px; }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-section-title { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; }
+        .sidebar-item { padding: 10px; cursor: pointer; background-color: #2d364a; border-radius: 4px; margin-bottom: 8px; transition: background-color 0.2s ease; }
+        .sidebar-item:hover { background-color: #3a4967; }
+        .sidebar-link { color: #fff; text-decoration: none; display: block; }
+        .btn { background-color: #4eca8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
+        .btn:hover { background-color: #3db97a; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        /* --- Options button style (Always enabled appearance) --- */
+        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
+        .btn-options:hover { background-color: #e9e9e9; }
+        /* No disabled style needed */
+        .btn-options svg { width: 16px; height: 16px; }
+        /* --- End Options button style --- */
+
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .sidebar::-webkit-scrollbar { width: 6px; background-color: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
+
+        /* Table styles */
+        .module-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        .module-table th, .module-table td { padding: 8px 10px; text-align: center; border: 1px solid #ddd; overflow: hidden; font-size: 1.04em; font-weight: 500; vertical-align: middle; }
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { text-align: left; white-space: normal; } /* Left align first column */
+        .module-table th { background-color: #f2f2f2; font-weight: bold; position: relative; }
+        /* Template Column Widths (7 columns) */
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; } /* Other Steel Col */
+        .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }  /* Pc */
+        .module-table th:nth-child(3), .module-table td:nth-child(3) { width: 10%; } /* Qty */
+        .module-table th:nth-child(4), .module-table td:nth-child(4) { width: 15%; } /* Rate */
+        .module-table th:nth-child(5), .module-table td:nth-child(5) { width: 10%; } /* Unit */
+        .module-table th:nth-child(6), .module-table td:nth-child(6) { width: 15%; } /* Total */
+        .module-table th:nth-child(7), .module-table td:nth-child(7) { width: 10%; } /* Actions */
+        .module-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .module-table tr:hover { background-color: #f1f1f1; }
+
+        /* General input styling */
+        .module-table input[type="text"], .module-table input[type="number"] { width: 100%; padding: 4px; border: 1px solid transparent; background-color: transparent; font-size: 1em; font-weight: inherit; font-family: inherit; }
+        .module-table td:not(:nth-child(1)) input[type="text"], .module-table td:not(:nth-child(1)) input[type="number"] { text-align: center; } /* Center inputs except first col */
+        .module-table input:focus { border: 1px solid #4eca8b; background-color: #fff; outline: none; }
+
+        .module-table .footer-row { font-weight: bold; background-color: #e9e9e9; }
+        .module-table .footer-row td { font-weight: bold; }
+        .module-table .qty-cell { background-color: #f0faf3; }
+        .checkbox-cell { vertical-align: middle; }
+        .item-checkbox { width: 16px; height: 16px; cursor: pointer; display: inline-block; vertical-align: middle;}
+        #save-status { display: inline-block; margin-left: 10px; font-size: 0.9em; transition: opacity 0.3s; }
+        .add-item-btn { margin-top: 10px; display: inline-block; }
+        .sort-header { cursor: pointer; }
+        .sort-header::after { content: "▼"; font-size: 0.8em; margin-left: 5px; opacity: 0.3; display: inline-block; }
+        .sort-header.sorted-asc::after { content: "▲"; opacity: 1; }
+        .sort-header.sorted-desc::after { content: "▼"; opacity: 1; }
+        .debug-panel { position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 9999; display: none; max-height: 200px; overflow-y: auto;}
+        #debug-toggle-btn { position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">Other Steel</div>
+        <div class="sidebar-content">
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Navigation</div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a> </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Actions</div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="add-custom-item">Add Custom Item</a> </div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="save-module-data">Save Data</a> </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="module-header">
+            <div class="module-title"> <i>S</i> <span id="module-title-text">Other Steel</span> </div>
+            <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
+            <div class="header-actions"> <div id="total-module-cost"> Total Other Steel Cost: R0.00 </div> </div>
+        </div>
+        <div class="module-description">
+            <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+                <div id="save-status"></div>
+                <button id="save-btn" class="btn">Save</button>
+                <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
+            </div>
+        </div>
+        <div class="module-content">
+             <table class="module-table" id="items-table">
+                <thead>
+                    <tr>
+                         <th class="sort-header" data-sort="description">Other Steel</th>
+                        <th>Pc</th>
+                        <th class="sort-header" data-sort="qty">Qty</th>
+                        <th class="sort-header" data-sort="rate">Rate</th>
+                        <th>Unit</th>
+                        <th class="sort-header" data-sort="total">Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="items-table-body"></tbody>
+                 <tfoot>
+                    <tr class="footer-row">
+                        <td colspan="6" style="text-align: right;">Total</td>
+                        <td id="table-total">R0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
+        </div>
+    </div>
+
+    <div class="debug-panel" id="debug-panel"></div>
+
+     <script>
+        // =====================================================================
+        // MODULE CONFIGURATION - ** CUSTOMIZED FOR OTHER STEEL MODULE **
+        // =====================================================================
+        const MODULE = {
+            id: 'other-steel', // Use Other Steel ID
+            title: 'Other Steel', // Use Other Steel title
+             // Use Other Steel default items from screenshot
+            defaultItems: [
+                { id: 'steel-i-beams', description: 'I - Beams', qty: 0, rate: 0.00, unit: 'p.m', checked: false },
+                { id: 'steel-mallions', description: 'Mallions', qty: 0, rate: 0.00, unit: 'Each', checked: false },
+                { id: 'steel-other-1', description: 'Steel Other', qty: 0, rate: 0.00, unit: 'Each', checked: false },
+                { id: 'steel-other-2', description: 'Steel Other', qty: 0, rate: 0.00, unit: 'Each', checked: false },
+                { id: 'steel-other-3', description: 'Steel Other', qty: 0, rate: 0.00, unit: 'Each', checked: false }
+            ]
+        };
+
+        // =====================================================================
+        // ALL JAVASCRIPT FUNCTIONS BELOW ARE FROM THE CORRECTED TEMPLATE
+        // (Rate editable, Delete always works)
+        // =====================================================================
+
+        // Module State & Utilities
+        let moduleData = { items: [], totalCost: 0, lastModified: new Date().toISOString() };
+        let cancelAutoSave = null;
+        const DEBUG = true;
+        let tableBodyElement = null;
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(`[${MODULE.id}] DOM loaded`);
+            tableBodyElement = document.getElementById('items-table-body');
+            if (!tableBodyElement) { console.error(`[${MODULE.id}] Critical error: #items-table-body not found!`); return; }
+            if (DEBUG) { setupDebugPanel(); }
+            updateModuleTitles(); // Initial title setup uses MODULE.title
+            const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
+            if (!validAccess) { console.warn(`[${MODULE.id}] Invalid access detected`); return; }
+            const client = window.ConstructionApp.ClientManager.getCurrentClient();
+            if (!client) { console.error(`[${MODULE.id}] No client found.`); window.ConstructionApp.ModuleUtils.showErrorMessage('No client selected.'); setTimeout(() => window.ConstructionApp.ModuleUtils.returnToDashboard(MODULE.id, moduleData, false), 500); return; }
+            const clientNameDisplay = document.getElementById('client-name-display');
+            if(clientNameDisplay) { clientNameDisplay.textContent = `Client: ${client.name}`; }
+            window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
+            setupEventListeners();
+            initModuleData(); // Calls updateUI
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input');
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000); // 2 minutes
+            setupTableSorting();
+            if (DEBUG) { updateDebugPanel(); } // Initial debug panel update
+            console.log(`[${MODULE.id}] Initialization complete.`);
+        });
+
+        // UI Update Functions
+        function updateModuleTitles() {
+            document.title = `${MODULE.title} - Construction Estimator`;
+            const sidebarHeader = document.querySelector('.sidebar-header'); if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
+            const moduleTitleText = document.getElementById('module-title-text'); if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
+            const totalModuleCost = document.getElementById('total-module-cost');
+            // Ensure total cost text is updated correctly, using moduleData
+             // Updated label text here too
+            if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost || 0)}`;
+        }
+
+        function updateUI() {
+            if (!tableBodyElement) return;
+            tableBodyElement.innerHTML = '';
+            moduleData.items.forEach(addTableRow); // Uses template function
+            calculateTotals(); // Uses template function
+            if (DEBUG) updateDebugPanel(); // Uses template function
+        }
+
+        // Uses template addTableRow (delete button always enabled)
+        function addTableRow(item) {
+            if (!tableBodyElement) return;
+            const row = document.createElement('tr');
+            row.setAttribute('data-item-id', item.id);
+
+            const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
+            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.qty > 0 ? (item.qty * item.rate) : 0);
+
+            // Template row structure (7 columns)
+            row.innerHTML = `
+                <td><input type="text" class="description-input" value="${item.description || ''}"></td>
+                <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
+                <td class="qty-cell"><input type="number" class="qty-input" value="${item.qty || 0}" min="0" step="1"></td>
+                <td><input type="text" class="rate-input" value="${rateFormatted}"></td> <td><input type="text" class="unit-input" value="${item.unit || ''}"></td> <td class="total-cell">${totalFormatted}</td>
+                <td>
+                    <button class="btn-options options-item-btn" title="More Actions"> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tableBodyElement.appendChild(row);
+            setupRowInputHandlers(row); // Uses template function
+        }
+
+        // Data Initialization & Management (Uses template logic)
+        function initModuleData() {
+             const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Client missing`); return; } const savedData = client.moduleData?.[MODULE.id]; if (savedData?.items?.length) { console.log(`[${MODULE.id}] Restoring saved data`); moduleData = JSON.parse(JSON.stringify(savedData)); if (!Array.isArray(moduleData.items)) moduleData.items = []; mergeWithDefaultItems(); } else { console.log(`[${MODULE.id}] Initializing with defaults`); moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); moduleData.totalCost = 0; moduleData.lastModified = new Date().toISOString(); } updateUI();
+         }
+        function mergeWithDefaultItems() { // Simpler merge as flags less important now
+            console.log(`[${MODULE.id}] Merging items`); const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item}])); const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item])); const mergedItems = []; defaultItemsMap.forEach((defaultItem, id) => { const savedItem = savedItemsMap.get(id); if (savedItem) { mergedItems.push({ ...defaultItem, ...savedItem }); savedItemsMap.delete(id); } else { mergedItems.push(defaultItem); } }); savedItemsMap.forEach(savedItem => { mergedItems.push({...savedItem}); }); moduleData.items = mergedItems; console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
+        }
+        function addCustomItem() { // No need for flags
+             console.log(`[${MODULE.id}] Adding custom item`); const newId = `custom-${Date.now()}`; const newItem = { id: newId, description: 'New Steel Item', qty: 0, rate: 0, unit: 'Each', checked: false }; moduleData.items.push(newItem); addTableRow(newItem); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); calculateTotals(); const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`); if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
+        }
+
+
+        // Event Handling & Calculations (Uses template logic)
+        function setupRowInputHandlers(row) {
+            const itemId = row.getAttribute('data-item-id');
+            row.querySelector('.description-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.unit-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.item-checkbox')?.addEventListener('change', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.qty-input')?.addEventListener('input', () => { updateItemFromRow(row); calculateRowTotal(row); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+
+            // Rate Input Listeners (Always attached)
+            const rateInput = row.querySelector('.rate-input');
+            if (rateInput) {
+                rateInput.addEventListener('focus', function() { try { this.value = getNumericValue(this.value); this.select(); } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); } });
+                rateInput.addEventListener('blur', function() {
+                    try {
+                        const currentItem = moduleData.items.find(i => i.id === itemId); if (!currentItem) return;
+                         updateItemFromRow(row); calculateRowTotal(row); calculateTotals();
+                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(currentItem.rate); // Format display
+                    } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
+                });
+                rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            } else { console.error(`Rate input not found for ${itemId}`); }
+
+            // Options Button Listener (Always attached)
+            const optionsBtn = row.querySelector('.options-item-btn');
+            if (optionsBtn) {
+                optionsBtn.addEventListener('click', function() {
+                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow');
+                    deleteItemRow(this); // 'this' is the button
+                });
+            } else { console.error(`Options button not found for ${itemId}`); }
+        }
+
+        function updateItemFromRow(row) {
+            const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); if (!item) { console.error(`[${MODULE.id}] updateItemFromRow: Cannot find item ${itemId}`); return; }
+            item.description = row.querySelector('.description-input')?.value || '';
+            item.unit = row.querySelector('.unit-input')?.value || ''; // Added unit update
+            item.checked = row.querySelector('.item-checkbox')?.checked || false;
+            item.qty = Math.max(0, parseInt(row.querySelector('.qty-input')?.value, 10) || 0);
+            const rateInput = row.querySelector('.rate-input'); if (rateInput) { item.rate = getNumericValue(rateInput.value); }
+            moduleData.lastModified = new Date().toISOString(); if (DEBUG) updateDebugPanel();
+        }
+
+        function calculateRowTotal(row) { const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); const totalCell = row.querySelector('.total-cell'); if (!item || !totalCell) return 0; const total = item.qty > 0 ? (item.qty * item.rate) : 0; totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total); return total; }
+        function calculateTotals() { moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0); updateModuleTitles(); const tableTotalElement = document.getElementById('table-total'); if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); } if (DEBUG) updateDebugPanel(); }
+        function getNumericValue(value) { if (typeof value === 'number') return value; if (!value || typeof value !== 'string') return 0; let numericString = value.replace(/[^\d.,-]/g, ''); if (numericString.includes(',') && !numericString.includes('.')) { numericString = numericString.replace(/,/g, '.'); } else { numericString = numericString.replace(/,/g, ''); } const number = parseFloat(numericString); return isNaN(number) ? 0 : number; }
+
+        // Event Listeners Setup
+        function setupEventListeners() { document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); }); }
+        // Table Sorting
+        function setupTableSorting() { document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); }); }
+        function sortTable(sortBy, header) { let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI(); }
+        // Data Persistence (Saving)
+        function saveModuleData(isAutoSave = false) { const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } }); }
+        // Navigation
+        function returnToDashboard() { console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard(); }
+        function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
+        // Debugging Utilities
+        function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
+        // Page Unload Handling
+        window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
+
+        // Delete Item Function (Deletes ALL items)
+        function deleteItemRow(buttonElement) {
+            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red');
+            const row = buttonElement.closest('tr');
+            const itemId = row?.getAttribute('data-item-id');
+            if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
+
+            const item = moduleData.items.find(i => i.id === itemId);
+            if (!item) { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} not found in data.`); return; }
+
+            const description = item.description || 'this item';
+            console.log(`[${MODULE.id}] Confirming delete for: ${itemId}`);
+            if (confirm(`Delete "${description}"?`)) {
+                console.log(`[${MODULE.id}] Deletion confirmed for ${itemId}.`);
+                const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
+                if (itemIndex > -1) {
+                    moduleData.items.splice(itemIndex, 1); console.log(`[${MODULE.id}] Item spliced.`);
+                    row.remove(); console.log(`[${MODULE.id}] Row removed.`);
+                    calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                    if (DEBUG) updateDebugPanel();
+                    console.log(`%c[${MODULE.id}] Deletion complete for ${itemId}.`, 'color: green');
+                } else { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} index not found.`); }
+            } else { console.log(`[${MODULE.id}] Deletion cancelled for ${itemId}.`); }
+        }
+
+    </script>
+</body>
+</html>
