@@ -170,22 +170,31 @@
             background-color: #5a6268;
         }
 
-        /* --- New --- Delete button style */
-        .btn-delete {
-            background-color: #dc3545;
+        /* --- Options button style (Replaced .btn-delete) --- */
+        .btn-options {
+            background-color: #6c757d; /* Grey background */
             color: white;
             border: none;
-            padding: 4px 8px; /* Smaller padding */
+            padding: 4px; /* Adjust padding for icon */
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.8em; /* Smaller font */
-            line-height: 1; /* Adjust line height */
+            font-size: 0.8em;
+            line-height: 1; /* Keep */
+            display: inline-flex; /* Align icon nicely */
+            align-items: center; /* Vertically center icon */
+            justify-content: center; /* Horizontally center icon */
         }
 
-        .btn-delete:hover {
-            background-color: #c82333;
+        .btn-options:hover {
+            background-color: #5a6268; /* Darker grey on hover */
         }
-        /* --- End New --- */
+
+        .btn-options svg {
+            width: 16px; /* Match SVG size */
+            height: 16px;
+            stroke: white; /* Ensure icon color matches */
+        }
+        /* --- End Options button style --- */
 
         .header-actions {
             display: flex;
@@ -254,10 +263,9 @@
         .module-table th:nth-child(6), /* Total */
         .module-table td:nth-child(6) { width: 15%; text-align: right; }
 
-        /* --- New --- Actions Column */
+        /* --- Actions Column */
         .module-table th:nth-child(7),
         .module-table td:nth-child(7) { width: 10%; text-align: center; }
-        /* --- End New --- */
         /* --- End Adjusted Widths --- */
 
         .module-table tr:nth-child(even) {
@@ -618,14 +626,18 @@
                 </td>
                 <td>
                     <input type="text" class="rate-input currency" value="${rateFormatted}"
-                           ${item.isDefault ? 'readonly' : ''}>
+                            ${item.isDefault ? 'readonly' : ''}>
                 </td>
                 <td>
                     <input type="text" class="unit-input" value="${item.unit || ''}">
                 </td>
                 <td class="total-cell currency">${totalFormatted}</td>
                 <td>
-                    <button class="btn-delete delete-item-btn" title="Delete Item">X</button>
+                    <button class="btn-options options-item-btn" title="More Actions">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                        </svg>
+                    </button>
                 </td>
             `;
             // --- End Updated Row InnerHTML ---
@@ -662,17 +674,21 @@
                 rateInput.addEventListener('input', () => window.ConstructionApp.ModuleUtils.markUnsavedChanges());
             }
 
-            // --- New --- Delete Button Listener
-            const deleteBtn = row.querySelector('.delete-item-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', function() {
-                    deleteItemRow(this); // Pass the button element
+            // --- Options Button Listener ---
+            const optionsBtn = row.querySelector('.options-item-btn'); // Changed selector
+            if (optionsBtn) {
+                optionsBtn.addEventListener('click', function() {
+                    // *** TODO: Implement options menu logic here ***
+                    // For now, just keeping the delete functionality:
+                    deleteItemRow(this); // Still calls delete, but using the new button
+                    // Eventually, this button click should open a small menu
+                    // with "Delete" and maybe other options like "Duplicate".
                 });
             }
-             // --- End New ---
+            // --- End Options Button Listener ---
         }
 
-        // --- New --- Delete item row function
+        // Delete item row function (no change needed here)
         function deleteItemRow(buttonElement) {
             const row = buttonElement.closest('tr');
             const itemId = row?.getAttribute('data-item-id');
@@ -713,7 +729,6 @@
                 }
             }
         }
-        // --- End New ---
 
         // Update item data from row inputs
         function updateItemFromRow(row) {
@@ -993,10 +1008,10 @@
                  // Attempt to update sessionStorage one last time if leaving unexpectedly
                  const client = window.ConstructionApp.ClientManager.getCurrentClient();
                  if (client) {
-                    client.moduleData = client.moduleData || {};
-                    client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
-                    client.lastModified = new Date().toISOString();
-                    try { sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch(err) {}
+                     client.moduleData = client.moduleData || {};
+                     client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
+                     client.lastModified = new Date().toISOString();
+                     try { sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch(err) {}
                  }
 
                 const message = 'You have unsaved changes. Are you sure you want to leave?';
