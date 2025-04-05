@@ -14,94 +14,18 @@
     <script src="js/data-models.js"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #f5f5f5;
-        }
-
-        .sidebar {
-            width: 25%;
-            background-color: #1c2639;
-            color: #fff;
-            height: 100%;
-            overflow-y: auto;
-            border-right: 1px solid #333;
-        }
-
-        .main-content {
-            width: 75%;
-            height: 100%;
-            overflow: hidden;
-            background-color: white;
-            color: #333;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            font-size: 1.4em;
-            font-weight: bold;
-            border-bottom: 1px solid #333;
-        }
-
-        .section-title {
-            padding: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .module-header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
-            background-color: #1c2639;
-            color: #fff;
-        }
-
-        .module-title {
-            font-size: 1.5em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-        }
-
-        .module-title i {
-            margin-right: 10px;
-        }
-
-        .module-description {
-            padding: 10px 20px;
-            color: #aaa;
-            background-color: #1c2639;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-             border-bottom: 1px solid #333;
-        }
-
-        .module-content {
-            padding: 20px;
-            background-color: #fff;
-            margin: 0;
-            color: #333;
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
+        /* ... (previous CSS styles remain the same) ... */
+         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: #f5f5f5; }
+        .sidebar { width: 25%; background-color: #1c2639; color: #fff; height: 100%; overflow-y: auto; border-right: 1px solid #333; }
+        .main-content { width: 75%; height: 100%; overflow: hidden; background-color: white; color: #333; position: relative; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; border-bottom: 1px solid #333; }
+        .section-title { padding: 20px; font-size: 1.2em; font-weight: bold; }
+        .module-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; background-color: #1c2639; color: #fff; }
+        .module-title { font-size: 1.5em; font-weight: bold; display: flex; align-items: center; }
+        .module-title i { margin-right: 10px; }
+        .module-description { padding: 10px 20px; color: #aaa; background-color: #1c2639; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333; }
+        .module-content { padding: 20px; background-color: #fff; margin: 0; color: #333; flex: 1; overflow-y: auto; overflow-x: hidden; }
         .module-content::-webkit-scrollbar { width: 8px; background-color: #f5f5f5; }
         .module-content::-webkit-scrollbar-thumb { background-color: #aaa; border-radius: 4px; }
         .module-content::-webkit-scrollbar-thumb:hover { background-color: #888; }
@@ -111,74 +35,50 @@
         .sidebar-item { padding: 10px; cursor: pointer; background-color: #2d364a; border-radius: 4px; margin-bottom: 8px; transition: background-color 0.2s ease; }
         .sidebar-item:hover { background-color: #3a4967; }
         .sidebar-link { color: #fff; text-decoration: none; display: block; }
-
         .btn { background-color: #4eca8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
         .btn:hover { background-color: #3db97a; }
         .btn-secondary { background-color: #6c757d; }
         .btn-secondary:hover { background-color: #5a6268; }
-
         .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
-        .btn-options:hover:not(:disabled) { background-color: #e9e9e9; } /* Add :not(:disabled) to hover */
-        .btn-options:disabled { cursor: default; opacity: 0.5; } /* Style disabled button */
+        .btn-options:hover:not(:disabled) { background-color: #e9e9e9; }
+        .btn-options:disabled { cursor: default; opacity: 0.5; }
         .btn-options svg { width: 16px; height: 16px; }
-
         .header-actions { display: flex; align-items: center; gap: 10px; }
         .sidebar::-webkit-scrollbar { width: 6px; background-color: transparent; }
         .sidebar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 3px; }
         .sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
-
         .module-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        .module-table th,
-        .module-table td { padding: 8px 10px; text-align: center; border: 1px solid #ddd; overflow: hidden; font-size: 1.04em; font-weight: 500; vertical-align: middle; }
-
-        /* ALIGNMENT OVERRIDE: Left-align Description column */
-        .module-table th:nth-child(1),
-        .module-table td:nth-child(1) { text-align: left; white-space: normal; }
-
+        .module-table th, .module-table td { padding: 8px 10px; text-align: center; border: 1px solid #ddd; overflow: hidden; font-size: 1.04em; font-weight: 500; vertical-align: middle; }
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { text-align: left; white-space: normal; }
         .module-table th { background-color: #f2f2f2; font-weight: bold; position: relative; }
-
-        /* Column widths (7 columns) */
-        .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; } /* Description */
-        .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }  /* Pc */
-        .module-table th:nth-child(3), .module-table td:nth-child(3) { width: 10%; } /* Qty */
-        .module-table th:nth-child(4), .module-table td:nth-child(4) { width: 15%; } /* Rate */
-        .module-table th:nth-child(5), .module-table td:nth-child(5) { width: 10%; } /* Unit */
-        .module-table th:nth-child(6), .module-table td:nth-child(6) { width: 15%; } /* Total */
-        .module-table th:nth-child(7), .module-table td:nth-child(7) { width: 10%; } /* Actions */
-
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; }
+        .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }
+        .module-table th:nth-child(3), .module-table td:nth-child(3) { width: 10%; }
+        .module-table th:nth-child(4), .module-table td:nth-child(4) { width: 15%; }
+        .module-table th:nth-child(5), .module-table td:nth-child(5) { width: 10%; }
+        .module-table th:nth-child(6), .module-table td:nth-child(6) { width: 15%; }
+        .module-table th:nth-child(7), .module-table td:nth-child(7) { width: 10%; }
         .module-table tr:nth-child(even) { background-color: #f9f9f9; }
         .module-table tr:hover { background-color: #f1f1f1; }
-
-        /* General input styling */
-        .module-table input[type="text"],
-        .module-table input[type="number"] { width: 100%; padding: 4px; border: 1px solid transparent; background-color: transparent; font-size: 1em; font-weight: inherit; font-family: inherit; }
-
-         /* Center align inputs in cells that are centered (i.e., not Description) */
-        .module-table td:not(:nth-child(1)) input[type="text"],
-        .module-table td:not(:nth-child(1)) input[type="number"] { text-align: center; }
-         /* Input in first column (Description) will inherit text-align: left */
-         /* Input[readonly] styling */
-        .module-table input[readonly] { background-color: #f8f8f8; color: #666; cursor: default; }
-
-
+        .module-table input[type="text"], .module-table input[type="number"] { width: 100%; padding: 4px; border: 1px solid transparent; background-color: transparent; font-size: 1em; font-weight: inherit; font-family: inherit; }
+        .module-table td:not(:nth-child(1)) input[type="text"], .module-table td:not(:nth-child(1)) input[type="number"] { text-align: center; }
         .module-table input:focus { border: 1px solid #4eca8b; background-color: #fff; outline: none; }
+        /* Style for readonly inputs */
+        .module-table input[readonly] { background-color: #f0f0f0; color: #777; cursor: not-allowed; border-color: #eee; } /* Added visual cue */
         .module-table .footer-row { font-weight: bold; background-color: #e9e9e9; }
         .module-table .footer-row td { font-weight: bold; }
         .module-table .qty-cell { background-color: #f0faf3; }
         .checkbox-cell { vertical-align: middle; }
         .item-checkbox { width: 16px; height: 16px; cursor: pointer; display: inline-block; vertical-align: middle; }
-
         #save-status { display: inline-block; margin-left: 10px; font-size: 0.9em; transition: opacity 0.3s; }
         .add-item-btn { margin-top: 10px; display: inline-block; }
-
         .sort-header { cursor: pointer; }
         .sort-header::after { content: "▼"; font-size: 0.8em; margin-left: 5px; opacity: 0.3; display: inline-block; }
         .sort-header.sorted-asc::after { content: "▲"; opacity: 1; }
         .sort-header.sorted-desc::after { content: "▼"; opacity: 1; }
+        .debug-panel { position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 9999; display: none; max-height: 200px; overflow-y: auto; }
+        #debug-toggle-btn { position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; display: none; }
 
-        /* Debug panel styling */
-         .debug-panel { position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 9999; display: none; max-height: 200px; overflow-y: auto; }
-         #debug-toggle-btn { position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
@@ -237,6 +137,7 @@
     </div>
 
     <div class="debug-panel" id="debug-panel"></div>
+
     <script>
         // =====================================================================
         // MODULE CONFIGURATION - ** CUSTOMIZED FOR CEILINGS **
@@ -244,7 +145,7 @@
         const MODULE = {
             id: 'ceilings',
             title: 'Ceilings',
-            defaultItems: [
+            defaultItems: [ // Added custom flag here during previous refinement
                 { id: 'ceil-project-quoted', description: 'Project Quoted', qty: 0, rate: 0.00, checked: false, unit: 'm²', custom: false },
                 { id: 'ceil-board-batten', description: 'Board Batten and Skim', qty: 0, rate: 480.00, checked: false, unit: 'm²', custom: false },
                 { id: 'ceil-skimmed-concrete', description: 'Skimmed Concrete Ceilings', qty: 0, rate: 320.00, checked: false, unit: 'm²', custom: false },
@@ -284,7 +185,7 @@
             if(clientNameDisplay) { clientNameDisplay.textContent = `Client: ${client.name}`; }
             window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
             setupEventListeners();
-            initModuleData(); // Calls updateUI
+            initModuleData();
             window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input');
             cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
             setupTableSorting();
@@ -303,7 +204,6 @@
 
         function updateUI() {
             if (!tableBodyElement) return;
-            // console.log(`[${MODULE.id}] Updating UI`); // Reduce console noise
             tableBodyElement.innerHTML = '';
             moduleData.items.forEach(addTableRow);
             calculateTotals();
@@ -315,14 +215,14 @@
             const row = document.createElement('tr');
             row.setAttribute('data-item-id', item.id);
 
-            // Ensure 'custom' property exists, default to false if missing (for robustness)
-            const isCustom = item.custom === true;
+            // **DEBUG LOG:** Check item status before setting attributes
+            console.log(`%c[${MODULE.id}] addTableRow - Item ${item.id}: custom=${item?.custom}`, 'color: purple');
+
+            const isCustom = item?.custom === true; // Safer check
 
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.qty > 0 ? (item.qty * item.rate) : 0);
 
-            // Set readonly based on !isCustom (i.e., item.custom is false or undefined)
-            // Set button disabled based on !isCustom
             row.innerHTML = `
                 <td><input type="text" class="description-input" value="${item.description || ''}"></td>
                 <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
@@ -348,17 +248,15 @@
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (!client) { console.error(`[${MODULE.id}] Client missing in initModuleData`); return; }
             const savedData = client.moduleData?.[MODULE.id];
-            if (savedData?.items?.length) { // Check length too
+            if (savedData?.items?.length) {
                  console.log(`[${MODULE.id}] Restoring saved data`);
-                 moduleData = JSON.parse(JSON.stringify(savedData)); // Deep copy saved data
-                 // Ensure items is array after deep copy
+                 moduleData = JSON.parse(JSON.stringify(savedData));
                  if (!Array.isArray(moduleData.items)) moduleData.items = [];
                  mergeWithDefaultItems();
             } else {
                  console.log(`[${MODULE.id}] Initializing with defaults`);
                  moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
-                 // Ensure default items also have the custom flag set correctly
-                 moduleData.items.forEach(item => item.custom = false);
+                 moduleData.items.forEach(item => item.custom = item.custom === true); // Ensure boolean false
                  moduleData.totalCost = 0;
                  moduleData.lastModified = new Date().toISOString();
             }
@@ -367,31 +265,22 @@
 
         function mergeWithDefaultItems() {
              console.log(`[${MODULE.id}] Merging items`);
-             // Ensure all current default items are marked correctly
              const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item, custom: false}]));
-             const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item])); // Use already loaded data
+             const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
              const mergedItems = [];
-
-             // Add default items first, using saved values if available
              defaultItemsMap.forEach((defaultItem, id) => {
                  const savedItem = savedItemsMap.get(id);
                  if (savedItem) {
-                     mergedItems.push({ ...defaultItem, ...savedItem, custom: false }); // Overwrite default with saved, ensure custom=false
-                     savedItemsMap.delete(id); // Mark as processed
+                     mergedItems.push({ ...defaultItem, ...savedItem, custom: false });
+                     savedItemsMap.delete(id);
                  } else {
-                     mergedItems.push(defaultItem); // Add missing default
+                     mergedItems.push(defaultItem);
                  }
              });
-
-            // Add remaining saved items (must be custom)
-             savedItemsMap.forEach(savedItem => {
-                 if (savedItem.custom === true) { // Strict check for custom flag
-                    mergedItems.push(savedItem);
-                 } else {
-                     console.warn(`[${MODULE.id}] Discarding saved item not marked as custom: ${savedItem.id}`);
-                 }
+            savedItemsMap.forEach(savedItem => {
+                 if (savedItem.custom === true) { mergedItems.push(savedItem); }
+                 else { console.warn(`[${MODULE.id}] Discarding saved item not marked as custom: ${savedItem.id}`); }
              });
-
             moduleData.items = mergedItems;
              console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
         }
@@ -404,65 +293,73 @@
             addTableRow(newItem);
             window.ConstructionApp.ModuleUtils.markUnsavedChanges();
             calculateTotals();
-            const newRow = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`);
-            if (newRow) { newRow.focus(); newRow.select(); }
+            const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`);
+            if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
         }
 
         // Event Handling & Calculations
         function setupRowInputHandlers(row) {
-            const itemId = row.getAttribute('data-item-id'); // Get item ID once
+            const itemId = row.getAttribute('data-item-id');
+            const item = moduleData.items.find(i => i.id === itemId); // Find item early
 
-            // --- Standard Input Listeners ---
+            // **DEBUG LOG:** Check item status when attaching handlers
+            console.log(`%c[${MODULE.id}] setupRowInputHandlers - Item ${itemId}: custom=${item?.custom}`, 'color: blue');
+
+            if (!item) { console.error(`Item not found for ID ${itemId} in setupRowInputHandlers!`); return; }
+
+            // Standard Input Listeners
             row.querySelector('.description-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.unit-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.item-checkbox')?.addEventListener('change', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.qty-input')?.addEventListener('input', () => { updateItemFromRow(row); calculateRowTotal(row); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
 
-            // --- Rate Input Listeners (Conditional) ---
+            // Rate Input Listeners (Conditional)
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && !rateInput.readOnly) { // Check if editable (custom item)
-                console.log(`%c[${MODULE.id}] Attaching rate listeners for editable item: ${itemId}`, 'color: cyan'); // Log attachment
+            if (rateInput && item.custom === true) { // Explicitly check item.custom === true
+                 console.log(`%c[${MODULE.id}] Attaching rate listeners for editable item: ${itemId}`, 'color: cyan');
 
                 rateInput.addEventListener('focus', function() {
                     try {
                         console.log(`[${MODULE.id}] Rate focus: ${itemId}. Value: ${this.value}`);
-                        this.value = getNumericValue(this.value); // Use updated getNumericValue
+                        this.value = getNumericValue(this.value);
                         this.select();
                          console.log(`[${MODULE.id}] Rate focus - numeric value: ${this.value}`);
                     } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); }
                 });
 
+                // **MODIFIED BLUR LISTENER** - Simplified for testing
                 rateInput.addEventListener('blur', function() {
                     try {
-                         console.log(`[${MODULE.id}] Rate blur: ${itemId}. Value: ${this.value}`);
-                        const numericValue = getNumericValue(this.value);
-                        this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
-                         console.log(`[${MODULE.id}] Rate blur - formatted value: ${this.value}`);
-                        updateItemFromRow(row); // Update data model *after* formatting display
-                        calculateRowTotal(row);
-                        calculateTotals();
-                         // Unsaved changes marked by 'input' listener
-                    } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
+                         console.log(`[${MODULE.id}] Rate input blurred: ${itemId}. Input value: ${this.value}`);
+                         updateItemFromRow(row); // Update data model (uses getNumericValue internally)
+                         console.log(`[${MODULE.id}] Data model updated for ${itemId}. New rate: ${item.rate}`); // Log the updated rate in data
+                         calculateRowTotal(row); // Update display total for row
+                         calculateTotals(); // Update overall totals
+                         console.log(`%c[${MODULE.id}] Rate input formatting skipped for testing. Input left as: ${this.value}`, 'color: magenta');
+                         // TEMPORARILY COMMENTED OUT FORMATTING:
+                         // const numericValue = getNumericValue(this.value);
+                         // this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
+                    } catch (e) {
+                        console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e);
+                    }
                 });
 
-                rateInput.addEventListener('input', () => {
-                    // Primarily for marking unsaved, actual update happens on blur
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                });
 
-            } else if (rateInput) { // Log if NOT attaching listeners
+                rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+
+            } else if (rateInput) {
                 console.log(`%c[${MODULE.id}] Rate listeners NOT attached for readonly item: ${itemId}`, 'color: orange');
             }
 
-            // --- Options Button Listener (Conditional) ---
+            // Options Button Listener (Conditional)
             const optionsBtn = row.querySelector('.options-item-btn');
-            if (optionsBtn && !optionsBtn.disabled) { // Check if enabled (custom item)
-                 console.log(`%c[${MODULE.id}] Attaching delete listener for custom item: ${itemId}`, 'color: lightgreen'); // Log attachment
+            if (optionsBtn && item.custom === true) { // Explicitly check item.custom === true
+                 console.log(`%c[${MODULE.id}] Attaching delete listener for custom item: ${itemId}`, 'color: lightgreen');
                 optionsBtn.addEventListener('click', function() {
-                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow'); // Log click
-                    deleteItemRow(this); // 'this' refers to the button
+                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow');
+                    deleteItemRow(this);
                 });
-            } else if (optionsBtn) { // Log if NOT attaching listener
+            } else if (optionsBtn) {
                  console.log(`%c[${MODULE.id}] Delete listener NOT attached for disabled (default) item: ${itemId}`, 'color: grey');
             }
         }
@@ -477,11 +374,10 @@
             item.checked = row.querySelector('.item-checkbox')?.checked || false;
             item.qty = Math.max(0, parseInt(row.querySelector('.qty-input')?.value, 10) || 0);
 
-            // Only update rate from input if the item is custom
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && item.custom === true) {
-                // Important: Store the NUMERIC value, even if input shows formatted string on blur
+            if (rateInput && item.custom === true) { // Only update rate if custom
                 item.rate = getNumericValue(rateInput.value);
+                 // console.log(`[${MODULE.id}] Updated item.rate for ${itemId} to: ${item.rate}`); // Optional detailed log
             }
 
             moduleData.lastModified = new Date().toISOString();
@@ -500,191 +396,47 @@
 
         function calculateTotals() {
             moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0);
-            updateModuleTitles(); // Update header total
+            updateModuleTitles();
             const tableTotalElement = document.getElementById('table-total');
             if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); }
             if (DEBUG) updateDebugPanel();
         }
 
-        // Use robust getNumericValue from template
          function getNumericValue(value) {
-            if (typeof value === 'number') return value;
-            if (!value || typeof value !== 'string') return 0;
-            // Handles R prefix, space, potential thousand separators (.), and comma decimal
-            let numericString = value.replace(/R|\s/g, '').replace(/\./g, '').replace(/,/g, '.');
-             // Fallback for standard US/UK format if needed
-             if (isNaN(parseFloat(numericString))) {
-                numericString = value.replace(/[^\d.-]/g, '');
+             if (typeof value === 'number') return value;
+             if (!value || typeof value !== 'string') return 0;
+             let numericString = value.replace(/[^\d.,-]/g, ''); // Keep digits, decimal separators, minus
+             // Handle potential European format (comma as decimal) FIRST
+             if (numericString.includes(',') && !numericString.includes('.')) {
+                 numericString = numericString.replace(/,/g, '.'); // Replace comma with dot
+             } else {
+                 // Handle US/UK format (dot as decimal, remove commas)
+                 numericString = numericString.replace(/,/g, '');
              }
              const number = parseFloat(numericString);
              return isNaN(number) ? 0 : number;
          }
 
+
+        // --- Other functions (setupEventListeners, sortTable, saveModuleData, navigation, debug, unload) remain the same as previous version ---
         // Event Listeners Setup
-        function setupEventListeners() {
-            document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false));
-            document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); });
-            document.getElementById('return-btn')?.addEventListener('click', returnToDashboard);
-            document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); });
-            document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem);
-            document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); });
-        }
-
+        function setupEventListeners() { document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); }); }
         // Table Sorting
-         function setupTableSorting() {
-            document.querySelectorAll('.sort-header').forEach(header => {
-                header.addEventListener('click', function() {
-                    const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this);
-                });
-            });
-        }
-        function sortTable(sortBy, header) {
-            let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc');
-            document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); });
-            if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); }
-            console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`);
-            moduleData.items.sort((a, b) => {
-                let aValue, bValue;
-                switch (sortBy) {
-                    case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break;
-                    case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break;
-                    case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break;
-                    case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break;
-                    default: return 0;
-                }
-                let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0);
-                return sortAsc ? comparison : (comparison * -1);
-            });
-            updateUI();
-        }
-
+         function setupTableSorting() { document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); }); }
+        function sortTable(sortBy, header) { let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI(); }
         // Data Persistence (Saving)
-        function saveModuleData(isAutoSave = false) {
-            const actionType = isAutoSave ? 'Auto-saving' : 'Saving';
-            console.log(`[${MODULE.id}] ${actionType}...`);
-            moduleData.lastModified = new Date().toISOString();
-            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; }
-            if (!client.moduleData) client.moduleData = {};
-            client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
-            client.lastModified = new Date().toISOString();
-            window.ConstructionApp.ClientManager.setCurrentClient(client);
-            console.log(`[${MODULE.id}] Client object updated.`);
-            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
-                if (success) {
-                    const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`);
-                    window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
-                    if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`);
-                } else {
-                    const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg);
-                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`);
-                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`);
-                }
-            });
-        }
-
+        function saveModuleData(isAutoSave = false) { const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } }); }
         // Navigation
-        function returnToDashboard() {
-            console.log(`[${MODULE.id}] Returning to dashboard...`);
-            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                if (confirm("Unsaved changes. Save before returning?")) {
-                    console.log(`[${MODULE.id}] Saving before return.`);
-                    saveModuleData(false); setTimeout(navigateToDashboard, 200); return;
-                } else { console.log(`[${MODULE.id}] Returning without saving.`); }
-            }
-            navigateToDashboard();
-        }
-        function navigateToDashboard() {
-            console.log(`[${MODULE.id}] Navigating to index.html.`);
-            if (cancelAutoSave) cancelAutoSave();
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (client) { // Ensure state saved before leaving
-                 if (!client.moduleData) client.moduleData = {};
-                 client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
-                 client.lastModified = new Date().toISOString();
-                 window.ConstructionApp.ClientManager.setCurrentClient(client);
-            }
-            sessionStorage.setItem('navigationState', 'returningToDashboard');
-            window.location.href = 'index.html';
-        }
-
+        function returnToDashboard() { console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard(); }
+        function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
         // Debugging Utilities
-        function setupDebugPanel() {
-            const debugPanel = document.getElementById('debug-panel');
-            let btn = document.getElementById('debug-toggle-btn');
-            if (!btn) { // Create if missing
-                 console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`);
-                 btn = document.createElement('button'); btn.id = 'debug-toggle-btn';
-                 btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;';
-                 document.body.appendChild(btn);
-            }
-            if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; }
-            btn.style.display = 'block'; btn.textContent = 'Debug';
-            if (!btn.dataset.listenerAttached) {
-                 btn.addEventListener('click', function() {
-                     const isVisible = debugPanel.style.display === 'block';
-                     debugPanel.style.display = isVisible ? 'none' : 'block';
-                     btn.textContent = isVisible ? 'Debug' : 'Hide Debug';
-                     if (!isVisible) updateDebugPanel();
-                 });
-                 btn.dataset.listenerAttached = 'true';
-            }
-        }
-        function updateDebugPanel() { /* ... (Keep template's debug content logic) ... */
-            if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return;
-            const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {}
-            const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges();
-            debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}, <strong>Custom:</strong> ${moduleData.items.filter(i=>i.custom).length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`;
-        }
-
+        function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}, <strong>Custom:</strong> ${moduleData.items.filter(i=>i.custom===true).length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
         // Page Unload Handling
-        window.addEventListener('beforeunload', function(e) {
-            // console.log(`[${MODULE.id}] beforeunload.`); // Reduce noise
-            if (cancelAutoSave) cancelAutoSave();
-            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                console.warn(`[${MODULE.id}] Unsaved changes on unload.`);
-                const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } }
-                const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message;
-            }
-        });
+        window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
+        // Delete Item Function
+        function deleteItemRow(buttonElement) { console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red'); const row = buttonElement.closest('tr'); const itemId = row?.getAttribute('data-item-id'); if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; } const item = moduleData.items.find(i => i.id === itemId); if (!item || item.custom !== true) { console.warn(`[${MODULE.id}] Delete aborted: Item ${itemId} not found or not custom.`); alert("This item cannot be deleted."); return; } const description = item.description || 'this custom item'; console.log(`[${MODULE.id}] Confirming delete for: ${itemId}`); if (confirm(`Delete "${description}"?`)) { console.log(`[${MODULE.id}] Deletion confirmed for ${itemId}.`); const itemIndex = moduleData.items.findIndex(i => i.id === itemId); if (itemIndex > -1) { moduleData.items.splice(itemIndex, 1); console.log(`[${MODULE.id}] Item spliced.`); row.remove(); console.log(`[${MODULE.id}] Row removed.`); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); if (DEBUG) updateDebugPanel(); console.log(`%c[${MODULE.id}] Deletion complete for ${itemId}.`, 'color: green'); } else { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} index not found.`); } } else { console.log(`[${MODULE.id}] Deletion cancelled for ${itemId}.`); } }
 
-        // Delete Item Function (Needed by options button)
-        function deleteItemRow(buttonElement) {
-            console.log(`%c[${MODULE.id}] deleteItemRow called for button:`, 'color: red', buttonElement); // Log entry
-            const row = buttonElement.closest('tr');
-            const itemId = row?.getAttribute('data-item-id');
-            if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
-
-            const item = moduleData.items.find(i => i.id === itemId);
-             // Double-check item exists and is custom before confirming
-             if (!item || !item.custom) {
-                 console.warn(`[${MODULE.id}] Delete aborted: Item ${itemId} not found or not custom.`);
-                 alert("This item cannot be deleted."); // User feedback
-                 return;
-             }
-
-            const description = item.description || 'this custom item';
-             console.log(`[${MODULE.id}] Preparing to confirm deletion for item: ${itemId}, Description: ${description}`);
-            if (confirm(`Are you sure you want to delete "${description}"? This action cannot be undone.`)) {
-                 console.log(`[${MODULE.id}] User confirmed deletion for ${itemId}.`);
-                const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
-                if (itemIndex > -1) {
-                    moduleData.items.splice(itemIndex, 1);
-                     console.log(`[${MODULE.id}] Item removed from moduleData.items array. New count: ${moduleData.items.length}`);
-                    row.remove();
-                     console.log(`[${MODULE.id}] Row removed from DOM.`);
-                    calculateTotals();
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                    if (DEBUG) updateDebugPanel();
-                     console.log(`%c[${MODULE.id}] Deletion process completed for ${itemId}.`, 'color: green');
-                } else {
-                     console.error(`[${MODULE.id}] Delete failed: Item ${itemId} confirmed but not found in array index.`);
-                 }
-            } else {
-                 console.log(`[${MODULE.id}] User cancelled deletion for ${itemId}.`);
-             }
-        }
 
     </script>
 </body>
