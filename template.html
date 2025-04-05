@@ -586,9 +586,6 @@
                         ...defaultItem,
                         ...savedItem,
                         // These properties should always match the default
-                        description: defaultItem.description,
-                        unit: defaultItem.unit,
-                        rate: defaultItem.rate,
                         isDefault: true
                     });
                     // Remove from map so we know it's been processed
@@ -641,11 +638,10 @@
                 item.qty > 0 ? (item.qty * item.rate) : 0
             );
             
-            // Create row content - kept the Pc checkbox for reference only
+            // Create row content - always editable regardless of isDefault
             row.innerHTML = `
                 <td>
-                    <input type="text" class="description-input" value="${item.description}" 
-                           ${item.isDefault ? 'readonly' : ''}>
+                    <input type="text" class="description-input" value="${item.description}">
                 </td>
                 <td class="checkbox-cell">
                     <input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}>
@@ -658,7 +654,7 @@
                            ${item.isDefault ? 'readonly' : ''}>
                 </td>
                 <td>
-                    ${item.unit}
+                    <input type="text" class="unit-input" value="${item.unit}">
                 </td>
                 <td class="total-cell currency">${totalFormatted}</td>
             `;
@@ -675,6 +671,15 @@
             const descInput = row.querySelector('.description-input');
             if (descInput) {
                 descInput.addEventListener('input', function() {
+                    updateItemFromRow(row);
+                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                });
+            }
+            
+            // Unit input
+            const unitInput = row.querySelector('.unit-input');
+            if (unitInput) {
+                unitInput.addEventListener('input', function() {
                     updateItemFromRow(row);
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
@@ -731,12 +736,17 @@
             if (item) {
                 // Get values from inputs
                 const descInput = row.querySelector('.description-input');
+                const unitInput = row.querySelector('.unit-input');  
                 const checkbox = row.querySelector('.item-checkbox');
                 const qtyInput = row.querySelector('.qty-input');
                 const rateInput = row.querySelector('.rate-input');
                 
-                if (descInput && !item.isDefault) {
+                if (descInput) {
                     item.description = descInput.value;
+                }
+                
+                if (unitInput) {
+                    item.unit = unitInput.value;
                 }
                 
                 if (checkbox) {
