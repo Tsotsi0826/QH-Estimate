@@ -4,399 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P&G's - Construction Estimator</title>
-    
-    <!-- Firebase Libraries -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
-    
-    <!-- Shared JavaScript Files -->
+
     <script src="js/firebase-config.js"></script>
     <script src="js/client-manager.js"></script>
     <script src="js/module-utils.js"></script>
     <script src="js/data-models.js"></script>
-    
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { display: flex; height: 100vh; overflow: hidden; background-color: #f5f5f5; }
+        .sidebar { width: 25%; background-color: #1c2639; color: #fff; height: 100%; overflow-y: auto; border-right: 1px solid #333; }
+        .main-content { width: 75%; height: 100%; overflow: hidden; background-color: white; color: #333; position: relative; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; border-bottom: 1px solid #333; }
+        .section-title { padding: 20px; font-size: 1.2em; font-weight: bold; }
+        .module-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; background-color: #1c2639; color: #fff; }
+        .module-title { font-size: 1.5em; font-weight: bold; display: flex; align-items: center; }
+        .module-title i { margin-right: 10px; }
+        .module-description { padding: 10px 20px; color: #aaa; background-color: #1c2639; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333;}
+        .module-content { padding: 20px; background-color: #fff; margin: 0; color: #333; flex: 1; overflow-y: auto; overflow-x: hidden; }
+        .module-content::-webkit-scrollbar { width: 8px; background-color: #f5f5f5; }
+        .module-content::-webkit-scrollbar-thumb { background-color: #aaa; border-radius: 4px; }
+        .module-content::-webkit-scrollbar-thumb:hover { background-color: #888; }
+        .sidebar-content { padding: 20px; }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-section-title { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; }
+        .sidebar-item { padding: 10px; cursor: pointer; background-color: #2d364a; border-radius: 4px; margin-bottom: 8px; transition: background-color 0.2s ease; }
+        .sidebar-item:hover { background-color: #3a4967; }
+        .sidebar-link { color: #fff; text-decoration: none; display: block; }
+        .btn { background-color: #4eca8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease; }
+        .btn:hover { background-color: #3db97a; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
 
-        body {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #f5f5f5;
-        }
+        /* --- Options button style (Always enabled appearance) --- */
+        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
+        .btn-options:hover { background-color: #e9e9e9; }
+        /* No disabled style needed */
+        .btn-options svg { width: 16px; height: 16px; }
+        /* --- End Options button style --- */
 
-        .sidebar {
-            width: 25%;
-            background-color: #1c2639;
-            color: #fff;
-            height: 100%;
-            overflow-y: auto;
-            border-right: 1px solid #333;
-        }
-
-        .main-content {
-            width: 75%;
-            height: 100%;
-            overflow: hidden;
-            background-color: white;
-            color: #333;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            font-size: 1.4em;
-            font-weight: bold;
-            border-bottom: 1px solid #333;
-        }
-
-        .section-title {
-            padding: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .module-header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
-            background-color: #1c2639;
-            color: #fff;
-        }
-
-        .module-title {
-            font-size: 1.5em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-        }
-
-        .module-title i {
-            margin-right: 10px;
-        }
-
-        .module-description {
-            padding: 10px 20px;
-            color: #aaa;
-            background-color: #1c2639;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-        }
-
-        .module-content {
-            padding: 20px;
-            background-color: #fff;
-            margin: 0;
-            color: #333;
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        /* Custom scrollbar styling */
-        .module-content::-webkit-scrollbar {
-            width: 8px;
-            background-color: #f5f5f5;
-        }
-
-        .module-content::-webkit-scrollbar-thumb {
-            background-color: #aaa;
-            border-radius: 4px;
-        }
-
-        .module-content::-webkit-scrollbar-thumb:hover {
-            background-color: #888;
-        }
-
-        .sidebar-content {
-            padding: 20px;
-        }
-
-        .sidebar-section {
-            margin-bottom: 30px;
-        }
-
-        .sidebar-section-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-
-        .sidebar-item {
-            padding: 10px;
-            cursor: pointer;
-            background-color: #2d364a;
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-
-        .sidebar-item:hover {
-            background-color: #3a4967;
-        }
-
-        .sidebar-link {
-            color: #fff;
-            text-decoration: none;
-            display: block;
-        }
-
-        .btn {
-            background-color: #4eca8b;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background-color: #3db97a;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Custom scrollbar styling for sidebar */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-            background-color: transparent;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.4);
-        }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .sidebar::-webkit-scrollbar { width: 6px; background-color: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
 
         /* Table styles */
-        .module-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            table-layout: fixed; /* Added for fixed column widths */
-        }
+        .module-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        .module-table th, .module-table td { padding: 8px 10px; text-align: center; border: 1px solid #ddd; overflow: hidden; font-size: 1.04em; font-weight: 500; vertical-align: middle; }
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { text-align: left; white-space: normal; } /* Left align first column */
+        .module-table th { background-color: #f2f2f2; font-weight: bold; position: relative; }
+        /* Template Column Widths (7 columns) */
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; } /* P&Gs Col */
+        .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }  /* Pc */
+        .module-table th:nth-child(3), .module-table td:nth-child(3) { width: 10%; } /* Qty */
+        .module-table th:nth-child(4), .module-table td:nth-child(4) { width: 15%; } /* Rate */
+        .module-table th:nth-child(5), .module-table td:nth-child(5) { width: 10%; } /* Unit */
+        .module-table th:nth-child(6), .module-table td:nth-child(6) { width: 15%; } /* Total */
+        .module-table th:nth-child(7), .module-table td:nth-child(7) { width: 10%; } /* Actions */
+        .module-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .module-table tr:hover { background-color: #f1f1f1; }
 
-        .module-table th, 
-        .module-table td {
-            padding: 8px 10px; /* Reduced vertical padding for tighter spacing */
-            text-align: left;
-            border: 1px solid #ddd;
-            overflow: hidden; /* Prevent content from breaking layout */
-            font-size: 1.04em; /* Slightly reduced from 1.1em */
-            font-weight: 500; /* Keep slightly bolder than normal */
-        }
+        /* General input styling */
+        .module-table input[type="text"], .module-table input[type="number"] { width: 100%; padding: 4px; border: 1px solid transparent; background-color: transparent; font-size: 1em; font-weight: inherit; font-family: inherit; }
+        .module-table td:not(:nth-child(1)) input[type="text"], .module-table td:not(:nth-child(1)) input[type="number"] { text-align: center; } /* Center inputs except first col */
+        .module-table input:focus { border: 1px solid #4eca8b; background-color: #fff; outline: none; }
 
-        /* Table header styling */
-        .module-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            position: relative;
-        }
-
-        /* Column width adjustments for P&G's */
-        .module-table th:nth-child(1),
-        .module-table td:nth-child(1) {
-            width: 40%; /* Description column */
-        }
-
-        .module-table th:nth-child(2),
-        .module-table td:nth-child(2) {
-            width: 5%; /* Pc column */
-            text-align: center;
-        }
-
-        .module-table th:nth-child(3),
-        .module-table td:nth-child(3) {
-            width: 10%; /* Qty column */
-            text-align: center;
-        }
-
-        .module-table th:nth-child(4),
-        .module-table td:nth-child(4) {
-            width: 15%; /* Rate column */
-            text-align: right;
-        }
-
-        .module-table th:nth-child(5),
-        .module-table td:nth-child(5) {
-            width: 10%; /* Unit column */
-            text-align: center;
-        }
-
-        .module-table th:nth-child(6),
-        .module-table td:nth-child(6) {
-            width: 15%; /* Total column */
-            text-align: right;
-        }
-
-        .module-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .module-table tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .module-table input {
-            width: 100%;
-            padding: 4px; /* Reduced padding to match reduced line height */
-            border: 1px solid transparent;
-            background-color: transparent;
-            font-size: 1em; /* Consistent text size with parent */
-            font-weight: inherit; /* Inherit font weight from parent */
-        }
-
-        .module-table input:focus {
-            border: 1px solid #4eca8b;
-            background-color: #fff;
-            outline: none;
-        }
-
-        .module-table input[type="number"] {
-            text-align: right;
-        }
-
-        .module-table .currency {
-            text-align: right;
-        }
-
-        .module-table .footer-row {
-            font-weight: bold;
-            background-color: #e9e9e9;
-        }
-
-        .module-table .footer-row td {
-            font-weight: bold; /* Ensure footer is bold */
-        }
-
-        .module-table .qty-cell {
-            background-color: #f0faf3;
-        }
-
-        /* Checkbox styles */
-        .checkbox-cell {
-            text-align: center;
-        }
-        
-        .item-checkbox {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        /* Save status indicator */
-        #save-status {
-            display: inline-block;
-            margin-left: 10px;
-            font-size: 0.9em;
-            transition: opacity 0.3s;
-        }
-
-        /* Addition buttons */
-        .add-item-btn {
-            margin-top: 10px;
-            display: inline-block;
-        }
-
-        /* Headers with sort arrows */
-        .sort-header {
-            cursor: pointer;
-        }
-
-        .sort-header::after {
-            content: "▼";
-            font-size: 0.8em;
-            margin-left: 5px;
-            opacity: 0.3;
-        }
-
-        .sort-header.sorted-asc::after {
-            content: "▲";
-            opacity: 1;
-        }
-
-        .sort-header.sorted-desc::after {
-            content: "▼";
-            opacity: 1;
-        }
-        
-        /* Debug panel for troubleshooting */
-        .debug-panel {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            max-width: 300px;
-            z-index: 9999;
-            display: none;
-        }
+        .module-table .footer-row { font-weight: bold; background-color: #e9e9e9; }
+        .module-table .footer-row td { font-weight: bold; }
+        .module-table .qty-cell { background-color: #f0faf3; }
+        .checkbox-cell { vertical-align: middle; }
+        .item-checkbox { width: 16px; height: 16px; cursor: pointer; display: inline-block; vertical-align: middle;}
+        #save-status { display: inline-block; margin-left: 10px; font-size: 0.9em; transition: opacity 0.3s; }
+        .add-item-btn { margin-top: 10px; display: inline-block; }
+        .sort-header { cursor: pointer; }
+        .sort-header::after { content: "▼"; font-size: 0.8em; margin-left: 5px; opacity: 0.3; display: inline-block; }
+        .sort-header.sorted-asc::after { content: "▲"; opacity: 1; }
+        .sort-header.sorted-desc::after { content: "▼"; opacity: 1; }
+        .debug-panel { position: fixed; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 9999; display: none; max-height: 200px; overflow-y: auto;}
+        #debug-toggle-btn { position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="sidebar-header">P&G's</div>
-        
         <div class="sidebar-content">
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Navigation</div>
-                <div class="sidebar-item">
-                    <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
-                </div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a> </div>
             </div>
-            
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Actions</div>
-                <div class="sidebar-item">
-                    <a href="#" class="sidebar-link" id="add-custom-item">Add Custom Item</a>
-                </div>
-                <div class="sidebar-item">
-                    <a href="#" class="sidebar-link" id="save-module-data">Save Data</a>
-                </div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="add-custom-item">Add Custom Item</a> </div>
+                <div class="sidebar-item"> <a href="#" class="sidebar-link" id="save-module-data">Save Data</a> </div>
             </div>
         </div>
     </div>
 
     <div class="main-content">
         <div class="module-header">
-            <div class="module-title">
-                <i>P</i> <span id="module-title-text">P&G's</span>
-            </div>
-            <div id="client-name-display" style="margin-left: 20px;"></div>
-            <div class="header-actions">
-                <div id="total-module-cost">
-                    Total P&G's Cost: R0.00
-                </div>
-            </div>
+            <div class="module-title"> <i>P</i> <span id="module-title-text">P&G's</span> </div>
+            <div id="client-name-display" style="margin-left: 20px;">Client: Loading...</div>
+            <div class="header-actions"> <div id="total-module-cost"> Total P&G's Cost: R0.00 </div> </div>
         </div>
-
         <div class="module-description">
             <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
                 <div id="save-status"></div>
@@ -404,7 +116,6 @@
                 <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
             </div>
         </div>
-
         <div class="module-content">
             <table class="module-table" id="items-table">
                 <thead>
@@ -415,749 +126,238 @@
                         <th class="sort-header" data-sort="rate">Rate</th>
                         <th>Unit</th>
                         <th class="sort-header" data-sort="total">Total</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="items-table-body">
-                    <!-- Items will be added here dynamically -->
-                </tbody>
+                <tbody id="items-table-body"></tbody>
                 <tfoot>
                     <tr class="footer-row">
-                        <td colspan="5" style="text-align: right;">Total</td>
-                        <td class="currency" id="table-total">R0.00</td>
+                        <td colspan="6" style="text-align: right;">Total</td>
+                        <td id="table-total">R0.00</td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>
-            
             <button id="add-item-btn" class="btn add-item-btn">Add Custom Item</button>
         </div>
     </div>
-    
-    <!-- Debug panel for troubleshooting -->
+
     <div class="debug-panel" id="debug-panel"></div>
 
-    <!-- Debug panel script -->
-    <script src="js/debug-panel.js" defer></script>
-
     <script>
-        // Module settings - CUSTOMIZED FOR P&G'S MODULE
+        // =====================================================================
+        // MODULE CONFIGURATION - ** CUSTOMIZED FOR P&G'S MODULE **
+        // =====================================================================
         const MODULE = {
-            id: 'p-and-gs', // Module ID matching filename
-            title: 'P&G\'s', // Module title
-            defaultItems: [  // P&G default items from screenshot
-                { id: 'contracts-manager', description: 'Contracts manager as required', rate: 6500.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'site-agent', description: 'Site Agent', rate: 8500.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'architect', description: 'Architect - Snag List', rate: 2500.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'deliveries', description: 'Deliveries', rate: 0.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'phones', description: 'Phones / radios', rate: 500.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'vehicle', description: 'Vehicle & Petrol', rate: 1000.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'site-office', description: 'Site Office', rate: 1250.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'site-container', description: 'Site Container', rate: 750.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'toilet-subbies', description: 'Temp. Chemical Toilet Subbies', rate: 400.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'toilet-manager', description: 'Temp. Chemical Toilet Manager', rate: 400.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'electrical-connection', description: 'Temp. Electrical connection', rate: 7500.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'electrical-usage', description: 'Temporary Electrical usage', rate: 100.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'fencing', description: 'Temporary Fencing', rate: 300.00, unit: 'm', checked: false, qty: 0, isDefault: true },
-                { id: 'water-connection', description: 'Water Supply connection', rate: 5000.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'water-usage', description: 'Water usage', rate: 150.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'head-office', description: 'Head Office Overheads', rate: 1000.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'insurances', description: 'Insurances', rate: 12500.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'land-surveyor', description: 'Land Surveyor', rate: 12000.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'health-safety-file', description: 'Health & safety file', rate: 7000.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'health-safety-visits', description: 'Health & safety visits', rate: 2500.00, unit: 'Months', checked: false, qty: 0, isDefault: true },
-                { id: 'site-board', description: 'Site Board', rate: 5500.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'hoa-deposit', description: 'HOA/Builders Deposit', rate: 15000.00, unit: '1', checked: false, qty: 0, isDefault: true },
-                { id: 'rubble-removal', description: 'General Rubble Removal', rate: 1700.00, unit: 'Weeks', checked: false, qty: 0, isDefault: true },
-                { id: 'builders-clean', description: 'Builders Clean at End', rate: 7500.00, unit: '1', checked: false, qty: 0, isDefault: true }
+            id: 'p-and-gs', // Use P&G's ID
+            title: 'P&G\'s',   // Use P&G's title
+            // Use P&G's default items, removed unnecessary flags
+            defaultItems: [
+                { id: 'contracts-manager', description: 'Contracts manager as required', rate: 6500.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'site-agent', description: 'Site Agent', rate: 8500.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'architect', description: 'Architect - Snag List', rate: 2500.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'deliveries', description: 'Deliveries', rate: 0.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'phones', description: 'Phones / radios', rate: 500.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'vehicle', description: 'Vehicle & Petrol', rate: 1000.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'site-office', description: 'Site Office', rate: 1250.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'site-container', description: 'Site Container', rate: 750.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'toilet-subbies', description: 'Temp. Chemical Toilet Subbies', rate: 400.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'toilet-manager', description: 'Temp. Chemical Toilet Manager', rate: 400.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'electrical-connection', description: 'Temp. Electrical connection', rate: 7500.00, unit: '1', checked: false, qty: 0 },
+                { id: 'electrical-usage', description: 'Temporary Electrical usage', rate: 100.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'fencing', description: 'Temporary Fencing', rate: 300.00, unit: 'm', checked: false, qty: 0 },
+                { id: 'water-connection', description: 'Water Supply connection', rate: 5000.00, unit: '1', checked: false, qty: 0 },
+                { id: 'water-usage', description: 'Water usage', rate: 150.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'head-office', description: 'Head Office Overheads', rate: 1000.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'insurances', description: 'Insurances', rate: 12500.00, unit: '1', checked: false, qty: 0 },
+                { id: 'land-surveyor', description: 'Land Surveyor', rate: 12000.00, unit: '1', checked: false, qty: 0 },
+                { id: 'health-safety-file', description: 'Health & safety file', rate: 7000.00, unit: '1', checked: false, qty: 0 },
+                { id: 'health-safety-visits', description: 'Health & safety visits', rate: 2500.00, unit: 'Months', checked: false, qty: 0 },
+                { id: 'site-board', description: 'Site Board', rate: 5500.00, unit: '1', checked: false, qty: 0 },
+                { id: 'hoa-deposit', description: 'HOA/Builders Deposit', rate: 15000.00, unit: '1', checked: false, qty: 0 },
+                { id: 'rubble-removal', description: 'General Rubble Removal', rate: 1700.00, unit: 'Weeks', checked: false, qty: 0 },
+                { id: 'builders-clean', description: 'Builders Clean at End', rate: 7500.00, unit: '1', checked: false, qty: 0 }
             ]
         };
-        
-        // Module data structure
-        let moduleData = {
-            items: [],
-            totalCost: 0,
-            lastModified: new Date().toISOString()
-        };
-        
-        // Auto-save cancel function
+
+        // =====================================================================
+        // ALL JAVASCRIPT FUNCTIONS BELOW ARE FROM THE CORRECTED TEMPLATE
+        // (Rate editable, Delete always works)
+        // =====================================================================
+
+        // Module State & Utilities
+        let moduleData = { items: [], totalCost: 0, lastModified: new Date().toISOString() };
         let cancelAutoSave = null;
-        
-        // Debug flag - set to true to enable debug panel
         const DEBUG = true;
-        
-        // Initialize
+        let tableBodyElement = null;
+
+        // Initialization
         document.addEventListener('DOMContentLoaded', function() {
-            console.log(`[${MODULE.id}] DOM loaded, initializing module`);
-            
-            // Set up debug panel if needed
-            if (DEBUG) {
-                setupDebugPanel();
-            }
-            
-            // Update module title everywhere
-            updateModuleTitles();
-            
-            // Check module access - ensure we came from dashboard
+            console.log(`[${MODULE.id}] DOM loaded`);
+            tableBodyElement = document.getElementById('items-table-body');
+            if (!tableBodyElement) { console.error(`[${MODULE.id}] Critical error: #items-table-body not found!`); return; }
+            if (DEBUG) { setupDebugPanel(); }
+            updateModuleTitles(); // Initial title setup uses MODULE.title
             const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
-            if (!validAccess) {
-                console.log(`[${MODULE.id}] Invalid access detected, redirecting`);
-                return; // ModuleUtils will handle the redirect
-            }
-            
-            // Get the current client
+            if (!validAccess) { console.warn(`[${MODULE.id}] Invalid access detected`); return; }
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!client) {
-                console.error(`[${MODULE.id}] No client available, returning to dashboard`);
-                window.ConstructionApp.ModuleUtils.returnToDashboard();
-                return;
-            }
-            
-            // Update client name display
-            document.getElementById('client-name-display').textContent = `Client: ${client.name}`;
-            
-            // Initialize save status indicator
+            if (!client) { console.error(`[${MODULE.id}] No client found.`); window.ConstructionApp.ModuleUtils.showErrorMessage('No client selected.'); setTimeout(() => window.ConstructionApp.ModuleUtils.returnToDashboard(MODULE.id, moduleData, false), 500); return; }
+            const clientNameDisplay = document.getElementById('client-name-display');
+            if(clientNameDisplay) { clientNameDisplay.textContent = `Client: ${client.name}`; }
             window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
-            
-            // Set up event listeners
             setupEventListeners();
-            
-            // Initialize module data
-            initModuleData();
-            
-            // Set up change tracking
-            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table');
-            
-            // Set up auto-save (2 minutes interval)
-            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 2 * 60 * 1000);
-            
-            // Set up sorting
+            initModuleData(); // Calls updateUI
+            window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input');
+            cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000); // 2 minutes
             setupTableSorting();
-            
-            // Update debug panel if enabled
-            if (DEBUG) {
-                updateDebugPanel();
-            }
+            if (DEBUG) { updateDebugPanel(); } // Initial debug panel update
+            console.log(`[${MODULE.id}] Initialization complete.`);
         });
-        
-        // Update module titles across the UI
+
+        // UI Update Functions
         function updateModuleTitles() {
             document.title = `${MODULE.title} - Construction Estimator`;
-            document.querySelector('.sidebar-header').textContent = MODULE.title;
-            document.getElementById('module-title-text').textContent = MODULE.title;
-            document.getElementById('total-module-cost').textContent = `Total ${MODULE.title} Cost: R0.00`;
+            const sidebarHeader = document.querySelector('.sidebar-header'); if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
+            const moduleTitleText = document.getElementById('module-title-text'); if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
+            const totalModuleCost = document.getElementById('total-module-cost');
+            // Ensure total cost text is updated correctly, using moduleData
+             // Updated label text here too
+            if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost || 0)}`;
         }
-        
-        // Initialize module data from client
-        function initModuleData() {
-            // Get client
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            
-            // Check if we have saved data for this module
-            const savedData = client.moduleData?.[MODULE.id] || null;
-            
-            if (savedData) {
-                // Restore saved data
-                console.log(`[${MODULE.id}] Restoring saved data`);
-                moduleData = savedData;
-                
-                // Ensure items array exists
-                if (!moduleData.items || !Array.isArray(moduleData.items)) {
-                    moduleData.items = [];
-                }
-                
-                // Merge with default items to ensure all required items exist
-                mergeWithDefaultItems();
-                
-                // Update UI with saved data
-                updateUI();
-            } else {
-                console.log(`[${MODULE.id}] No saved data found, using defaults`);
-                // Try to use data-models default P&Gs items if available
-                if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.getPAndGsItems) {
-                    moduleData.items = window.ConstructionApp.DataModels.getPAndGsItems();
-                    console.log(`[${MODULE.id}] Loaded items from DataModels:`, moduleData.items.length);
-                } else {
-                    // Initialize with default items from this module
-                    moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); // Deep copy
-                    console.log(`[${MODULE.id}] Loaded default items:`, moduleData.items.length);
-                }
-                updateUI();
-            }
-        }
-        
-        // Merge saved items with default items
-        function mergeWithDefaultItems() {
-            // Use DataModels utility if available
-            if (window.ConstructionApp.DataModels && window.ConstructionApp.DataModels.mergeWithDefaults && window.ConstructionApp.DataModels.getPAndGsItems) {
-                moduleData.items = window.ConstructionApp.DataModels.getPAndGsItems(moduleData.items);
-                return;
-            }
-            
-            // Fallback to manual merge
-            // Create a map of saved items by ID
-            const savedItemsMap = {};
-            moduleData.items.forEach(item => {
-                if (item.id) {
-                    savedItemsMap[item.id] = item;
-                }
-            });
-            
-            // Create a new array with default items, but use saved values if they exist
-            const mergedItems = [];
-            
-            // First add all default items (with saved values if available)
-            MODULE.defaultItems.forEach(defaultItem => {
-                if (savedItemsMap[defaultItem.id]) {
-                    // Item exists in saved data, use it but ensure required properties exist
-                    const savedItem = savedItemsMap[defaultItem.id];
-                    mergedItems.push({
-                        ...defaultItem,
-                        ...savedItem,
-                        // These properties should always match the default
-                        description: defaultItem.description,
-                        unit: defaultItem.unit,
-                        rate: defaultItem.rate,
-                        isDefault: true
-                    });
-                    // Remove from map so we know it's been processed
-                    delete savedItemsMap[defaultItem.id];
-                } else {
-                    // Item doesn't exist in saved data, use default
-                    mergedItems.push({...defaultItem});
-                }
-            });
-            
-            // Then add any custom items that weren't in the defaults
-            for (const id in savedItemsMap) {
-                if (savedItemsMap[id].custom) {
-                    mergedItems.push(savedItemsMap[id]);
-                }
-            }
-            
-            // Update module data
-            moduleData.items = mergedItems;
-        }
-        
-        // Update UI with current module data
+
         function updateUI() {
-            const tableBody = document.getElementById('items-table-body');
-            tableBody.innerHTML = ''; // Clear existing rows
-            
-            // Add each item
-            moduleData.items.forEach(item => {
-                addTableRow(item);
-            });
-            
-            // Update totals
-            calculateTotals();
-            
-            // Update debug panel if enabled
-            if (DEBUG) {
-                updateDebugPanel();
-            }
+            if (!tableBodyElement) return;
+            tableBodyElement.innerHTML = '';
+            moduleData.items.forEach(addTableRow); // Uses template function
+            calculateTotals(); // Uses template function
+            if (DEBUG) updateDebugPanel(); // Uses template function
         }
-        
-        // Add a row to the table
+
+        // Uses template addTableRow (delete button always enabled)
         function addTableRow(item) {
-            const tableBody = document.getElementById('items-table-body');
+            if (!tableBodyElement) return;
             const row = document.createElement('tr');
             row.setAttribute('data-item-id', item.id);
-            
-            // Format currency
+
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
-            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(
-                item.qty > 0 ? (item.qty * item.rate) : 0
-            );
-            
-            // Create row content - kept the Pc checkbox for reference only
+            const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.qty > 0 ? (item.qty * item.rate) : 0);
+
+            // Template row structure (7 columns)
             row.innerHTML = `
+                <td><input type="text" class="description-input" value="${item.description || ''}"></td>
+                <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
+                <td class="qty-cell"><input type="number" class="qty-input" value="${item.qty || 0}" min="0" step="1"></td>
+                <td><input type="text" class="rate-input" value="${rateFormatted}"></td> <td><input type="text" class="unit-input" value="${item.unit || ''}"></td> <td class="total-cell">${totalFormatted}</td>
                 <td>
-                    <input type="text" class="description-input" value="${item.description}" 
-                           ${item.isDefault ? 'readonly' : ''}>
+                    <button class="btn-options options-item-btn" title="More Actions"> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                        </svg>
+                    </button>
                 </td>
-                <td class="checkbox-cell">
-                    <input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}>
-                </td>
-                <td class="qty-cell">
-                    <input type="number" class="qty-input" value="${item.qty}" min="0" step="1">
-                </td>
-                <td>
-                    <input type="text" class="rate-input currency" value="${rateFormatted}" 
-                           ${item.isDefault ? 'readonly' : ''}>
-                </td>
-                <td>
-                    ${item.unit}
-                </td>
-                <td class="total-cell currency">${totalFormatted}</td>
             `;
-            
-            tableBody.appendChild(row);
-            
-            // Add event listeners to inputs
-            setupRowInputHandlers(row);
+            tableBodyElement.appendChild(row);
+            setupRowInputHandlers(row); // Uses template function
         }
-        
-        // Set up input handlers for a row
+
+        // Data Initialization & Management (Uses template logic)
+        function initModuleData() {
+             const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Client missing`); return; } const savedData = client.moduleData?.[MODULE.id]; if (savedData?.items?.length) { console.log(`[${MODULE.id}] Restoring saved data`); moduleData = JSON.parse(JSON.stringify(savedData)); if (!Array.isArray(moduleData.items)) moduleData.items = []; mergeWithDefaultItems(); } else { console.log(`[${MODULE.id}] Initializing with defaults`); moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); moduleData.totalCost = 0; moduleData.lastModified = new Date().toISOString(); } updateUI();
+         }
+        function mergeWithDefaultItems() { // Simpler merge as flags less important now
+            console.log(`[${MODULE.id}] Merging items`); const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item}])); const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item])); const mergedItems = []; defaultItemsMap.forEach((defaultItem, id) => { const savedItem = savedItemsMap.get(id); if (savedItem) { mergedItems.push({ ...defaultItem, ...savedItem }); savedItemsMap.delete(id); } else { mergedItems.push(defaultItem); } }); savedItemsMap.forEach(savedItem => { mergedItems.push({...savedItem}); }); moduleData.items = mergedItems; console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
+        }
+        function addCustomItem() { // No need for flags
+             console.log(`[${MODULE.id}] Adding custom item`); const newId = `custom-${Date.now()}`; const newItem = { id: newId, description: 'New Custom Item', qty: 0, rate: 0, unit: '@', checked: false }; moduleData.items.push(newItem); addTableRow(newItem); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); calculateTotals(); const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`); if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
+        }
+
+
+        // Event Handling & Calculations (Uses template logic)
         function setupRowInputHandlers(row) {
-            // Description input
-            const descInput = row.querySelector('.description-input');
-            if (descInput) {
-                descInput.addEventListener('input', function() {
-                    updateItemFromRow(row);
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                });
-            }
-            
-            // Checkbox input - for reference only, doesn't affect calculation
-            const checkbox = row.querySelector('.item-checkbox');
-            if (checkbox) {
-                checkbox.addEventListener('change', function() {
-                    updateItemFromRow(row);
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                });
-            }
-            
-            // Quantity input - this affects the calculation
-            const qtyInput = row.querySelector('.qty-input');
-            if (qtyInput) {
-                qtyInput.addEventListener('input', function() {
-                    updateItemFromRow(row);
-                    calculateRowTotal(row);
-                    calculateTotals();
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-                });
-            }
-            
-            // Rate input
+            const itemId = row.getAttribute('data-item-id');
+            row.querySelector('.description-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.unit-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.item-checkbox')?.addEventListener('change', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            row.querySelector('.qty-input')?.addEventListener('input', () => { updateItemFromRow(row); calculateRowTotal(row); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+
+            // Rate Input Listeners (Always attached)
             const rateInput = row.querySelector('.rate-input');
             if (rateInput) {
-                rateInput.addEventListener('focus', function() {
-                    // When focusing, show raw number for editing
-                    this.value = getNumericValue(this.value);
-                });
-                
+                rateInput.addEventListener('focus', function() { try { this.value = getNumericValue(this.value); this.select(); } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); } });
                 rateInput.addEventListener('blur', function() {
-                    // When losing focus, format as currency
-                    const numericValue = getNumericValue(this.value);
-                    this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
-                    updateItemFromRow(row);
-                    calculateRowTotal(row);
-                    calculateTotals();
+                    try {
+                        const currentItem = moduleData.items.find(i => i.id === itemId); if (!currentItem) return;
+                         updateItemFromRow(row); calculateRowTotal(row); calculateTotals();
+                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(currentItem.rate); // Format display
+                    } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
                 });
-                
-                rateInput.addEventListener('input', function() {
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
+            } else { console.error(`Rate input not found for ${itemId}`); }
+
+            // Options Button Listener (Always attached)
+            const optionsBtn = row.querySelector('.options-item-btn');
+            if (optionsBtn) {
+                optionsBtn.addEventListener('click', function() {
+                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow');
+                    deleteItemRow(this); // 'this' is the button
                 });
-            }
+            } else { console.error(`Options button not found for ${itemId}`); }
         }
-        
-        // Update item data from row inputs
+
         function updateItemFromRow(row) {
-            const itemId = row.getAttribute('data-item-id');
+            const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); if (!item) { console.error(`[${MODULE.id}] updateItemFromRow: Cannot find item ${itemId}`); return; }
+            item.description = row.querySelector('.description-input')?.value || '';
+            item.unit = row.querySelector('.unit-input')?.value || ''; // Added unit update
+            item.checked = row.querySelector('.item-checkbox')?.checked || false;
+            item.qty = Math.max(0, parseInt(row.querySelector('.qty-input')?.value, 10) || 0);
+            const rateInput = row.querySelector('.rate-input'); if (rateInput) { item.rate = getNumericValue(rateInput.value); }
+            moduleData.lastModified = new Date().toISOString(); if (DEBUG) updateDebugPanel();
+        }
+
+        function calculateRowTotal(row) { const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); const totalCell = row.querySelector('.total-cell'); if (!item || !totalCell) return 0; const total = item.qty > 0 ? (item.qty * item.rate) : 0; totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total); return total; }
+        function calculateTotals() { moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0); updateModuleTitles(); const tableTotalElement = document.getElementById('table-total'); if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); } if (DEBUG) updateDebugPanel(); }
+        function getNumericValue(value) { if (typeof value === 'number') return value; if (!value || typeof value !== 'string') return 0; let numericString = value.replace(/[^\d.,-]/g, ''); if (numericString.includes(',') && !numericString.includes('.')) { numericString = numericString.replace(/,/g, '.'); } else { numericString = numericString.replace(/,/g, ''); } const number = parseFloat(numericString); return isNaN(number) ? 0 : number; }
+
+        // Event Listeners Setup
+        function setupEventListeners() { document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); }); }
+        // Table Sorting
+        function setupTableSorting() { document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); }); }
+        function sortTable(sortBy, header) { let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI(); }
+        // Data Persistence (Saving)
+        function saveModuleData(isAutoSave = false) { const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } }); }
+        // Navigation
+        function returnToDashboard() { console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard(); }
+        function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
+        // Debugging Utilities
+        function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
+        // Page Unload Handling
+        window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
+
+        // Delete Item Function (Deletes ALL items)
+        function deleteItemRow(buttonElement) {
+            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red');
+            const row = buttonElement.closest('tr');
+            const itemId = row?.getAttribute('data-item-id');
+            if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
+
             const item = moduleData.items.find(i => i.id === itemId);
-            
-            if (item) {
-                // Get values from inputs
-                const descInput = row.querySelector('.description-input');
-                const checkbox = row.querySelector('.item-checkbox');
-                const qtyInput = row.querySelector('.qty-input');
-                const rateInput = row.querySelector('.rate-input');
-                
-                if (descInput && !item.isDefault) {
-                    item.description = descInput.value;
-                }
-                
-                if (checkbox) {
-                    item.checked = checkbox.checked; // Store checkbox state for reference
-                }
-                
-                if (qtyInput) {
-                    item.qty = parseInt(qtyInput.value) || 0;
-                }
-                
-                if (rateInput && !item.isDefault) {
-                    item.rate = getNumericValue(rateInput.value);
-                }
-            }
+            if (!item) { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} not found in data.`); return; }
+
+            const description = item.description || 'this item';
+            console.log(`[${MODULE.id}] Confirming delete for: ${itemId}`);
+            if (confirm(`Delete "${description}"?`)) {
+                console.log(`[${MODULE.id}] Deletion confirmed for ${itemId}.`);
+                const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
+                if (itemIndex > -1) {
+                    moduleData.items.splice(itemIndex, 1); console.log(`[${MODULE.id}] Item spliced.`);
+                    row.remove(); console.log(`[${MODULE.id}] Row removed.`);
+                    calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                    if (DEBUG) updateDebugPanel();
+                    console.log(`%c[${MODULE.id}] Deletion complete for ${itemId}.`, 'color: green');
+                } else { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} index not found.`); }
+            } else { console.log(`[${MODULE.id}] Deletion cancelled for ${itemId}.`); }
         }
-        
-        // Calculate total for a row - based on qty only, not checkbox
-        function calculateRowTotal(row) {
-            const itemId = row.getAttribute('data-item-id');
-            const item = moduleData.items.find(i => i.id === itemId);
-            
-            if (item) {
-                // Include in total if quantity > 0 (checkbox doesn't affect this)
-                const total = item.qty > 0 ? (item.qty * item.rate) : 0;
-                const totalCell = row.querySelector('.total-cell');
-                
-                if (totalCell) {
-                    totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
-                }
-                
-                return total;
-            }
-            
-            return 0;
-        }
-        
-        // Calculate all totals and update module data - based on qty only
-        function calculateTotals() {
-            let totalCost = 0;
-            
-            // Sum all item totals (only items with qty > 0, regardless of checkbox)
-            moduleData.items.forEach(item => {
-                if (item.qty > 0) {
-                    totalCost += item.qty * item.rate;
-                }
-            });
-            
-            // Update module data
-            moduleData.totalCost = totalCost;
-            
-            // Update UI
-            document.getElementById('table-total').textContent = 
-                window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
-            
-            document.getElementById('total-module-cost').textContent = 
-                `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(totalCost)}`;
-                
-            // Update debug panel if enabled
-            if (DEBUG) {
-                updateDebugPanel();
-            }
-        }
-        
-        // Add a new custom item
-        function addCustomItem() {
-            // Generate unique ID
-            const newId = 'custom-' + Date.now();
-            
-            // Create new item
-            const newItem = {
-                id: newId,
-                description: 'New P&G Item',
-                rate: 0,
-                unit: 'Weeks',
-                checked: false,
-                qty: 0,
-                isDefault: false,
-                custom: true
-            };
-            
-            // Add to module data
-            moduleData.items.push(newItem);
-            
-            // Add to UI
-            addTableRow(newItem);
-            
-            // Mark as unsaved
-            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-            
-            // Update totals
-            calculateTotals();
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Save buttons
-            document.getElementById('save-btn').addEventListener('click', function() {
-                saveModuleData();
-            });
-            
-            document.getElementById('save-module-data').addEventListener('click', function(e) {
-                e.preventDefault();
-                saveModuleData();
-            });
-            
-            // Return to dashboard
-            document.getElementById('return-btn').addEventListener('click', returnToDashboard);
-            document.getElementById('return-to-dashboard').addEventListener('click', function(e) {
-                e.preventDefault();
-                returnToDashboard();
-            });
-            
-            // Add custom item buttons
-            document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
-            document.getElementById('add-custom-item').addEventListener('click', function(e) {
-                e.preventDefault();
-                addCustomItem();
-            });
-        }
-        
-        // Setup table sorting
-        function setupTableSorting() {
-            const sortHeaders = document.querySelectorAll('.sort-header');
-            sortHeaders.forEach(header => {
-                header.addEventListener('click', function() {
-                    const sortBy = this.getAttribute('data-sort');
-                    sortTable(sortBy, this);
-                });
-            });
-        }
-        
-        // Sort the table by column
-        function sortTable(sortBy, header) {
-            // Determine sort direction
-            let sortAsc = true;
-            if (header.classList.contains('sorted-asc')) {
-                sortAsc = false;
-                header.classList.remove('sorted-asc');
-                header.classList.add('sorted-desc');
-            } else {
-                // Remove sorted class from all headers
-                document.querySelectorAll('.sort-header').forEach(h => {
-                    h.classList.remove('sorted-asc');
-                    h.classList.remove('sorted-desc');
-                });
-                header.classList.add('sorted-asc');
-            }
-            
-            // Sort items
-            moduleData.items.sort((a, b) => {
-                let aValue, bValue;
-                
-                switch (sortBy) {
-                    case 'description':
-                        aValue = a.description.toLowerCase();
-                        bValue = b.description.toLowerCase();
-                        break;
-                    case 'qty':
-                        aValue = a.qty;
-                        bValue = b.qty;
-                        break;
-                    case 'rate':
-                        aValue = a.rate;
-                        bValue = b.rate;
-                        break;
-                    case 'total':
-                        aValue = a.qty > 0 ? (a.qty * a.rate) : 0;
-                        bValue = b.qty > 0 ? (b.qty * b.rate) : 0;
-                        break;
-                    default:
-                        return 0;
-                }
-                
-                if (aValue < bValue) return sortAsc ? -1 : 1;
-                if (aValue > bValue) return sortAsc ? 1 : -1;
-                return 0;
-            });
-            
-            // Update UI
-            updateUI();
-        }
-        
-        // Get numeric value from formatted currency string
-        function getNumericValue(value) {
-            if (typeof value === 'number') return value;
-            
-            // Remove currency symbol and spaces
-            let numericString = value.toString().replace(/[R\s]/g, '');
-            
-            // Replace comma with period for decimal
-            numericString = numericString.replace(/,/g, '.');
-            
-            return parseFloat(numericString) || 0;
-        }
-        
-        // Save module data with enhanced error handling
-        function saveModuleData(isAutoSave = false) {
-            // Update module data timestamps
-            moduleData.lastModified = new Date().toISOString();
-            
-            // Show saving indicator
-            window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
-            
-            // IMPORTANT: Get current client and directly update its moduleData
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (client) {
-                // Ensure moduleData exists
-                if (!client.moduleData) {
-                    client.moduleData = {};
-                }
-                
-                // Store updated module data directly in the client object
-                client.moduleData[MODULE.id] = {...moduleData};
-                
-                // Update client's lastModified timestamp
-                client.lastModified = new Date().toISOString();
-                
-                // CRITICAL: Update client in both the ClientManager and sessionStorage
-                window.ConstructionApp.ClientManager.setCurrentClient(client);
-                
-                console.log(`[${MODULE.id}] Directly updated client object with module data, total cost: ${moduleData.totalCost}`);
-            }
-            
-            // Also save using the ClientManager's API for Firebase persistence
-            window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
-                if (success) {
-                    const message = isAutoSave ? 'Auto-saved' : 'Saved';
-                    window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message);
-                    
-                    // Show success message (only for manual saves)
-                    if (!isAutoSave) {
-                        window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} data saved successfully!`);
-                    }
-                } else {
-                    window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: ' + (error || 'Unknown error'));
-                    
-                    // Show error message
-                    window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving data: ${error || 'Unknown error'}`);
-                }
-            });
-        }
-        
-        // Return to dashboard with improved client preservation
-        function returnToDashboard() {
-            // Check if there are unsaved changes
-            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                // Ask user if they want to save before returning
-                const shouldSave = confirm("You have unsaved changes. Would you like to save before returning to the dashboard?");
-                if (shouldSave) {
-                    // Save first - but don't navigate in the callback to avoid timing issues
-                    saveModuleData();
-                    
-                    // We'll use a short delay to make sure saving completes
-                    setTimeout(() => navigateToDashboard(), 300);
-                    return;
-                }
-            }
-            
-            // If no changes or user doesn't want to save, navigate immediately
-            navigateToDashboard();
-        }
-        
-        // Navigate to dashboard with proper state preservation
-        function navigateToDashboard() {
-            console.log(`[${MODULE.id}] Navigating to dashboard`);
-            
-            // Cancel auto-save timer
-            if (cancelAutoSave) cancelAutoSave();
-            
-            // Get the current client
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            
-            if (client) {
-                // CRITICAL: Update client's module data even if we didn't save
-                // This ensures the data is available when returning to the dashboard
-                if (!client.moduleData) {
-                    client.moduleData = {};
-                }
-                
-                // Always update the moduleData with the latest values
-                client.moduleData[MODULE.id] = {...moduleData};
-                
-                // Update lastModified timestamp
-                client.lastModified = new Date().toISOString();
-                
-                // Store client directly in sessionStorage (reliable backup approach)
-                sessionStorage.setItem('currentClient', JSON.stringify(client));
-                console.log(`[${MODULE.id}] Client data saved to sessionStorage before navigation`);
-                
-                // IMPORTANT: Force a client update through the client manager
-                // This ensures any listeners (like the dashboard) are notified
-                window.ConstructionApp.ClientManager.setCurrentClient(client);
-            }
-            
-            // IMPORTANT: Set navigation state to explicitly indicate returning from a module
-            // This tells the dashboard that it should restore the client
-            sessionStorage.setItem('navigationState', 'returningToDashboard');
-            console.log(`[${MODULE.id}] Navigation state set to: returningToDashboard`);
-            
-            // Navigate back to the dashboard
-            window.location.href = 'index.html';
-        }
-        
-        // Setup debug panel
-        function setupDebugPanel() {
-            const debugPanel = document.getElementById('debug-panel');
-            
-            // Create toggle button
-            const toggleBtn = document.createElement('button');
-            toggleBtn.textContent = 'Debug';
-            toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px;';
-            document.body.appendChild(toggleBtn);
-            
-            // Toggle debug panel on click
-            toggleBtn.addEventListener('click', function() {
-                const isVisible = debugPanel.style.display === 'block';
-                debugPanel.style.display = isVisible ? 'none' : 'block';
-                
-                if (!isVisible) {
-                    updateDebugPanel();
-                }
-            });
-        }
-        
-        // Update debug panel
-        function updateDebugPanel() {
-            const debugPanel = document.getElementById('debug-panel');
-            
-            // Get client data
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            const sessionClient = sessionStorage.getItem('currentClient');
-            let sessionClientData = null;
-            try {
-                if (sessionClient) {
-                    sessionClientData = JSON.parse(sessionClient);
-                }
-            } catch (e) {
-                console.error("Error parsing session client:", e);
-            }
-            
-            // Get navigation state
-            const navigationState = sessionStorage.getItem('navigationState');
-            
-            // Create debug info
-            let debugInfo = `
-                <strong>Module ID:</strong> ${MODULE.id}<br>
-                <strong>Navigation State:</strong> ${navigationState || 'None'}<br>
-                <strong>Current Client:</strong> ${client ? client.name : 'None'}<br>
-                <strong>Client ID:</strong> ${client ? client.id : 'None'}<br>
-                <strong>Session Storage Client:</strong> ${sessionClientData ? sessionClientData.name : 'None'}<br>
-                <strong>Module Items:</strong> ${moduleData.items.length}<br>
-                <strong>Items with Qty > 0:</strong> ${moduleData.items.filter(item => item.qty > 0).length}<br>
-                <strong>Marked Items (Pc):</strong> ${moduleData.items.filter(item => item.checked).length}<br>
-                <strong>Module Total Cost:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br>
-                <strong>Unsaved Changes:</strong> ${window.ConstructionApp.ModuleUtils.hasUnsavedChanges() ? 'Yes' : 'No'}<br>
-                <strong>Last Modified:</strong> ${moduleData.lastModified}<br>
-            `;
-            
-            // Add sample of module data
-            debugInfo += '<strong>Module Data Sample:</strong><br>';
-            const activeItems = moduleData.items.filter(item => item.qty > 0);
-            if (activeItems.length > 0) {
-                const sampleItem = activeItems[0];
-                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}, Total: ${sampleItem.qty * sampleItem.rate}<br>`;
-            } else if (moduleData.items.length > 0) {
-                const sampleItem = moduleData.items[0];
-                debugInfo += `- ID: ${sampleItem.id}, Description: ${sampleItem.description}, Marked: ${sampleItem.checked ? 'Yes' : 'No'}, Qty: ${sampleItem.qty}, Rate: ${sampleItem.rate}<br>`;
-            } else {
-                debugInfo += '- No items<br>';
-            }
-            
-            // Update panel
-            debugPanel.innerHTML = debugInfo;
-        }
-        
-        // Clean up when leaving page
-        window.addEventListener('beforeunload', function(e) {
-            // Cancel auto-save timer
-            if (cancelAutoSave) cancelAutoSave();
-            
-            // If we have unsaved changes, warn user
-            if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                // Store client data in sessionStorage to prevent loss
-                const client = window.ConstructionApp.ClientManager.getCurrentClient();
-                if (client) {
-                    sessionStorage.setItem('currentClient', JSON.stringify(client));
-                }
-                
-                // This will trigger the browser's "unsaved changes" warning
-                const message = 'You have unsaved changes. Are you sure you want to leave?';
-                e.returnValue = message;
-                return message;
-            }
-        });
+
     </script>
 </body>
 </html>
