@@ -40,9 +40,9 @@
         .btn-secondary:hover { background-color: #5a6268; }
 
         /* --- Options button style --- */
-        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease, opacity 0.2s ease; }
-        .btn-options:hover:not(:disabled) { background-color: #e9e9e9; }
-        .btn-options:disabled { cursor: default; opacity: 0.4; }
+        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
+        .btn-options:hover { background-color: #e9e9e9; } /* Hover works always */
+        /* .btn-options:disabled { cursor: default; opacity: 0.4; } /* Removed disabled style */
         .btn-options svg { width: 16px; height: 16px; }
         /* --- End Options button style --- */
 
@@ -149,9 +149,10 @@
             id: 'module-template',
             title: 'Template',
             defaultItems: [
-                { id: 'item-1', description: 'Item 1 Description', rate: 10.00, unit: '@', checked: false, qty: 0, isDefault: true, custom: false },
-                { id: 'item-2', description: 'Item 2 Description', rate: 25.50, unit: 'm', checked: false, qty: 0, isDefault: true, custom: false },
-                { id: 'item-3', description: 'Item 3 Description', rate: 100.00, unit: 'ea', checked: false, qty: 0, isDefault: true, custom: false },
+                // Default items no longer need special flags if all are deletable/editable
+                { id: 'item-1', description: 'Item 1 Description', rate: 10.00, unit: '@', checked: false, qty: 0 },
+                { id: 'item-2', description: 'Item 2 Description', rate: 25.50, unit: 'm', checked: false, qty: 0 },
+                { id: 'item-3', description: 'Item 3 Description', rate: 100.00, unit: 'ea', checked: false, qty: 0 },
             ]
         };
 
@@ -185,20 +186,11 @@
         });
 
         // UI Update Functions
-        function updateModuleTitles() {
-            document.title = `${MODULE.title} - Construction Estimator`;
-            const sidebarHeader = document.querySelector('.sidebar-header'); if (sidebarHeader) sidebarHeader.textContent = MODULE.title;
-            const moduleTitleText = document.getElementById('module-title-text'); if (moduleTitleText) moduleTitleText.textContent = MODULE.title;
-            const totalModuleCost = document.getElementById('total-module-cost');
-            if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost || 0)}`;
+        function updateModuleTitles() { /* ... (same as before) ... */
+            document.title = `${MODULE.title} - Construction Estimator`; const sidebarHeader = document.querySelector('.sidebar-header'); if (sidebarHeader) sidebarHeader.textContent = MODULE.title; const moduleTitleText = document.getElementById('module-title-text'); if (moduleTitleText) moduleTitleText.textContent = MODULE.title; const totalModuleCost = document.getElementById('total-module-cost'); if (totalModuleCost) totalModuleCost.textContent = `Total ${MODULE.title} Cost: ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost || 0)}`;
         }
-
-        function updateUI() {
-            if (!tableBodyElement) return;
-            tableBodyElement.innerHTML = '';
-            moduleData.items.forEach(addTableRow);
-            calculateTotals();
-            if (DEBUG) updateDebugPanel();
+        function updateUI() { /* ... (same as before) ... */
+            if (!tableBodyElement) return; tableBodyElement.innerHTML = ''; moduleData.items.forEach(addTableRow); calculateTotals(); if (DEBUG) updateDebugPanel();
         }
 
         function addTableRow(item) {
@@ -206,12 +198,10 @@
             const row = document.createElement('tr');
             row.setAttribute('data-item-id', item.id);
 
-            const isDefaultItem = item?.isDefault === true;
-            // console.log(`%c[${MODULE.id}] addTableRow - Item ${item.id}: isDefault=${isDefaultItem}`, 'color: purple'); // Basic check log
-
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.qty > 0 ? (item.qty * item.rate) : 0);
 
+            // --- MODIFIED: Button is ALWAYS enabled, title is always "More Actions" ---
             row.innerHTML = `
                 <td><input type="text" class="description-input" value="${item.description || ''}"></td>
                 <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
@@ -219,75 +209,34 @@
                 <td><input type="text" class="rate-input" value="${rateFormatted}"></td> <td><input type="text" class="unit-input" value="${item.unit || ''}"></td>
                 <td class="total-cell">${totalFormatted}</td>
                 <td>
-                    <button class="btn-options options-item-btn" title="${isDefaultItem ? 'Default Item (Cannot Delete)' : 'More Actions'}" ${isDefaultItem ? 'disabled' : ''}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="btn-options options-item-btn" title="More Actions"> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
                         </svg>
                     </button>
                 </td>
             `;
+
             tableBodyElement.appendChild(row);
             setupRowInputHandlers(row);
         }
 
         // Data Initialization & Management
-        function initModuleData() {
-            const client = window.ConstructionApp.ClientManager.getCurrentClient();
-            if (!client) { console.error(`[${MODULE.id}] Client missing`); return; }
-            const savedData = client.moduleData?.[MODULE.id];
-            if (savedData?.items?.length) {
-                 console.log(`[${MODULE.id}] Restoring saved data`);
-                 moduleData = JSON.parse(JSON.stringify(savedData));
-                 if (!Array.isArray(moduleData.items)) moduleData.items = [];
-                 mergeWithDefaultItems();
-            } else {
-                 console.log(`[${MODULE.id}] Initializing with defaults`);
-                 moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
-                 moduleData.items.forEach(item => { item.isDefault = true; item.custom = false; }); // Ensure flags are set
-                 moduleData.totalCost = 0;
-                 moduleData.lastModified = new Date().toISOString();
-            }
-            updateUI();
+        function initModuleData() { /* ... (Simplified merge logic slightly as flags less critical now) ... */
+            const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Client missing`); return; } const savedData = client.moduleData?.[MODULE.id]; if (savedData?.items?.length) { console.log(`[${MODULE.id}] Restoring saved data`); moduleData = JSON.parse(JSON.stringify(savedData)); if (!Array.isArray(moduleData.items)) moduleData.items = []; mergeWithDefaultItems(); } else { console.log(`[${MODULE.id}] Initializing with defaults`); moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); moduleData.totalCost = 0; moduleData.lastModified = new Date().toISOString(); } updateUI();
+        }
+        function mergeWithDefaultItems() { /* ... (Simpler merge logic if flags aren't needed) ... */
+            console.log(`[${MODULE.id}] Merging items`); const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item}])); const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item])); const mergedItems = []; defaultItemsMap.forEach((defaultItem, id) => { const savedItem = savedItemsMap.get(id); if (savedItem) { mergedItems.push({ ...defaultItem, ...savedItem }); savedItemsMap.delete(id); } else { mergedItems.push(defaultItem); } }); savedItemsMap.forEach(savedItem => { mergedItems.push({...savedItem}); }); moduleData.items = mergedItems; console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
+        }
+        function addCustomItem() { /* ... (No need for isDefault/custom flags) ... */
+             console.log(`[${MODULE.id}] Adding custom item`); const newId = `custom-${Date.now()}`; const newItem = { id: newId, description: 'New Custom Item', qty: 0, rate: 0, unit: '@', checked: false }; moduleData.items.push(newItem); addTableRow(newItem); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); calculateTotals(); const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`); if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
         }
 
-        function mergeWithDefaultItems() {
-             console.log(`[${MODULE.id}] Merging items`);
-             const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item, isDefault: true, custom: false}]));
-             const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
-             const mergedItems = [];
-             defaultItemsMap.forEach((defaultItem, id) => {
-                 const savedItem = savedItemsMap.get(id);
-                 if (savedItem) {
-                     mergedItems.push({ ...defaultItem, ...savedItem, isDefault: true, custom: false });
-                     savedItemsMap.delete(id);
-                 } else { mergedItems.push(defaultItem); }
-             });
-             savedItemsMap.forEach(savedItem => {
-                 if (savedItem.custom === true) { mergedItems.push({...savedItem, isDefault: false, custom: true}); }
-                 else { console.warn(`[${MODULE.id}] Discarding saved item not marked as custom: ${savedItem.id}`); }
-             });
-            moduleData.items = mergedItems;
-             console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
-        }
-
-        function addCustomItem() {
-            console.log(`[${MODULE.id}] Adding custom item`);
-            const newId = `custom-${Date.now()}`;
-            const newItem = { id: newId, description: 'New Custom Item', qty: 0, rate: 0, unit: '@', checked: false, isDefault: false, custom: true }; // Set both flags
-            moduleData.items.push(newItem);
-            addTableRow(newItem);
-            window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-            calculateTotals();
-            const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`);
-            if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
-        }
 
         // Event Handling & Calculations
         function setupRowInputHandlers(row) {
             const itemId = row.getAttribute('data-item-id');
-            const item = moduleData.items.find(i => i.id === itemId);
-            // console.log(`%c[${MODULE.id}] setupRowInputHandlers - Item ${itemId}: isDefault=${item?.isDefault}`, 'color: blue'); // Basic check log
-            if (!item) { console.error(`Item ${itemId} not found in setup!`); return; }
+            // const item = moduleData.items.find(i => i.id === itemId); // No longer needed just for setup
+            // if (!item) { console.error(`Item ${itemId} not found in setup!`); return; } // Redundant check
 
             // Standard Input Listeners
             row.querySelector('.description-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
@@ -298,58 +247,42 @@
             // Rate Input Listeners (Always attached now)
             const rateInput = row.querySelector('.rate-input');
             if (rateInput) {
-                rateInput.addEventListener('focus', function() {
-                    try { this.value = getNumericValue(this.value); this.select(); }
-                    catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); }
-                });
+                rateInput.addEventListener('focus', function() { try { this.value = getNumericValue(this.value); this.select(); } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); } });
                 rateInput.addEventListener('blur', function() {
                     try {
-                         updateItemFromRow(row); // Update data first
-                         calculateRowTotal(row);
-                         calculateTotals();
-                         const numericValue = item.rate; // Get rate from updated data model
-                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue); // Format display
+                        // Need to find item here to update display correctly
+                        const currentItem = moduleData.items.find(i => i.id === itemId);
+                        if (!currentItem) return; // Safety check
+                         updateItemFromRow(row); // Update data model first
+                         calculateRowTotal(row); calculateTotals();
+                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(currentItem.rate); // Format display based on updated data
                     } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
                 });
                 rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             } else { console.error(`Rate input not found for ${itemId}`); }
 
-            // Options Button Listener (Conditional based on disabled attribute)
+            // Options Button Listener (Now always attached)
             const optionsBtn = row.querySelector('.options-item-btn');
-            // *** DETAILED LOGGING FOR LISTENER ATTACHMENT ***
-            if (optionsBtn) {
-                console.log(`[${MODULE.id}] setupRowInputHandlers - Found optionsBtn for item ${itemId}. Disabled status: ${optionsBtn.disabled}`); // LOG STATUS
-            } else {
-                console.error(`[${MODULE.id}] setupRowInputHandlers - !!! Options button NOT FOUND for item ${itemId} !!!`); // LOG IF NOT FOUND
-            }
-            // *** END DETAILED LOGGING ***
-
-            if (optionsBtn && !optionsBtn.disabled) { // Check if button exists and is NOT disabled
-                console.log(`%c[${MODULE.id}] Attaching delete listener for custom item: ${itemId}`, 'color: lightgreen'); // Log attachment
+            if (optionsBtn) { // Check only if button exists
+                // console.log(`%c[${MODULE.id}] Attaching delete listener for item: ${itemId}`, 'color: lightgreen'); // Less noisy log
                 optionsBtn.addEventListener('click', function() {
-                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow'); // Log click
-                    deleteItemRow(this);
+                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow');
+                    deleteItemRow(this); // 'this' is the button
                 });
-            } else if (optionsBtn) { // Log if listener NOT attached
-                console.log(`%c[${MODULE.id}] Delete listener NOT attached for disabled (default) item: ${itemId}`, 'color: grey'); // Log skip
-            }
+            } else { console.error(`Options button not found for ${itemId}`); } // Should not happen
         }
 
         function updateItemFromRow(row) {
             const itemId = row.getAttribute('data-item-id');
             const item = moduleData.items.find(i => i.id === itemId);
             if (!item) { console.error(`[${MODULE.id}] updateItemFromRow: Cannot find item ${itemId}`); return; }
-
             item.description = row.querySelector('.description-input')?.value || '';
             item.unit = row.querySelector('.unit-input')?.value || '';
             item.checked = row.querySelector('.item-checkbox')?.checked || false;
             item.qty = Math.max(0, parseInt(row.querySelector('.qty-input')?.value, 10) || 0);
-
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput) { // Update rate regardless of default/custom now
-                item.rate = getNumericValue(rateInput.value);
-            }
-
+            if (rateInput) { item.rate = getNumericValue(rateInput.value); }
+             // No need to track isDefault/custom if all are treated same for edit/delete
             moduleData.lastModified = new Date().toISOString();
             if (DEBUG) updateDebugPanel();
         }
@@ -358,57 +291,44 @@
         function calculateTotals() { moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0); updateModuleTitles(); const tableTotalElement = document.getElementById('table-total'); if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); } if (DEBUG) updateDebugPanel(); }
          function getNumericValue(value) { if (typeof value === 'number') return value; if (!value || typeof value !== 'string') return 0; let numericString = value.replace(/[^\d.,-]/g, ''); if (numericString.includes(',') && !numericString.includes('.')) { numericString = numericString.replace(/,/g, '.'); } else { numericString = numericString.replace(/,/g, ''); } const number = parseFloat(numericString); return isNaN(number) ? 0 : number; }
 
-        // Event Listeners Setup
+        // --- Other functions (setupEventListeners, sortTable, saveModuleData, navigation, debug, unload) remain the same ---
         function setupEventListeners() { document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); }); }
-        // Table Sorting
          function setupTableSorting() { document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); }); }
         function sortTable(sortBy, header) { let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI(); }
-        // Data Persistence (Saving)
         function saveModuleData(isAutoSave = false) { const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } }); }
-        // Navigation
         function returnToDashboard() { console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard(); }
         function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
-        // Debugging Utilities
         function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
-        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}, <strong>Custom:</strong> ${moduleData.items.filter(i=>i.custom===true).length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
-        // Page Unload Handling
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; } /* Removed custom item count as flag removed */
         window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
 
-        // Delete Item Function Definition
+        // Delete Item Function Definition (Simplified check)
         function deleteItemRow(buttonElement) {
-            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red'); // Log entry
+            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red');
             const row = buttonElement.closest('tr');
             const itemId = row?.getAttribute('data-item-id');
             if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
 
             const item = moduleData.items.find(i => i.id === itemId);
-            // Check item exists and is NOT default (isDefault === false)
-            if (!item || item.isDefault === true) {
-                console.warn(`[${MODULE.id}] Delete aborted: Item ${itemId} not found or is a default item.`);
-                alert("Default items cannot be deleted.");
-                return;
+            // --- REMOVED CHECK for isDefault ---
+            if (!item) {
+                 console.error(`[${MODULE.id}] Delete failed: Item ${itemId} not found in data.`);
+                 return; // Still need to check if item exists
             }
 
-            const description = item.description || 'this custom item';
+            const description = item.description || 'this item'; // Changed message slightly
             console.log(`[${MODULE.id}] Confirming delete for: ${itemId}`);
             if (confirm(`Delete "${description}"?`)) {
                 console.log(`[${MODULE.id}] Deletion confirmed for ${itemId}.`);
                 const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
                 if (itemIndex > -1) {
-                    moduleData.items.splice(itemIndex, 1);
-                    console.log(`[${MODULE.id}] Item spliced.`);
-                    row.remove();
-                    console.log(`[${MODULE.id}] Row removed.`);
-                    calculateTotals();
-                    window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                    moduleData.items.splice(itemIndex, 1); console.log(`[${MODULE.id}] Item spliced.`);
+                    row.remove(); console.log(`[${MODULE.id}] Row removed.`);
+                    calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                     if (DEBUG) updateDebugPanel();
                     console.log(`%c[${MODULE.id}] Deletion complete for ${itemId}.`, 'color: green');
-                } else {
-                    console.error(`[${MODULE.id}] Delete failed: Item ${itemId} index not found.`);
-                }
-            } else {
-                console.log(`[${MODULE.id}] Deletion cancelled for ${itemId}.`);
-            }
+                } else { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} index not found.`); }
+            } else { console.log(`[${MODULE.id}] Deletion cancelled for ${itemId}.`); }
         }
 
     </script>
