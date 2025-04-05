@@ -171,6 +171,14 @@
             background-color: #5a6268;
         }
 
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
         .header-actions {
             display: flex;
             align-items: center;
@@ -220,7 +228,7 @@
         /* Column width adjustments for P&G's */
         .module-table th:nth-child(1),
         .module-table td:nth-child(1) {
-            width: 40%; /* Description column */
+            width: 36%; /* Description column - reduced to make room for delete */
         }
 
         .module-table th:nth-child(2),
@@ -251,6 +259,12 @@
         .module-table td:nth-child(6) {
             width: 15%; /* Total column */
             text-align: right;
+        }
+        
+        .module-table th:nth-child(7),
+        .module-table td:nth-child(7) {
+            width: 5%; /* Actions column */
+            text-align: center;
         }
 
         .module-table tr:nth-child(even) {
@@ -306,6 +320,26 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
+        }
+
+        /* Delete button styles */
+        .delete-btn {
+            padding: 3px 5px;
+            font-size: 0.9em;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .delete-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
 
         /* Save status indicator */
@@ -415,6 +449,7 @@
                         <th class="sort-header" data-sort="rate">Rate</th>
                         <th>Unit</th>
                         <th class="sort-header" data-sort="total">Total</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="items-table-body">
@@ -422,7 +457,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="footer-row">
-                        <td colspan="5" style="text-align: right;">Total</td>
+                        <td colspan="6" style="text-align: right;">Total</td>
                         <td class="currency" id="table-total">R0.00</td>
                     </tr>
                 </tfoot>
@@ -657,6 +692,11 @@
                     <input type="text" class="unit-input" value="${item.unit}">
                 </td>
                 <td class="total-cell currency">${totalFormatted}</td>
+                <td>
+                    <button class="delete-btn" ${item.isDefault ? 'disabled' : ''}>
+                        Delete
+                    </button>
+                </td>
             `;
             
             tableBody.appendChild(row);
@@ -725,6 +765,56 @@
                 rateInput.addEventListener('input', function() {
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges();
                 });
+            }
+            
+            // Delete button
+            const deleteBtn = row.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    const itemId = row.getAttribute('data-item-id');
+                    const item = moduleData.items.find(i => i.id === itemId);
+                    
+                    // Ask for confirmation
+                    if (confirm(`Are you sure you want to delete "${item.description}"?`)) {
+                        deleteItem(itemId);
+                    }
+                });
+            }
+        }
+        
+        // Delete an item by ID
+        function deleteItem(itemId) {
+            // Check if the item is a default item
+            const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
+            
+            if (itemIndex >= 0) {
+                const item = moduleData.items[itemIndex];
+                
+                // Only allow deletion of custom items
+                if (item.isDefault) {
+                    alert("Default items cannot be deleted.");
+                    return;
+                }
+                
+                // Remove the item from the array
+                moduleData.items.splice(itemIndex, 1);
+                
+                // Remove the row from the UI
+                const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+                if (row) {
+                    row.remove();
+                }
+                
+                // Recalculate totals
+                calculateTotals();
+                
+                // Mark unsaved changes
+                window.ConstructionApp.ModuleUtils.markUnsavedChanges();
+                
+                // Update debug panel
+                if (DEBUG) {
+                    updateDebugPanel();
+                }
             }
         }
         
