@@ -149,24 +149,24 @@
         // MODULE CONFIGURATION - ** CUSTOMIZED FOR TOOL HIRE MODULE **
         // =====================================================================
         const MODULE = {
-            id: 'toolhire', // Use Tool Hire ID
+            id: 'tool-hire', // Use Tool Hire ID (hyphenated)
             title: 'Tool Hire', // Use Tool Hire title
-             // Use Tool Hire default items, removed allow/isDefault, added checked:false
+             // Use Tool Hire default items from screenshot
             defaultItems: [
-                { id: 'petrol', description: 'Petrol', qty: 0, rate: 25.00, unit: 'P.L', checked: false },
-                { id: 'wacker', description: 'Wacker', qty: 0, rate: 400.00, unit: 'P.D', checked: false },
-                { id: 'plate-compactors', description: 'Plate Compacters', qty: 0, rate: 700.00, unit: 'P.D', checked: false },
-                { id: 'poker', description: 'Poker', qty: 0, rate: 400.00, unit: 'P.D', checked: false },
-                { id: 'generators', description: 'Generators', qty: 0, rate: 500.00, unit: 'P.D', checked: false },
-                { id: 'scaffolding-single', description: 'Scaffolding S&L Single Tower', qty: 0, rate: 160.00, unit: 'P.D', checked: false },
-                { id: 'scaffolding-double', description: 'Scaffolding S&L Double Tower', qty: 0, rate: 320.00, unit: 'P.D', checked: false },
-                { id: 'scaffolding-planks', description: 'Scaffolding Planks', qty: 0, rate: 16.00, unit: 'P.D', checked: false },
-                { id: 'tressols', description: 'Tressol\'s', qty: 0, rate: 22.00, unit: 'P.D', checked: false },
-                { id: 'mixer', description: 'Mixer', qty: 0, rate: 330.00, unit: 'P.D', checked: false },
-                { id: 'wheel-barrow', description: 'Wheel Barrow', qty: 0, rate: 90.00, unit: 'P.D', checked: false },
-                { id: 'breaker', description: 'Breaker', qty: 0, rate: 470.00, unit: 'P.D', checked: false },
-                { id: 'sundries', description: 'Sundries', qty: 0, rate: 1000.00, unit: '', checked: false },
-                { id: 'tool-hire-other', description: 'Tool Hire Other', qty: 0, rate: 300.00, unit: '', checked: false }
+                { id: 'tool-petrol', description: 'Petrol', qty: 0, rate: 25.00, unit: 'P.L', checked: false },
+                { id: 'tool-wacker', description: 'Wacker', qty: 0, rate: 400.00, unit: 'P.D', checked: false },
+                { id: 'tool-plate-compacters', description: 'Plate Compacters', qty: 0, rate: 700.00, unit: 'P.D', checked: false },
+                { id: 'tool-poker', description: 'Poker', qty: 0, rate: 400.00, unit: 'P.D', checked: false },
+                { id: 'tool-generators', description: 'Generators', qty: 0, rate: 500.00, unit: 'P.D', checked: false },
+                { id: 'tool-scaff-single', description: 'Schaffolding S&L Single Tower', qty: 0, rate: 160.00, unit: 'P.D', checked: false },
+                { id: 'tool-scaff-double', description: 'Schaffolding S&L Double Tower', qty: 0, rate: 320.00, unit: 'P.D', checked: false },
+                { id: 'tool-scaff-planks', description: 'Schaffolding Planks', qty: 0, rate: 16.00, unit: 'P.D', checked: false },
+                { id: 'tool-tressols', description: 'Tressol\'s', qty: 0, rate: 22.00, unit: 'P.D', checked: false },
+                { id: 'tool-mixer', description: 'Mixer', qty: 0, rate: 330.00, unit: 'P.D', checked: false },
+                { id: 'tool-wheel-barrow', description: 'Wheel Barrow', qty: 0, rate: 90.00, unit: 'P.D', checked: false },
+                { id: 'tool-breaker', description: 'Breaker', qty: 0, rate: 470.00, unit: 'P.D', checked: false },
+                { id: 'tool-sundries', description: 'Sundries', qty: 0, rate: 1000.00, unit: '@', checked: false }, // Used '@' for unit
+                { id: 'tool-hire-other', description: 'Tool Hire Other', qty: 0, rate: 300.00, unit: '@', checked: false } // Used '@' for unit
             ]
         };
 
@@ -235,9 +235,9 @@
             // Template row structure (7 columns)
             row.innerHTML = `
                 <td><input type="text" class="description-input" value="${item.description || ''}"></td>
-                <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" <span class="math-inline">\{item\.checked ? 'checked' \: ''\}\></td\>
-<td class\="qty\-cell"\><input type\="number" class\="qty\-input" value\="</span>{item.qty || 0}" min="0" step="1"></td>
-                <td><input type="text" class="rate-input" value="<span class="math-inline">\{rateFormatted\}"\></td\> <td\><input type\="text" class\="unit\-input" value\="</span>{item.unit || ''}"></td> <td class="total-cell">${totalFormatted}</td>
+                <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
+                <td class="qty-cell"><input type="number" class="qty-input" value="${item.qty || 0}" min="0" step="1"></td>
+                <td><input type="text" class="rate-input" value="${rateFormatted}"></td> <td><input type="text" class="unit-input" value="${item.unit || ''}"></td> <td class="total-cell">${totalFormatted}</td>
                 <td>
                     <button class="btn-options options-item-btn" title="More Actions"> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
@@ -257,7 +257,7 @@
             console.log(`[${MODULE.id}] Merging items`); const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item}])); const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item])); const mergedItems = []; defaultItemsMap.forEach((defaultItem, id) => { const savedItem = savedItemsMap.get(id); if (savedItem) { mergedItems.push({ ...defaultItem, ...savedItem }); savedItemsMap.delete(id); } else { mergedItems.push(defaultItem); } }); savedItemsMap.forEach(savedItem => { mergedItems.push({...savedItem}); }); moduleData.items = mergedItems; console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
         }
         function addCustomItem() { // No need for flags
-             console.log(`[${MODULE.id}] Adding custom item`); const newId = `custom-${Date.now()}`; const newItem = { id: newId, description: 'New Tool Hire Item', qty: 0, rate: 0, unit: 'P.D', checked: false }; moduleData.items.push(newItem); addTableRow(newItem); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); calculateTotals(); const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`); if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
+             console.log(`[${MODULE.id}] Adding custom item`); const newId = `custom-${Date.now()}`; const newItem = { id: newId, description: 'New Tool Item', qty: 0, rate: 0, unit: 'P.D', checked: false }; moduleData.items.push(newItem); addTableRow(newItem); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); calculateTotals(); const newRowInput = tableBodyElement.querySelector(`tr[data-item-id="${newId}"] .description-input`); if (newRowInput) { newRowInput.focus(); newRowInput.select(); }
         }
 
 
@@ -272,13 +272,13 @@
             // Rate Input Listeners (Always attached)
             const rateInput = row.querySelector('.rate-input');
             if (rateInput) {
-                rateInput.addEventListener('focus', function() { try { this.value = getNumericValue(this.value); this.select(); } catch (e) { console.error(`[<span class="math-inline">\{MODULE\.id\}\] Error in rate FOCUS listener \(</span>{itemId}):`, e); } });
+                rateInput.addEventListener('focus', function() { try { this.value = getNumericValue(this.value); this.select(); } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); } });
                 rateInput.addEventListener('blur', function() {
                     try {
                         const currentItem = moduleData.items.find(i => i.id === itemId); if (!currentItem) return;
                          updateItemFromRow(row); calculateRowTotal(row); calculateTotals();
                          this.value = window.ConstructionApp.ModuleUtils.formatCurrency(currentItem.rate); // Format display
-                    } catch (e) { console.error(`[<span class="math-inline">\{MODULE\.id\}\] Error in rate BLUR listener \(</span>{itemId}):`, e); }
+                    } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
                 });
                 rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             } else { console.error(`Rate input not found for ${itemId}`); }
@@ -319,7 +319,7 @@
         function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
         // Debugging Utilities
         function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
-        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> <span class="math-inline">\{new Date\(moduleData\.lastModified\)\.toLocaleTimeString\(\)\}<hr\><strong\>Data\[0\]\:</strong\><br\><pre style\="font\-size\:10px;max\-height\:40px;overflow\-y\:auto;color\:white;background\:\#444;padding\:2px;"\></span>{JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
         // Page Unload Handling
         window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
 
