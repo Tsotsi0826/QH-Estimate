@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Floor & Wall Covering - Single File with Measure Modal</title>
+  <style>
+    /* --- Basic Styles (similar to your template) --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f5f5f5;
+    }
+    .sidebar {
+      width: 25%;
+      min-width: 250px;
+      background-color: #1c2639;
+      color: #fff;
+      height: 100%;
+      overflow-y: auto;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-content {
+      width: 75%;
+      height: 100%;
+      overflow: hidden;
+      background-color: white;
+      color: #333;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 20px;
+      font-size: 1.4em;
+      font-weight: bold;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .module-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+      background-color: #1c2639;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .module-title {
+      font-size: 1.5em;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+    .module-title i {
+      margin-right: 10px;
+    }
+    .module-description {
+      padding: 10px 20px;
+      color: #aaa;
+      background-color: #1c2639;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .module-content {
+      background-color: #fff;
+      margin: 0;
+      color: #333;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    .module-content::-webkit-scrollbar {
+      width: 8px;
+      background-color: #f5f5f5;
+    }
+    .module-content::-webkit-scrollbar-thumb {
+      background-color: #aaa;
+      border-radius: 4px;
+    }
+    .sidebar-content {
+      padding: 20px;
+    }
+    .sidebar-section {
+      margin-bottom: 30px;
+    }
+    .sidebar-section-title {
+      font-size: 1.1em;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .sidebar-item {
+      padding: 10px;
+      cursor: pointer;
+      background-color: #2d364a;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      transition: background-color 0.2s ease;
+    }
+    .sidebar-item:hover {
+      background-color: #3a4967;
+    }
+    .sidebar-link {
+      color: #fff;
+      text-decoration: none;
+      display: block;
+    }
+    .btn {
+      background-color: #4eca8b;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background-color: #3db97a;
+    }
+    .btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #save-status {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 0.9em;
+      transition: opacity 0.3s;
+      color: #2ecc71;
+    }
+
+    /* Table from your template: Description, Pc, Qty, Rate, Unit, Total, Actions */
+    table.items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    /* Center all columns except for the first one (Description) */
+    table.items-table thead th,
+    table.items-table tbody td {
+      text-align: center;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+    table.items-table thead th:first-child,
+    table.items-table tbody td:first-child {
+      text-align: left;
+    }
+    table.items-table thead th {
+      background-color: #f2f2f2;
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+    }
+    table.items-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .actions-btn {
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      font-size: 0.9em;
+    }
+
+    /* Centered, borderless numeric inputs for Qty & Rate. 
+       We'll do a special rule for these <input> in table 
+     */
+    td input[type="number"] {
+      text-align: center;
+      border: none;
+      background: transparent;
+      width: 60px; /* adjust if needed */
+      font-size: 1em;
+    }
+    td input[type="number"]:focus {
+      outline: none;
+    }
+
+    /* Tabs */
+    .tab-buttons {
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    .tab-button {
+      background-color: #eee;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-right: 5px;
+      border-radius: 4px 4px 0 0;
+      font-size: 1em;
+    }
+    .tab-button.active {
+      background-color: #fff;
+      border-bottom: 1px solid #fff;
+      position: relative;
+      top: 1px;
+      font-weight: bold;
+      color: #4eca8b;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Debug Panel */
+    .debug-panel {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      max-width: 350px;
+      z-index: 9999;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #debug-toggle-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      z-index: 10000;
+      padding: 5px 10px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      display: none;
+    }
+
+    /* Modal for "Measure" fields */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; 
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      min-width: 300px;
+      max-width: 500px;
+    }
+    .modal-content h3 {
+      margin-bottom: 15px;
+    }
+    .modal-content .form-group {
+      margin-bottom: 15px;
+    }
+    .modal-content label {
+      margin-bottom: 5px;
+      display: block;
+      font-weight: bold;
+    }
+    .modal-content input, .modal-content select {
+      width: 100%;
+      padding: 6px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <!-- Configuration Section -->
+  <script>
+    // Coverage list
+    const defaultCoverings = [
+      { id: 'floor-tiles',    name: 'Floor Tiles',      price: 400.00 },
+      { id: 'wall-tiles',     name: 'Wall Tiles',       price: 400.00 },
+      { id: 'carpets',        name: 'Carpets',          price: 500.00 },
+      { id: 'wood',           name: 'Wood',             price: 1100.00 },
+      { id: 'vinyl',          name: 'Vinyl',            price: 650.00 },
+      { id: 'stucco',         name: 'Stucco',           price: 600.00 },
+      { id: 'cemcrete',       name: 'Cemcrete',         price: 750.00 },
+      { id: 'laminate',       name: 'Laminate',         price: 700.00 },
+      { id: 'tile-skirting1', name: 'Tile Skirting',    price: 400.00 },
+      { id: 'staircase',      name: 'Staircase',        price: 0.00 },
+      { id: 'shower-floor',   name: 'Shower Floor',     price: 0.00 },
+      { id: 'tile-skirting2', name: 'Tile Skirting',    price: 450.00 },
+      { id: 'cladding',       name: 'Cladding',         price: 1300.00 },
+      { id: 'other1',         name: 'Other',            price: 0.00 },
+      { id: 'other2',         name: 'Other',            price: 0.00 },
+      { id: 'other3',         name: 'Other',            price: 0.00 },
+    ];
+    const defaultFloorMaterials = defaultCoverings;
+    const defaultWallMaterials  = defaultCoverings;
+  </script>
+
+  <div class="sidebar">
+    <div class="sidebar-header" id="module-sidebar-title">Floor & Wall Covering</div>
+    <div class="sidebar-content">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Navigation</div>
+        <div class="sidebar-item">
+          <a href="#" class="sidebar-link" id="return-to-dashboard">Return to Dashboard</a>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Actions</div>
+        <div class="sidebar-item">
+          <a href="#" class="sidebar-link" id="save-module-data-sidebar">Save Data</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="module-header">
+      <div class="module-title">
+        <i> F&W </i> <span id="module-title-text">Floor & Wall Covering</span>
+      </div>
+      <div id="client-name-display" style="margin-left: 20px;">Client: Preview Client</div>
+      <div class="header-actions">
+        <div id="total-module-cost" style="font-weight:bold;">Total Module Cost: R0.00</div>
+      </div>
+    </div>
+    <div class="module-description">
+      <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%;">
+        <div id="save-status"></div>
+        <button id="save-btn" class="btn">Save</button>
+        <button id="return-btn" class="btn btn-secondary" style="margin-left: 10px;">Return to Dashboard</button>
+      </div>
+    </div>
+
+    <div class="module-content">
+      <div class="tab-buttons">
+        <button class="tab-button active" data-tab="floor">Floor Calculator</button>
+        <button class="tab-button" data-tab="wall">Wall Calculator</button>
+      </div>
+
+      <!-- Floor Calculator Section -->
+      <div id="floor-calculator-content" class="tab-content active">
+        <div>
+          <button id="floor-measure-btn" class="btn" style="margin-bottom:10px;">Measure</button>
+          <button id="add-floor-item" class="btn" style="margin-bottom:10px;">+ Add Floor Item</button>
+
+          <table class="items-table" id="floor-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Pc</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Unit</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="floor-tbody">
+              <!-- no items initially -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Wall Calculator Section -->
+      <div id="wall-calculator-content" class="tab-content">
+        <div>
+          <button id="wall-measure-btn" class="btn" style="margin-bottom:10px;">Measure</button>
+          <button id="add-wall-item" class="btn" style="margin-bottom:10px;">+ Add Wall Item</button>
+
+          <table class="items-table" id="wall-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Pc</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Unit</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="wall-tbody">
+              <!-- no items initially -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug Panel and Toggle Button -->
+  <div class="debug-panel" id="debug-panel"></div>
+  <button id="debug-toggle-btn">Debug</button>
+
+  <!-- MEASURE MODAL -->
+  <div class="modal-overlay" id="measure-modal">
+    <div class="modal-content">
+      <h3>Measure <span id="measure-modal-section-name"></span></h3>
+
+      <div class="form-group">
+        <label for="modal-material">Select Material:</label>
+        <select id="modal-material"></select>
+      </div>
+      <div class="form-group">
+        <label for="modal-price">Price (R):</label>
+        <input type="number" id="modal-price" placeholder="e.g. 250.00" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="modal-length">Length (m):</label>
+        <input type="number" id="modal-length" placeholder="e.g. 5.5" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="modal-width">Width (m):</label>
+        <input type="number" id="modal-width" placeholder="e.g. 4.0" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="modal-waste">Waste (%):</label>
+        <input type="number" id="modal-waste" value="10" step="1" min="0">
+      </div>
+
+      <button id="measure-apply-btn" class="btn">Apply</button>
+      <button id="measure-cancel-btn" class="btn btn-secondary" style="margin-left:10px;">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    let moduleData = {
+      floor: {
+        items: []
+      },
+      wall: {
+        items: []
+      },
+      totalCost: 0,
+      lastModified: null
+    };
+
+    let floorTbody, wallTbody, totalModuleCostDisplay, debugPanel, debugToggleBtn;
+    let measureModal, measureModalSectionName;
+    let modalMaterial, modalPrice, modalLength, modalWidth, modalWaste;
+    let measureApplyBtn, measureCancelBtn;
+    let currentSection='floor'; // track which tab to apply measure data
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      floorTbody = document.getElementById('floor-tbody');
+      wallTbody  = document.getElementById('wall-tbody');
+      totalModuleCostDisplay = document.getElementById('total-module-cost');
+      debugPanel             = document.getElementById('debug-panel');
+      debugToggleBtn         = document.getElementById('debug-toggle-btn');
+
+      measureModal            = document.getElementById('measure-modal');
+      measureModalSectionName = document.getElementById('measure-modal-section-name');
+      modalMaterial           = document.getElementById('modal-material');
+      modalPrice              = document.getElementById('modal-price');
+      modalLength             = document.getElementById('modal-length');
+      modalWidth              = document.getElementById('modal-width');
+      modalWaste              = document.getElementById('modal-waste');
+      measureApplyBtn         = document.getElementById('measure-apply-btn');
+      measureCancelBtn        = document.getElementById('measure-cancel-btn');
+
+      // measure buttons
+      document.getElementById('floor-measure-btn').addEventListener('click',()=> openMeasureModal('floor'));
+      document.getElementById('wall-measure-btn').addEventListener('click',()=> openMeasureModal('wall'));
+
+      // add item buttons
+      document.getElementById('add-floor-item').addEventListener('click',()=> addItem('floor'));
+      document.getElementById('add-wall-item').addEventListener('click',()=> addItem('wall'));
+
+      // tab switching
+      document.querySelectorAll('.tab-button').forEach(btn=>{
+        btn.addEventListener('click',()=> switchTab(btn.getAttribute('data-tab')));
+      });
+
+      measureApplyBtn.addEventListener('click', applyMeasureData);
+      measureCancelBtn.addEventListener('click', closeMeasureModal);
+
+      // mock save & return
+      document.getElementById('save-btn').addEventListener('click',saveModuleData);
+      document.getElementById('save-module-data-sidebar').addEventListener('click',(e)=>{
+        e.preventDefault();
+        saveModuleData();
+      });
+      document.getElementById('return-btn').addEventListener('click',()=> alert('Returning to Dashboard (mock).'));
+      document.getElementById('return-to-dashboard').addEventListener('click',(e)=>{
+        e.preventDefault();
+        alert('Returning to Dashboard (mock).');
+      });
+
+      // debug
+      debugToggleBtn.style.display='block';
+      debugToggleBtn.addEventListener('click', toggleDebug);
+
+      // Initially no items
+      // We'll push new items each time user measures or "adds item"
+      // populate measure material select
+      populateMeasureMaterials();
+
+      moduleData.lastModified=new Date().toISOString();
+      updateUI();
+    });
+
+    function populateMeasureMaterials(){
+      modalMaterial.innerHTML='';
+      defaultFloorMaterials.forEach(mat=>{
+        let opt=new Option(mat.name, mat.id);
+        modalMaterial.add(opt);
+      });
+      modalMaterial.addEventListener('change',()=>{
+        let found=defaultFloorMaterials.find(m=>m.id===modalMaterial.value);
+        if(found){
+          modalPrice.value = found.price;
+        }
+      });
+    }
+
+    function openMeasureModal(section){
+      currentSection=section;
+      measureModalSectionName.textContent=(section==='floor'?'(Floor)':'(Wall)');
+      // clear or set defaults
+      modalMaterial.value = defaultFloorMaterials[0].id;
+      modalPrice.value    = defaultFloorMaterials[0].price;
+      modalLength.value   ='';
+      modalWidth.value    ='';
+      modalWaste.value    ='10';
+
+      measureModal.style.display='flex';
+    }
+    function closeMeasureModal(){
+      measureModal.style.display='none';
+    }
+
+    function applyMeasureData(){
+      let matId   = modalMaterial.value;
+      let found   = defaultFloorMaterials.find(m=>m.id===matId);
+      let matName = found ? found.name : 'Custom';
+      let price   = parseFloat(modalPrice.value) || 0;
+      let length  = parseFloat(modalLength.value)||0;
+      let width   = parseFloat(modalWidth.value)||0;
+      let waste   = parseFloat(modalWaste.value)||0;
+      
+      // compute net area
+      let baseArea= length*width;
+      let netArea = baseArea*(1+(waste/100));
+      let total   = netArea*price;
+
+      // create new item from measure
+      let newItem={
+        description: matName,
+        pc:false,
+        qty: parseFloat(netArea.toFixed(2)), // 2 decimals
+        rate: price,
+        unit:'m²',
+        total: parseFloat(total.toFixed(2))
+      };
+      // push into the current section's array
+      moduleData[currentSection].items.push(newItem);
+
+      closeMeasureModal();
+      calculateTotal();
+      updateUI();
+    }
+
+    function addItem(section){
+      let arr=moduleData[section].items;
+      let newItem={
+        description:'(Custom item)',
+        pc:false,
+        qty:1,
+        rate:100,
+        unit:'m²',
+        total:100
+      };
+      arr.push(newItem);
+      calculateTotal();
+      updateUI();
+    }
+
+    function calculateTotal(){
+      let floorSum=0, wallSum=0;
+      moduleData.floor.items.forEach(it=> {
+        floorSum += (it.qty*it.rate);
+      });
+      moduleData.wall.items.forEach(it=> {
+        wallSum += (it.qty*it.rate);
+      });
+      moduleData.totalCost=floorSum+wallSum;
+    }
+
+    function updateUI(){
+      renderItemsTable('floor');
+      renderItemsTable('wall');
+
+      totalModuleCostDisplay.textContent=`Total Module Cost: ${formatCurrency(moduleData.totalCost)}`;
+      updateDebugPanel();
+    }
+
+    function renderItemsTable(section){
+      let tbody=(section==='floor'? floorTbody: wallTbody);
+      tbody.innerHTML='';
+      let items=moduleData[section].items;
+
+      items.forEach((item, idx)=>{
+        let tr=document.createElement('tr');
+
+        // Description (left align)
+        let tdDesc=document.createElement('td');
+        tdDesc.textContent=item.description;
+        tr.appendChild(tdDesc);
+
+        // PC (checkbox, center)
+        let tdPc=document.createElement('td');
+        let pcCheck=document.createElement('input');
+        pcCheck.type='checkbox';
+        pcCheck.checked=item.pc;
+        pcCheck.addEventListener('change',()=>{
+          item.pc=pcCheck.checked;
+        });
+        tdPc.appendChild(pcCheck);
+        tr.appendChild(tdPc);
+
+        // Qty
+        let tdQty=document.createElement('td');
+        let qtyInput=document.createElement('input');
+        qtyInput.type='number';
+        qtyInput.step='0.01';
+        qtyInput.min='0';
+        qtyInput.value=item.qty.toFixed(2); 
+        qtyInput.addEventListener('input',()=>{
+          let val=parseFloat(qtyInput.value)||0;
+          item.qty= parseFloat(val.toFixed(2)); 
+          item.total=item.qty*item.rate;
+          calculateTotal();
+          updateUI();
+        });
+        tdQty.appendChild(qtyInput);
+        tr.appendChild(tdQty);
+
+        // Rate
+        let tdRate=document.createElement('td');
+        let rateInput=document.createElement('input');
+        rateInput.type='number';
+        rateInput.step='0.01';
+        rateInput.min='0';
+        rateInput.value=item.rate;
+        rateInput.addEventListener('input',()=>{
+          let val=parseFloat(rateInput.value)||0;
+          item.rate=val;
+          item.total=item.qty*item.rate;
+          calculateTotal();
+          updateUI();
+        });
+        tdRate.appendChild(rateInput);
+        tr.appendChild(tdRate);
+
+        // Unit
+        let tdUnit=document.createElement('td');
+        tdUnit.textContent=item.unit||'m²';
+        tr.appendChild(tdUnit);
+
+        // Total
+        let tdTotal=document.createElement('td');
+        tdTotal.textContent=formatCurrency(item.total);
+        tr.appendChild(tdTotal);
+
+        // Actions => "..." 
+        let tdAct=document.createElement('td');
+        let rmBtn=document.createElement('button');
+        rmBtn.className='actions-btn';
+        rmBtn.textContent='...'; 
+        rmBtn.addEventListener('click',()=>{
+          items.splice(idx,1);
+          calculateTotal();
+          updateUI();
+        });
+        tdAct.appendChild(rmBtn);
+        tr.appendChild(tdAct);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function switchTab(tabName){
+      document.querySelectorAll('.tab-button').forEach(btn=>{
+        btn.classList.toggle('active', btn.getAttribute('data-tab')===tabName);
+      });
+      document.getElementById('floor-calculator-content').classList.toggle('active', tabName==='floor');
+      document.getElementById('wall-calculator-content').classList.toggle('active', tabName==='wall');
+    }
+
+    function saveModuleData(){
+      moduleData.lastModified=new Date().toISOString();
+      alert('Data saved (mock). Check debug panel for final JSON.');
+      updateUI();
+    }
+
+    // Format as Rand
+    function formatCurrency(val){
+      // This uses the built-in Intl with "ZAR", but effectively displays "R###.##"
+      return new Intl.NumberFormat('en-ZA',{
+        style:'currency',
+        currency:'ZAR'
+      }).format(val);
+    }
+
+    // Debug toggling
+    function toggleDebug(){
+      if(debugPanel.style.display==='block'){
+        debugPanel.style.display='none';
+        debugToggleBtn.textContent='Debug';
+      } else {
+        debugPanel.style.display='block';
+        debugToggleBtn.textContent='Hide Debug';
+        updateDebugPanel();
+      }
+    }
+    function updateDebugPanel(){
+      if(debugPanel.style.display==='none') return;
+      debugPanel.innerHTML=`
+        <strong>Module Data:</strong><br>
+        <pre style="font-size:10px;color:white;background:#444;padding:5px;">${JSON.stringify(moduleData,null,2)}</pre>
+      `;
+    }
+  </script>
+</body>
+</html>
