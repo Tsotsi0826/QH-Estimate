@@ -224,18 +224,19 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: fixed; /* Added for fixed column widths */
+            table-layout: fixed;
         }
 
         .module-table th,
         .module-table td {
-            padding: 8px 10px; /* Reduced vertical padding for tighter spacing */
-            text-align: left;
+            padding: 8px 10px;
+            /* --- ALIGNMENT CHANGE: All cells centered --- */
+            text-align: center;
             border: 1px solid #ddd;
-            overflow: hidden; /* Prevent content from breaking layout */
-            font-size: 1.04em; /* Slightly reduced from 1.1em */
-            font-weight: 500; /* Keep slightly bolder than normal */
-            vertical-align: middle; /* Align content vertically */
+            overflow: hidden;
+            font-size: 1.04em;
+            font-weight: 500;
+            vertical-align: middle;
         }
 
         /* Table header styling */
@@ -246,28 +247,28 @@
         }
 
         /* Column width adjustments */
-        /* --- Adjusted Widths --- */
+        /* --- Adjusted Widths (Removed text-align from here) --- */
         .module-table th:nth-child(1), /* Description */
         .module-table td:nth-child(1) { width: 35%; }
 
         .module-table th:nth-child(2), /* Pc */
-        .module-table td:nth-child(2) { width: 5%; text-align: center; }
+        .module-table td:nth-child(2) { width: 5%; }
 
         .module-table th:nth-child(3), /* Qty */
-        .module-table td:nth-child(3) { width: 10%; text-align: center; }
+        .module-table td:nth-child(3) { width: 10%; }
 
         .module-table th:nth-child(4), /* Rate */
-        .module-table td:nth-child(4) { width: 15%; text-align: right; }
+        .module-table td:nth-child(4) { width: 15%; }
 
         .module-table th:nth-child(5), /* Unit */
-        .module-table td:nth-child(5) { width: 10%; text-align: center; }
+        .module-table td:nth-child(5) { width: 10%; }
 
         .module-table th:nth-child(6), /* Total */
-        .module-table td:nth-child(6) { width: 15%; text-align: right; }
+        .module-table td:nth-child(6) { width: 15%; }
 
-        /* --- Actions Column */
+        /* Actions Column */
         .module-table th:nth-child(7),
-        .module-table td:nth-child(7) { width: 10%; text-align: center; }
+        .module-table td:nth-child(7) { width: 10%; }
         /* --- End Adjusted Widths --- */
 
         .module-table tr:nth-child(even) {
@@ -281,11 +282,13 @@
         .module-table input[type="text"],
         .module-table input[type="number"] {
             width: 100%;
-            padding: 4px; /* Reduced padding to match reduced line height */
+            padding: 4px;
             border: 1px solid transparent;
             background-color: transparent;
-            font-size: 1em; /* Consistent text size with parent */
-            font-weight: inherit; /* Inherit font weight from parent */
+            font-size: 1em;
+            font-weight: inherit;
+             /* --- ALIGNMENT CHANGE: Inputs will inherit center alignment --- */
+             text-align: center; /* Explicitly center input text */
         }
 
         .module-table input:focus {
@@ -294,13 +297,19 @@
             outline: none;
         }
 
+        /* --- ALIGNMENT CHANGE: Removed rule for number input text-align: right --- */
+        /*
         .module-table input[type="number"] {
             text-align: right;
         }
+        */
 
+        /* --- ALIGNMENT CHANGE: Removed .currency rule --- */
+        /*
         .module-table .currency {
             text-align: right;
         }
+        */
 
         .module-table .footer-row {
             font-weight: bold;
@@ -312,18 +321,19 @@
         }
 
         .module-table .qty-cell {
-            background-color: #f0faf3;
+            background-color: #f0faf3; /* Keep specific background if needed */
         }
 
         /* Checkbox styles */
         .checkbox-cell {
-            text-align: center;
+             /* Centering is now handled by the general td rule */
         }
 
         .item-checkbox {
             width: 16px;
             height: 16px;
             cursor: pointer;
+            display: inline-block; /* Helps with centering if needed */
         }
 
         /* Save status indicator */
@@ -439,8 +449,8 @@
                     </tbody>
                 <tfoot>
                     <tr class="footer-row">
-                        <td colspan="6" style="text-align: right;">Total</td>
-                        <td class="currency" id="table-total">R0.00</td>
+                        <td colspan="6">Total</td>
+                        <td id="table-total">R0.00</td>
                         <td></td> </tr>
                 </tfoot>
             </table>
@@ -615,7 +625,7 @@
                 item.qty > 0 ? (item.qty * item.rate) : 0
             );
 
-            // --- Updated Row InnerHTML (SVG stroke and stroke-width changed) ---
+            // Row InnerHTML remains the same as previous version (SVG stroke/width)
             row.innerHTML = `
                 <td>
                     <input type="text" class="description-input" value="${item.description || ''}">
@@ -627,13 +637,13 @@
                     <input type="number" class="qty-input" value="${item.qty || 0}" min="0" step="1">
                 </td>
                 <td>
-                    <input type="text" class="rate-input currency" value="${rateFormatted}"
+                    <input type="text" class="rate-input" value="${rateFormatted}"
                             ${item.isDefault ? 'readonly' : ''}>
                 </td>
                 <td>
                     <input type="text" class="unit-input" value="${item.unit || ''}">
                 </td>
-                <td class="total-cell currency">${totalFormatted}</td>
+                <td class="total-cell">${totalFormatted}</td>
                 <td>
                     <button class="btn-options options-item-btn" title="More Actions">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -642,7 +652,7 @@
                     </button>
                 </td>
             `;
-            // --- End Updated Row InnerHTML ---
+            // Note: Removed 'currency' class from rate and total cells/inputs as specific alignment is removed
 
             tableBody.appendChild(row);
             setupRowInputHandlers(row); // Attach listeners to the new row's inputs and buttons
@@ -667,27 +677,23 @@
                  rateInput.addEventListener('focus', function() { this.value = getNumericValue(this.value); });
                  rateInput.addEventListener('blur', function() {
                     const numericValue = getNumericValue(this.value);
+                    // Format back to currency string after editing
                     this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
                     updateItemFromRow(row); // Update rate in moduleData
                     calculateRowTotal(row);
                     calculateTotals();
-                    // markUnsavedChanges already triggered by input
                 });
+                // Trigger unsaved changes on input event
                 rateInput.addEventListener('input', () => window.ConstructionApp.ModuleUtils.markUnsavedChanges());
             }
 
-            // --- Options Button Listener ---
-            const optionsBtn = row.querySelector('.options-item-btn'); // Selector remains the same
+            // Options Button Listener (no change needed)
+            const optionsBtn = row.querySelector('.options-item-btn');
             if (optionsBtn) {
                 optionsBtn.addEventListener('click', function() {
-                    // *** TODO: Implement options menu logic here ***
-                    // For now, just keeping the delete functionality:
-                    deleteItemRow(this); // Still calls delete, using the new button style
-                    // Eventually, this button click should open a small menu
-                    // with "Delete" and maybe other options like "Duplicate".
+                    deleteItemRow(this);
                 });
             }
-            // --- End Options Button Listener ---
         }
 
         // Delete item row function (no change needed here)
@@ -700,7 +706,6 @@
                 return;
             }
 
-            // Find item details for confirmation message
             const item = moduleData.items.find(i => i.id === itemId);
             const description = item ? item.description : 'this item';
 
@@ -708,21 +713,12 @@
                 const itemIndex = moduleData.items.findIndex(i => i.id === itemId);
 
                 if (itemIndex > -1) {
-                    // Remove from data array
                     moduleData.items.splice(itemIndex, 1);
                     console.log(`[${MODULE.id}] Deleted item: ${itemId} from data array.`);
-
-                    // Remove from DOM
                     row.remove();
                     console.log(`[${MODULE.id}] Removed row from DOM for item: ${itemId}.`);
-
-                    // Recalculate totals
                     calculateTotals();
-
-                    // Mark changes as unsaved
                     window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-
-                    // Update debug panel
                     if (DEBUG) {
                         updateDebugPanel();
                     }
@@ -743,12 +739,11 @@
                 item.checked = row.querySelector('.item-checkbox')?.checked || false;
                 item.qty = parseInt(row.querySelector('.qty-input')?.value) || 0;
 
-                // Only update rate if the input exists and is not readonly (custom item)
                 const rateInput = row.querySelector('.rate-input');
                 if (rateInput && !rateInput.readOnly) {
+                    // Get numeric value for storage, even if input shows formatted string
                     item.rate = getNumericValue(rateInput.value);
                 }
-                // Note: Rate for default items should not change here
             }
         }
 
@@ -761,6 +756,7 @@
                 const total = item.qty > 0 ? (item.qty * item.rate) : 0;
                 const totalCell = row.querySelector('.total-cell');
                 if (totalCell) {
+                    // Always display formatted currency in the total cell
                     totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
                 }
                 return total;
@@ -863,11 +859,14 @@
             updateUI(); // Re-render the sorted table
         }
 
-        // Get numeric value from formatted currency string
+        // Get numeric value from potentially formatted currency string
         function getNumericValue(value) {
             if (typeof value === 'number') return value;
             if (!value || typeof value !== 'string') return 0;
-            let numericString = value.replace(/[R\s]/g, '').replace(/,/g, '.');
+            // Updated to handle South African Rand format (R prefix, space, comma decimal) robustly
+            let numericString = value.replace(/R|\s/g, '').replace(/,/g, '.');
+            // Also handle potential standard formats if ModuleUtils changes
+             numericString = numericString.replace(/,/g, ''); // Remove thousand separators if any
             return parseFloat(numericString) || 0;
         }
 
@@ -876,25 +875,20 @@
             moduleData.lastModified = new Date().toISOString();
             window.ConstructionApp.ModuleUtils.updateSaveStatus('saving');
 
-            // Get current client and directly update its moduleData
-            // This ensures the client object used by ClientManager is up-to-date
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             if (client) {
                 client.moduleData = client.moduleData || {};
-                // Create a deep copy to avoid potential reference issues
                 client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
                 client.lastModified = new Date().toISOString();
-                // CRITICAL: Update client in both ClientManager state and sessionStorage
                 window.ConstructionApp.ClientManager.setCurrentClient(client);
                 console.log(`[${MODULE.id}] Updated client object in ClientManager/SessionStorage. Total cost: ${moduleData.totalCost}`);
             } else {
                  console.error(`[${MODULE.id}] Cannot save: No current client found in ClientManager.`);
                  window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: No client loaded');
                  window.ConstructionApp.ModuleUtils.showErrorMessage('Error saving data: No client is currently loaded.');
-                 return; // Stop the save process
+                 return;
             }
 
-            // Use ClientManager's API for Firebase persistence
             window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => {
                 if (success) {
                     const message = isAutoSave ? 'Auto-saved' : 'Saved';
@@ -913,26 +907,21 @@
         function returnToDashboard() {
             if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
                 if (confirm("You have unsaved changes. Save before returning?")) {
-                    saveModuleData(false); // Manual save, not auto-save
-                     // Use a small delay to allow save operation potentially time to complete network request
+                    saveModuleData(false);
                     setTimeout(navigateToDashboard, 300);
                     return;
                 }
             }
-            // If no unsaved changes or user chose not to save, navigate immediately
             navigateToDashboard();
         }
 
         // Navigate to dashboard, ensuring state preservation
         function navigateToDashboard() {
             console.log(`[${MODULE.id}] Navigating to dashboard`);
-            if (cancelAutoSave) cancelAutoSave(); // Stop auto-save timer
+            if (cancelAutoSave) cancelAutoSave();
 
-            // Ensure current client state is in SessionStorage before leaving
-            // ClientManager.setCurrentClient *should* handle this, but this is a fallback.
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
              if (client) {
-                // Make sure the module data is updated in the client object one last time
                 client.moduleData = client.moduleData || {};
                 client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData));
                 client.lastModified = new Date().toISOString();
@@ -948,18 +937,16 @@
             window.location.href = 'index.html';
         }
 
-        // Setup debug panel toggle (assuming debug-panel.js doesn't do this)
-         // Basic setup if debug-panel.js doesn't exist or handle the toggle
+        // Setup debug panel toggle
         function setupDebugPanel() {
             const debugPanel = document.getElementById('debug-panel');
-            if (!debugPanel) return; // Exit if no panel element
+            if (!debugPanel) return;
 
-            // Check if toggle already exists
             if (document.getElementById('debug-toggle-btn')) return;
 
             const toggleBtn = document.createElement('button');
             toggleBtn.textContent = 'Debug';
-            toggleBtn.id = 'debug-toggle-btn'; // Give it an ID
+            toggleBtn.id = 'debug-toggle-btn';
             toggleBtn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer;';
             document.body.appendChild(toggleBtn);
 
@@ -974,7 +961,7 @@
         // Update debug panel content
         function updateDebugPanel() {
             const debugPanel = document.getElementById('debug-panel');
-            if (!debugPanel || debugPanel.style.display === 'none') return; // Don't update if hidden or doesn't exist
+            if (!debugPanel || debugPanel.style.display === 'none') return;
 
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
             const sessionClientStr = sessionStorage.getItem('currentClient');
@@ -1007,7 +994,6 @@
             if (cancelAutoSave) cancelAutoSave();
 
             if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) {
-                 // Attempt to update sessionStorage one last time if leaving unexpectedly
                  const client = window.ConstructionApp.ClientManager.getCurrentClient();
                  if (client) {
                      client.moduleData = client.moduleData || {};
