@@ -320,11 +320,7 @@
             if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
 
             const item = moduleData.items.find(i => i.id === itemId);
-            // No check for default/custom needed here
-            if (!item) {
-                 console.error(`[${MODULE.id}] Delete failed: Item ${itemId} not found in data.`);
-                 return;
-            }
+            if (!item) { console.error(`[${MODULE.id}] Delete failed: Item ${itemId} not found in data.`); return; }
 
             const description = item.description || 'this item';
             console.log(`[${MODULE.id}] Confirming delete for: ${itemId}`);
