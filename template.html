@@ -170,11 +170,11 @@
             background-color: #5a6268;
         }
 
-        /* --- Options button style (Updated) --- */
+        /* --- Options button style --- */
         .btn-options {
-            background-color: transparent; /* Removed background */
+            background-color: transparent;
             border: none;
-            padding: 4px; /* Keep padding for clickable area */
+            padding: 4px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.8em;
@@ -182,18 +182,16 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s ease; /* Add transition for hover */
+            transition: background-color 0.2s ease;
         }
 
         .btn-options:hover {
-            background-color: #e9e9e9; /* Light grey background on hover */
+            background-color: #e9e9e9;
         }
 
-        /* No specific SVG color needed here anymore */
         .btn-options svg {
             width: 16px;
             height: 16px;
-            /* stroke and stroke-width are defined directly in the SVG */
         }
         /* --- End Options button style --- */
 
@@ -230,13 +228,19 @@
         .module-table th,
         .module-table td {
             padding: 8px 10px;
-            /* --- ALIGNMENT CHANGE: All cells centered --- */
+            /* --- ALIGNMENT CHANGE: Center all cells by default --- */
             text-align: center;
             border: 1px solid #ddd;
             overflow: hidden;
             font-size: 1.04em;
             font-weight: 500;
             vertical-align: middle;
+        }
+
+        /* --- ALIGNMENT OVERRIDE: Left-align Description column --- */
+        .module-table th:nth-child(1),
+        .module-table td:nth-child(1) {
+            text-align: left;
         }
 
         /* Table header styling */
@@ -246,30 +250,14 @@
             position: relative;
         }
 
-        /* Column width adjustments */
-        /* --- Adjusted Widths (Removed text-align from here) --- */
-        .module-table th:nth-child(1), /* Description */
-        .module-table td:nth-child(1) { width: 35%; }
-
-        .module-table th:nth-child(2), /* Pc */
-        .module-table td:nth-child(2) { width: 5%; }
-
-        .module-table th:nth-child(3), /* Qty */
-        .module-table td:nth-child(3) { width: 10%; }
-
-        .module-table th:nth-child(4), /* Rate */
-        .module-table td:nth-child(4) { width: 15%; }
-
-        .module-table th:nth-child(5), /* Unit */
-        .module-table td:nth-child(5) { width: 10%; }
-
-        .module-table th:nth-child(6), /* Total */
-        .module-table td:nth-child(6) { width: 15%; }
-
-        /* Actions Column */
-        .module-table th:nth-child(7),
-        .module-table td:nth-child(7) { width: 10%; }
-        /* --- End Adjusted Widths --- */
+        /* Column width adjustments (No text-align needed here) */
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; }
+        .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }
+        .module-table th:nth-child(3), .module-table td:nth-child(3) { width: 10%; }
+        .module-table th:nth-child(4), .module-table td:nth-child(4) { width: 15%; }
+        .module-table th:nth-child(5), .module-table td:nth-child(5) { width: 10%; }
+        .module-table th:nth-child(6), .module-table td:nth-child(6) { width: 15%; }
+        .module-table th:nth-child(7), .module-table td:nth-child(7) { width: 10%; }
 
         .module-table tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -279,6 +267,7 @@
             background-color: #f1f1f1;
         }
 
+        /* General input styling */
         .module-table input[type="text"],
         .module-table input[type="number"] {
             width: 100%;
@@ -287,29 +276,22 @@
             background-color: transparent;
             font-size: 1em;
             font-weight: inherit;
-             /* --- ALIGNMENT CHANGE: Inputs will inherit center alignment --- */
-             text-align: center; /* Explicitly center input text */
+            /* Text alignment is handled by specific rules below or inheritance */
         }
+
+         /* Center align inputs in cells that are centered (i.e., not Description) */
+        .module-table td:not(:nth-child(1)) input[type="text"],
+        .module-table td:not(:nth-child(1)) input[type="number"] {
+             text-align: center;
+        }
+         /* Input in first column (Description) will inherit text-align: left from its td */
+
 
         .module-table input:focus {
             border: 1px solid #4eca8b;
             background-color: #fff;
             outline: none;
         }
-
-        /* --- ALIGNMENT CHANGE: Removed rule for number input text-align: right --- */
-        /*
-        .module-table input[type="number"] {
-            text-align: right;
-        }
-        */
-
-        /* --- ALIGNMENT CHANGE: Removed .currency rule --- */
-        /*
-        .module-table .currency {
-            text-align: right;
-        }
-        */
 
         .module-table .footer-row {
             font-weight: bold;
@@ -324,7 +306,6 @@
             background-color: #f0faf3; /* Keep specific background if needed */
         }
 
-        /* Checkbox styles */
         .checkbox-cell {
              /* Centering is now handled by the general td rule */
         }
@@ -333,7 +314,7 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
-            display: inline-block; /* Helps with centering if needed */
+            display: inline-block;
         }
 
         /* Save status indicator */
@@ -495,7 +476,7 @@
 
             // Set up debug panel if needed
             if (DEBUG) {
-                setupDebugPanel(); // Assumes setupDebugPanel handles creating the toggle button
+                setupDebugPanel();
             }
 
             // Update module title everywhere
@@ -505,7 +486,7 @@
             const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
             if (!validAccess) {
                 console.log(`[${MODULE.id}] Invalid access detected, redirecting`);
-                return; // ModuleUtils will handle the redirect
+                return;
             }
 
             // Get the current client
@@ -548,7 +529,7 @@
             document.title = `${MODULE.title} - Construction Estimator`;
             document.querySelector('.sidebar-header').textContent = MODULE.title;
             document.getElementById('module-title-text').textContent = MODULE.title;
-            document.getElementById('total-module-cost').textContent = `Total ${MODULE.title} Cost: R0.00`; // Initial set, updated by calculateTotals
+            document.getElementById('total-module-cost').textContent = `Total ${MODULE.title} Cost: R0.00`;
         }
 
         // Initialize module data from client
@@ -562,12 +543,12 @@
                 if (!moduleData.items || !Array.isArray(moduleData.items)) {
                     moduleData.items = [];
                 }
-                mergeWithDefaultItems(); // Ensure all defaults are present, merge custom
+                mergeWithDefaultItems();
             } else {
                 console.log(`[${MODULE.id}] No saved data found, using defaults`);
-                moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems)); // Deep copy
+                moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
             }
-            updateUI(); // Render the table
+            updateUI();
         }
 
         // Merge saved items with default items
@@ -575,22 +556,19 @@
             const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
             const mergedItems = [];
 
-            // Add defaults, using saved values if present
             MODULE.defaultItems.forEach(defaultItem => {
                 if (savedItemsMap.has(defaultItem.id)) {
                     const savedItem = savedItemsMap.get(defaultItem.id);
                     mergedItems.push({ ...defaultItem, ...savedItem, isDefault: true });
-                    savedItemsMap.delete(defaultItem.id); // Mark as processed
+                    savedItemsMap.delete(defaultItem.id);
                 } else {
-                    mergedItems.push({ ...defaultItem }); // Add missing default
+                    mergedItems.push({ ...defaultItem });
                 }
             });
 
-            // Add remaining saved items (these are custom)
             savedItemsMap.forEach(savedItem => {
-                // Only add if it's explicitly marked as custom OR if it was saved but not part of defaults
                 if (savedItem.custom || !MODULE.defaultItems.some(df => df.id === savedItem.id)) {
-                     mergedItems.push({ ...savedItem, isDefault: false, custom: true }); // Ensure custom flag
+                     mergedItems.push({ ...savedItem, isDefault: false, custom: true });
                 }
             });
 
@@ -601,13 +579,13 @@
         // Update UI with current module data
         function updateUI() {
             const tableBody = document.getElementById('items-table-body');
-            tableBody.innerHTML = ''; // Clear existing rows
+            tableBody.innerHTML = '';
 
             moduleData.items.forEach(item => {
                 addTableRow(item);
             });
 
-            calculateTotals(); // Recalculate and display totals
+            calculateTotals();
 
             if (DEBUG) {
                 updateDebugPanel();
@@ -625,7 +603,7 @@
                 item.qty > 0 ? (item.qty * item.rate) : 0
             );
 
-            // Row InnerHTML remains the same as previous version (SVG stroke/width)
+            // Row InnerHTML - no changes here from previous version
             row.innerHTML = `
                 <td>
                     <input type="text" class="description-input" value="${item.description || ''}">
@@ -652,15 +630,13 @@
                     </button>
                 </td>
             `;
-            // Note: Removed 'currency' class from rate and total cells/inputs as specific alignment is removed
 
             tableBody.appendChild(row);
-            setupRowInputHandlers(row); // Attach listeners to the new row's inputs and buttons
+            setupRowInputHandlers(row);
         }
 
         // Set up input handlers for a row
         function setupRowInputHandlers(row) {
-            // Description, Unit, Checkbox, Qty inputs (listeners trigger updateItemFromRow and markUnsavedChanges)
             row.querySelector('.description-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.unit-input')?.addEventListener('input', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.item-checkbox')?.addEventListener('change', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
@@ -671,23 +647,19 @@
                 window.ConstructionApp.ModuleUtils.markUnsavedChanges();
             });
 
-            // Rate input (handles formatting and recalculation on blur)
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput && !rateInput.readOnly) { // Only add listeners if not readonly (i.e., custom item)
+            if (rateInput && !rateInput.readOnly) {
                  rateInput.addEventListener('focus', function() { this.value = getNumericValue(this.value); });
                  rateInput.addEventListener('blur', function() {
                     const numericValue = getNumericValue(this.value);
-                    // Format back to currency string after editing
                     this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
-                    updateItemFromRow(row); // Update rate in moduleData
+                    updateItemFromRow(row);
                     calculateRowTotal(row);
                     calculateTotals();
                 });
-                // Trigger unsaved changes on input event
                 rateInput.addEventListener('input', () => window.ConstructionApp.ModuleUtils.markUnsavedChanges());
             }
 
-            // Options Button Listener (no change needed)
             const optionsBtn = row.querySelector('.options-item-btn');
             if (optionsBtn) {
                 optionsBtn.addEventListener('click', function() {
@@ -696,7 +668,7 @@
             }
         }
 
-        // Delete item row function (no change needed here)
+        // Delete item row function
         function deleteItemRow(buttonElement) {
             const row = buttonElement.closest('tr');
             const itemId = row?.getAttribute('data-item-id');
@@ -741,7 +713,6 @@
 
                 const rateInput = row.querySelector('.rate-input');
                 if (rateInput && !rateInput.readOnly) {
-                    // Get numeric value for storage, even if input shows formatted string
                     item.rate = getNumericValue(rateInput.value);
                 }
             }
@@ -756,7 +727,6 @@
                 const total = item.qty > 0 ? (item.qty * item.rate) : 0;
                 const totalCell = row.querySelector('.total-cell');
                 if (totalCell) {
-                    // Always display formatted currency in the total cell
                     totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total);
                 }
                 return total;
@@ -775,7 +745,6 @@
 
             moduleData.totalCost = totalCost;
 
-            // Update UI totals
             document.getElementById('table-total').textContent =
                 window.ConstructionApp.ModuleUtils.formatCurrency(totalCost);
             document.getElementById('total-module-cost').textContent =
@@ -794,12 +763,11 @@
                 checked: false, qty: 0, isDefault: false, custom: true
             };
 
-            moduleData.items.push(newItem); // Add to data
-            addTableRow(newItem); // Add row to UI
+            moduleData.items.push(newItem);
+            addTableRow(newItem);
             window.ConstructionApp.ModuleUtils.markUnsavedChanges();
-            calculateTotals(); // Update totals
+            calculateTotals();
 
-             // Optional: scroll to the new item and focus its description
              const newRow = document.querySelector(`tr[data-item-id="${newId}"]`);
              newRow?.querySelector('.description-input')?.focus();
              newRow?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -856,19 +824,22 @@
                 if (aValue > bValue) return sortAsc ? 1 : -1;
                 return 0;
             });
-            updateUI(); // Re-render the sorted table
+            updateUI();
         }
 
         // Get numeric value from potentially formatted currency string
         function getNumericValue(value) {
             if (typeof value === 'number') return value;
             if (!value || typeof value !== 'string') return 0;
-            // Updated to handle South African Rand format (R prefix, space, comma decimal) robustly
-            let numericString = value.replace(/R|\s/g, '').replace(/,/g, '.');
-            // Also handle potential standard formats if ModuleUtils changes
-             numericString = numericString.replace(/,/g, ''); // Remove thousand separators if any
+            // Handles R prefix, space, potential thousand separators (.), and comma decimal
+            let numericString = value.replace(/R|\s/g, '').replace(/\./g, '').replace(/,/g, '.');
+             // Fallback for standard US/UK format if needed
+             if (isNaN(parseFloat(numericString))) {
+                numericString = value.replace(/[^\d.-]/g, '');
+             }
             return parseFloat(numericString) || 0;
         }
+
 
         // Save module data
         function saveModuleData(isAutoSave = false) {
