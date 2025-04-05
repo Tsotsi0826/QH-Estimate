@@ -23,7 +23,7 @@
         .module-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; background-color: #1c2639; color: #fff; }
         .module-title { font-size: 1.5em; font-weight: bold; display: flex; align-items: center; }
         .module-title i { margin-right: 10px; }
-        .module-description { padding: 10px 20px; color: #aaa; background-color: #1c2639; display: flex; justify-content: flex-end; align-items: center; }
+        .module-description { padding: 10px 20px; color: #aaa; background-color: #1c2639; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #333;}
         .module-content { padding: 20px; background-color: #fff; margin: 0; color: #333; flex: 1; overflow-y: auto; overflow-x: hidden; }
         .module-content::-webkit-scrollbar { width: 8px; background-color: #f5f5f5; }
         .module-content::-webkit-scrollbar-thumb { background-color: #aaa; border-radius: 4px; }
@@ -40,9 +40,9 @@
         .btn-secondary:hover { background-color: #5a6268; }
 
         /* --- Options button style --- */
-        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
-        .btn-options:hover:not(:disabled) { background-color: #e9e9e9; } /* Hover only if enabled */
-        .btn-options:disabled { cursor: default; opacity: 0.4; } /* Style disabled */
+        .btn-options { background-color: transparent; border: none; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 0.8em; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease, opacity 0.2s ease; }
+        .btn-options:hover:not(:disabled) { background-color: #e9e9e9; }
+        .btn-options:disabled { cursor: default; opacity: 0.4; }
         .btn-options svg { width: 16px; height: 16px; }
         /* --- End Options button style --- */
 
@@ -54,7 +54,7 @@
         /* Table styles */
         .module-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
         .module-table th, .module-table td { padding: 8px 10px; text-align: center; border: 1px solid #ddd; overflow: hidden; font-size: 1.04em; font-weight: 500; vertical-align: middle; }
-        .module-table th:nth-child(1), .module-table td:nth-child(1) { text-align: left; white-space: normal; } /* Left align description */
+        .module-table th:nth-child(1), .module-table td:nth-child(1) { text-align: left; white-space: normal; }
         .module-table th { background-color: #f2f2f2; font-weight: bold; position: relative; }
         .module-table th:nth-child(1), .module-table td:nth-child(1) { width: 35%; }
         .module-table th:nth-child(2), .module-table td:nth-child(2) { width: 5%; }
@@ -68,12 +68,8 @@
 
         /* General input styling */
         .module-table input[type="text"], .module-table input[type="number"] { width: 100%; padding: 4px; border: 1px solid transparent; background-color: transparent; font-size: 1em; font-weight: inherit; font-family: inherit; }
-        /* Center align inputs in centered columns (not description) */
         .module-table td:not(:nth-child(1)) input[type="text"], .module-table td:not(:nth-child(1)) input[type="number"] { text-align: center; }
         .module-table input:focus { border: 1px solid #4eca8b; background-color: #fff; outline: none; }
-
-        /* No readonly style needed now as rate is always editable */
-        /* .module-table input[readonly] { background-color: #f0f0f0; color: #777; cursor: not-allowed; border-color: #eee; } */
 
         .module-table .footer-row { font-weight: bold; background-color: #e9e9e9; }
         .module-table .footer-row td { font-weight: bold; }
@@ -132,7 +128,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="items-table-body"> </tbody>
+                <tbody id="items-table-body"></tbody>
                 <tfoot>
                     <tr class="footer-row">
                         <td colspan="6" style="text-align: right;">Total</td>
@@ -148,11 +144,11 @@
     <div class="debug-panel" id="debug-panel"></div>
 
     <script>
-        // Module settings - TEMPLATE FOR NEW MODULES
+        // Module settings
         const MODULE = {
             id: 'module-template',
             title: 'Template',
-            defaultItems: [ // Added isDefault and custom flags
+            defaultItems: [
                 { id: 'item-1', description: 'Item 1 Description', rate: 10.00, unit: '@', checked: false, qty: 0, isDefault: true, custom: false },
                 { id: 'item-2', description: 'Item 2 Description', rate: 25.50, unit: 'm', checked: false, qty: 0, isDefault: true, custom: false },
                 { id: 'item-3', description: 'Item 3 Description', rate: 100.00, unit: 'ea', checked: false, qty: 0, isDefault: true, custom: false },
@@ -163,7 +159,7 @@
         let moduleData = { items: [], totalCost: 0, lastModified: new Date().toISOString() };
         let cancelAutoSave = null;
         const DEBUG = true;
-        let tableBodyElement = null; // Cache table body
+        let tableBodyElement = null;
 
         // Initialization
         document.addEventListener('DOMContentLoaded', function() {
@@ -171,7 +167,7 @@
             tableBodyElement = document.getElementById('items-table-body');
             if (!tableBodyElement) { console.error(`[${MODULE.id}] Critical error: #items-table-body not found!`); return; }
             if (DEBUG) { setupDebugPanel(); }
-            updateModuleTitles(); // Initial title setup
+            updateModuleTitles();
             const validAccess = window.ConstructionApp.ModuleUtils.checkModuleAccess();
             if (!validAccess) { console.warn(`[${MODULE.id}] Invalid access detected`); return; }
             const client = window.ConstructionApp.ClientManager.getCurrentClient();
@@ -180,11 +176,11 @@
             if(clientNameDisplay) { clientNameDisplay.textContent = `Client: ${client.name}`; }
             window.ConstructionApp.ModuleUtils.initSaveStatus('save-status');
             setupEventListeners();
-            initModuleData(); // This now calls updateUI
+            initModuleData();
             window.ConstructionApp.ModuleUtils.setupChangeTracking('.module-table input');
             cancelAutoSave = window.ConstructionApp.ModuleUtils.setupAutoSave(saveModuleData, 120000);
             setupTableSorting();
-            if (DEBUG) { updateDebugPanel(); } // Initial debug panel update
+            if (DEBUG) { updateDebugPanel(); }
             console.log(`[${MODULE.id}] Initialization complete.`);
         });
 
@@ -210,14 +206,12 @@
             const row = document.createElement('tr');
             row.setAttribute('data-item-id', item.id);
 
-            // Determine if item is default (using isDefault flag)
             const isDefaultItem = item?.isDefault === true;
+            // console.log(`%c[${MODULE.id}] addTableRow - Item ${item.id}: isDefault=${isDefaultItem}`, 'color: purple'); // Basic check log
 
             const rateFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.rate);
             const totalFormatted = window.ConstructionApp.ModuleUtils.formatCurrency(item.qty > 0 ? (item.qty * item.rate) : 0);
 
-            // --- MODIFIED: Rate input no longer readonly ---
-            // --- MODIFIED: Options button disabled and title changed if default ---
             row.innerHTML = `
                 <td><input type="text" class="description-input" value="${item.description || ''}"></td>
                 <td class="checkbox-cell"><input type="checkbox" class="item-checkbox" ${item.checked ? 'checked' : ''}></td>
@@ -232,7 +226,6 @@
                     </button>
                 </td>
             `;
-
             tableBodyElement.appendChild(row);
             setupRowInputHandlers(row);
         }
@@ -250,8 +243,7 @@
             } else {
                  console.log(`[${MODULE.id}] Initializing with defaults`);
                  moduleData.items = JSON.parse(JSON.stringify(MODULE.defaultItems));
-                  // Ensure flags are correct on initial load
-                 moduleData.items.forEach(item => { item.isDefault = true; item.custom = false; });
+                 moduleData.items.forEach(item => { item.isDefault = true; item.custom = false; }); // Ensure flags are set
                  moduleData.totalCost = 0;
                  moduleData.lastModified = new Date().toISOString();
             }
@@ -260,36 +252,28 @@
 
         function mergeWithDefaultItems() {
              console.log(`[${MODULE.id}] Merging items`);
-             // Ensure default items have correct flags
              const defaultItemsMap = new Map(MODULE.defaultItems.map(item => [item.id, {...item, isDefault: true, custom: false}]));
              const savedItemsMap = new Map(moduleData.items.map(item => [item.id, item]));
              const mergedItems = [];
-
              defaultItemsMap.forEach((defaultItem, id) => {
                  const savedItem = savedItemsMap.get(id);
                  if (savedItem) {
-                     // Use saved item, but ensure flags are for default item
                      mergedItems.push({ ...defaultItem, ...savedItem, isDefault: true, custom: false });
                      savedItemsMap.delete(id);
-                 } else {
-                     mergedItems.push(defaultItem); // Add missing default
-                 }
+                 } else { mergedItems.push(defaultItem); }
              });
-             // Add remaining saved items (must be custom)
              savedItemsMap.forEach(savedItem => {
-                 if (savedItem.custom === true) { // Check custom flag from save
-                    mergedItems.push({...savedItem, isDefault: false, custom: true}); // Ensure flags correct
-                 } else { console.warn(`[${MODULE.id}] Discarding saved item not marked as custom: ${savedItem.id}`); }
+                 if (savedItem.custom === true) { mergedItems.push({...savedItem, isDefault: false, custom: true}); }
+                 else { console.warn(`[${MODULE.id}] Discarding saved item not marked as custom: ${savedItem.id}`); }
              });
             moduleData.items = mergedItems;
-            console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
+             console.log(`[${MODULE.id}] Merge complete. Items: ${moduleData.items.length}`);
         }
 
         function addCustomItem() {
             console.log(`[${MODULE.id}] Adding custom item`);
             const newId = `custom-${Date.now()}`;
-             // Ensure custom item has correct flags
-            const newItem = { id: newId, description: 'New Custom Item', qty: 0, rate: 0, unit: '@', checked: false, isDefault: false, custom: true };
+            const newItem = { id: newId, description: 'New Custom Item', qty: 0, rate: 0, unit: '@', checked: false, isDefault: false, custom: true }; // Set both flags
             moduleData.items.push(newItem);
             addTableRow(newItem);
             window.ConstructionApp.ModuleUtils.markUnsavedChanges();
@@ -302,6 +286,7 @@
         function setupRowInputHandlers(row) {
             const itemId = row.getAttribute('data-item-id');
             const item = moduleData.items.find(i => i.id === itemId);
+            // console.log(`%c[${MODULE.id}] setupRowInputHandlers - Item ${itemId}: isDefault=${item?.isDefault}`, 'color: blue'); // Basic check log
             if (!item) { console.error(`Item ${itemId} not found in setup!`); return; }
 
             // Standard Input Listeners
@@ -310,44 +295,43 @@
             row.querySelector('.item-checkbox')?.addEventListener('change', () => { updateItemFromRow(row); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
             row.querySelector('.qty-input')?.addEventListener('input', () => { updateItemFromRow(row); calculateRowTotal(row); calculateTotals(); window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
 
-            // Rate Input Listeners (Now attached to ALL rate inputs)
+            // Rate Input Listeners (Always attached now)
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput) { // Check only if input exists
-                // console.log(`%c[${MODULE.id}] Attaching rate listeners for item: ${itemId}`, 'color: cyan'); // Less noisy log
-
+            if (rateInput) {
                 rateInput.addEventListener('focus', function() {
-                    try {
-                        this.value = getNumericValue(this.value); this.select();
-                    } catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); }
+                    try { this.value = getNumericValue(this.value); this.select(); }
+                    catch (e) { console.error(`[${MODULE.id}] Error in rate FOCUS listener (${itemId}):`, e); }
                 });
-
-                // **MODIFIED BLUR LISTENER** - Reinstated formatting
                 rateInput.addEventListener('blur', function() {
                     try {
-                         updateItemFromRow(row); // Update data model first
-                         // console.log(`[${MODULE.id}] Data model updated for ${itemId}. New rate: ${item.rate}`);
+                         updateItemFromRow(row); // Update data first
                          calculateRowTotal(row);
                          calculateTotals();
-                         // Format the display value AFTER updating data and totals
-                         const numericValue = item.rate; // Use the already updated numeric rate from data model
-                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue);
-                    } catch (e) {
-                        console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e);
-                    }
+                         const numericValue = item.rate; // Get rate from updated data model
+                         this.value = window.ConstructionApp.ModuleUtils.formatCurrency(numericValue); // Format display
+                    } catch (e) { console.error(`[${MODULE.id}] Error in rate BLUR listener (${itemId}):`, e); }
                 });
-
                 rateInput.addEventListener('input', () => { window.ConstructionApp.ModuleUtils.markUnsavedChanges(); });
-
-            } else { console.error(`Rate input not found for ${itemId}`); } // Should not happen
+            } else { console.error(`Rate input not found for ${itemId}`); }
 
             // Options Button Listener (Conditional based on disabled attribute)
             const optionsBtn = row.querySelector('.options-item-btn');
+            // *** DETAILED LOGGING FOR LISTENER ATTACHMENT ***
+            if (optionsBtn) {
+                console.log(`[${MODULE.id}] setupRowInputHandlers - Found optionsBtn for item ${itemId}. Disabled status: ${optionsBtn.disabled}`); // LOG STATUS
+            } else {
+                console.error(`[${MODULE.id}] setupRowInputHandlers - !!! Options button NOT FOUND for item ${itemId} !!!`); // LOG IF NOT FOUND
+            }
+            // *** END DETAILED LOGGING ***
+
             if (optionsBtn && !optionsBtn.disabled) { // Check if button exists and is NOT disabled
-                 // console.log(`%c[${MODULE.id}] Attaching delete listener for custom item: ${itemId}`, 'color: lightgreen'); // Less noisy log
+                console.log(`%c[${MODULE.id}] Attaching delete listener for custom item: ${itemId}`, 'color: lightgreen'); // Log attachment
                 optionsBtn.addEventListener('click', function() {
-                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow'); // Keep click log
+                    console.log(`%c[${MODULE.id}] Options button clicked for item: ${itemId}`, 'color: yellow'); // Log click
                     deleteItemRow(this);
                 });
+            } else if (optionsBtn) { // Log if listener NOT attached
+                console.log(`%c[${MODULE.id}] Delete listener NOT attached for disabled (default) item: ${itemId}`, 'color: grey'); // Log skip
             }
         }
 
@@ -361,9 +345,8 @@
             item.checked = row.querySelector('.item-checkbox')?.checked || false;
             item.qty = Math.max(0, parseInt(row.querySelector('.qty-input')?.value, 10) || 0);
 
-            // --- MODIFIED: Update rate always, as input is always editable ---
             const rateInput = row.querySelector('.rate-input');
-            if (rateInput) {
+            if (rateInput) { // Update rate regardless of default/custom now
                 item.rate = getNumericValue(rateInput.value);
             }
 
@@ -371,60 +354,36 @@
             if (DEBUG) updateDebugPanel();
         }
 
-        function calculateRowTotal(row) { /* ... (same as before) ... */
-            const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); const totalCell = row.querySelector('.total-cell'); if (!item || !totalCell) return 0; const total = item.qty > 0 ? (item.qty * item.rate) : 0; totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total); return total;
-        }
-        function calculateTotals() { /* ... (same as before) ... */
-            moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0); updateModuleTitles(); const tableTotalElement = document.getElementById('table-total'); if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); } if (DEBUG) updateDebugPanel();
-        }
-         function getNumericValue(value) { /* ... (use robust version from previous step) ... */
-            if (typeof value === 'number') return value; if (!value || typeof value !== 'string') return 0; let numericString = value.replace(/[^\d.,-]/g, ''); if (numericString.includes(',') && !numericString.includes('.')) { numericString = numericString.replace(/,/g, '.'); } else { numericString = numericString.replace(/,/g, ''); } const number = parseFloat(numericString); return isNaN(number) ? 0 : number;
-         }
+        function calculateRowTotal(row) { const itemId = row.getAttribute('data-item-id'); const item = moduleData.items.find(i => i.id === itemId); const totalCell = row.querySelector('.total-cell'); if (!item || !totalCell) return 0; const total = item.qty > 0 ? (item.qty * item.rate) : 0; totalCell.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(total); return total; }
+        function calculateTotals() { moduleData.totalCost = moduleData.items.reduce((sum, item) => sum + (item.qty > 0 ? (item.qty * item.rate) : 0), 0); updateModuleTitles(); const tableTotalElement = document.getElementById('table-total'); if(tableTotalElement) { tableTotalElement.textContent = window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost); } if (DEBUG) updateDebugPanel(); }
+         function getNumericValue(value) { if (typeof value === 'number') return value; if (!value || typeof value !== 'string') return 0; let numericString = value.replace(/[^\d.,-]/g, ''); if (numericString.includes(',') && !numericString.includes('.')) { numericString = numericString.replace(/,/g, '.'); } else { numericString = numericString.replace(/,/g, ''); } const number = parseFloat(numericString); return isNaN(number) ? 0 : number; }
 
         // Event Listeners Setup
-        function setupEventListeners() { /* ... (same as before) ... */
-            document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); });
-        }
+        function setupEventListeners() { document.getElementById('save-btn')?.addEventListener('click', () => saveModuleData(false)); document.getElementById('save-module-data')?.addEventListener('click', (e) => { e.preventDefault(); saveModuleData(false); }); document.getElementById('return-btn')?.addEventListener('click', returnToDashboard); document.getElementById('return-to-dashboard')?.addEventListener('click', (e) => { e.preventDefault(); returnToDashboard(); }); document.getElementById('add-item-btn')?.addEventListener('click', addCustomItem); document.getElementById('add-custom-item')?.addEventListener('click', (e) => { e.preventDefault(); addCustomItem(); }); }
         // Table Sorting
-         function setupTableSorting() { /* ... (same as before) ... */
-            document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); });
-        }
-        function sortTable(sortBy, header) { /* ... (same as before) ... */
-            let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI();
-        }
+         function setupTableSorting() { document.querySelectorAll('.sort-header').forEach(header => { header.addEventListener('click', function() { const sortBy = this.getAttribute('data-sort'); if (sortBy) sortTable(sortBy, this); }); }); }
+        function sortTable(sortBy, header) { let sortAsc = true; const isCurrentlyAsc = header.classList.contains('sorted-asc'); document.querySelectorAll('.sort-header').forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); }); if (isCurrentlyAsc) { sortAsc = false; header.classList.add('sorted-desc'); } else { header.classList.add('sorted-asc'); } console.log(`[${MODULE.id}] Sorting by ${sortBy}, ${sortAsc ? 'ASC' : 'DESC'}`); moduleData.items.sort((a, b) => { let aValue, bValue; switch (sortBy) { case 'description': aValue = (a.description || '').toLowerCase(); bValue = (b.description || '').toLowerCase(); break; case 'qty': aValue = a.qty || 0; bValue = b.qty || 0; break; case 'rate': aValue = a.rate || 0; bValue = b.rate || 0; break; case 'total': aValue = a.qty > 0 ? (a.qty * a.rate) : 0; bValue = b.qty > 0 ? (b.qty * b.rate) : 0; break; default: return 0; } let comparison = (aValue < bValue) ? -1 : (aValue > bValue ? 1 : 0); return sortAsc ? comparison : (comparison * -1); }); updateUI(); }
         // Data Persistence (Saving)
-        function saveModuleData(isAutoSave = false) { /* ... (same as before) ... */
-            const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } });
-        }
+        function saveModuleData(isAutoSave = false) { const actionType = isAutoSave ? 'Auto-saving' : 'Saving'; console.log(`[${MODULE.id}] ${actionType}...`); moduleData.lastModified = new Date().toISOString(); window.ConstructionApp.ModuleUtils.updateSaveStatus('saving'); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (!client) { console.error(`[${MODULE.id}] Cannot save: Client not found.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', 'Error: Client not found'); return; } if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); console.log(`[${MODULE.id}] Client object updated.`); window.ConstructionApp.ClientManager.saveModuleData(MODULE.id, moduleData, (success, error) => { if (success) { const message = isAutoSave ? 'Auto-saved' : 'Saved'; console.log(`[${MODULE.id}] ${message} successful.`); window.ConstructionApp.ModuleUtils.updateSaveStatus('saved', message); if (!isAutoSave) window.ConstructionApp.ModuleUtils.showSuccessMessage(`${MODULE.title} saved!`); } else { const errorMsg = error || 'Unknown save error'; console.error(`[${MODULE.id}] Save failed:`, errorMsg); window.ConstructionApp.ModuleUtils.updateSaveStatus('error', `Error: ${errorMsg}`); window.ConstructionApp.ModuleUtils.showErrorMessage(`Error saving: ${errorMsg}`); } }); }
         // Navigation
-        function returnToDashboard() { /* ... (same as before) ... */
-            console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard();
-        }
-        function navigateToDashboard() { /* ... (same as before) ... */
-            console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html';
-        }
+        function returnToDashboard() { console.log(`[${MODULE.id}] Returning to dashboard...`); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { if (confirm("Unsaved changes. Save before returning?")) { console.log(`[${MODULE.id}] Saving before return.`); saveModuleData(false); setTimeout(navigateToDashboard, 200); return; } else { console.log(`[${MODULE.id}] Returning without saving.`); } } navigateToDashboard(); }
+        function navigateToDashboard() { console.log(`[${MODULE.id}] Navigating to index.html.`); if (cancelAutoSave) cancelAutoSave(); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); window.ConstructionApp.ClientManager.setCurrentClient(client); } sessionStorage.setItem('navigationState', 'returningToDashboard'); window.location.href = 'index.html'; }
         // Debugging Utilities
-        function setupDebugPanel() { /* ... (same as before) ... */
-            const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; }
-        }
-        function updateDebugPanel() { /* ... (same as before - check custom flag is boolean) ... */
-            if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}, <strong>Custom:</strong> ${moduleData.items.filter(i=>i.custom===true).length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`;
-        }
+        function setupDebugPanel() { const debugPanel = document.getElementById('debug-panel'); let btn = document.getElementById('debug-toggle-btn'); if (!btn) { console.warn(`[${MODULE.id}] Debug toggle button missing, creating.`); btn = document.createElement('button'); btn.id = 'debug-toggle-btn'; btn.style.cssText = 'position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;'; document.body.appendChild(btn); } if (!debugPanel || !btn) { console.warn(`[${MODULE.id}] Debug panel/button missing.`); return; } btn.style.display = 'block'; btn.textContent = 'Debug'; if (!btn.dataset.listenerAttached) { btn.addEventListener('click', function() { const isVisible = debugPanel.style.display === 'block'; debugPanel.style.display = isVisible ? 'none' : 'block'; btn.textContent = isVisible ? 'Debug' : 'Hide Debug'; if (!isVisible) updateDebugPanel(); }); btn.dataset.listenerAttached = 'true'; } }
+        function updateDebugPanel() { if (!DEBUG) return; const debugPanel = document.getElementById('debug-panel'); if (!debugPanel || debugPanel.style.display === 'none') return; const client = window.ConstructionApp.ClientManager.getCurrentClient(); let sessionClientData = null; try { sessionClientData = JSON.parse(sessionStorage.getItem('currentClient') || 'null'); } catch (e) {} const navigationState = sessionStorage.getItem('navigationState'); const unsavedChanges = window.ConstructionApp.ModuleUtils.hasUnsavedChanges(); debugPanel.innerHTML = `<strong>ModID:</strong> ${MODULE.id}<br><strong>Nav:</strong> ${navigationState||'N/A'}<br><strong>CM Cli:</strong> ${client?client.name:'N/A'}<br><strong>Sess Cli:</strong> ${sessionClientData?sessionClientData.name:'N/A'}<hr><strong>Items:</strong> ${moduleData.items.length}, <strong>Custom:</strong> ${moduleData.items.filter(i=>i.custom===true).length}<br><strong>Total:</strong> ${window.ConstructionApp.ModuleUtils.formatCurrency(moduleData.totalCost)}<br><strong>Unsaved:</strong> ${unsavedChanges?'Y':'N'}<br><strong>LastMod:</strong> ${new Date(moduleData.lastModified).toLocaleTimeString()}<hr><strong>Data[0]:</strong><br><pre style="font-size:10px;max-height:40px;overflow-y:auto;color:white;background:#444;padding:2px;">${JSON.stringify(moduleData.items[0],null,1)||'N/A'}</pre>`; }
         // Page Unload Handling
-        window.addEventListener('beforeunload', function(e) { /* ... (same as before) ... */
-            if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; }
-        });
+        window.addEventListener('beforeunload', function(e) { if (cancelAutoSave) cancelAutoSave(); if (window.ConstructionApp.ModuleUtils.hasUnsavedChanges()) { console.warn(`[${MODULE.id}] Unsaved changes on unload.`); const client = window.ConstructionApp.ClientManager.getCurrentClient(); if (client) { try { if (!client.moduleData) client.moduleData = {}; client.moduleData[MODULE.id] = JSON.parse(JSON.stringify(moduleData)); client.lastModified = new Date().toISOString(); sessionStorage.setItem('currentClient', JSON.stringify(client)); } catch (error) { console.error(`[${MODULE.id}] Error backup to session on unload:`, error); } } const message = 'You have unsaved changes. Are you sure you want to leave?'; e.returnValue = message; return message; } });
 
-        // *** ADDED: Delete Item Function Definition ***
+        // Delete Item Function Definition
         function deleteItemRow(buttonElement) {
-            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red');
+            console.log(`%c[${MODULE.id}] deleteItemRow called`, 'color: red'); // Log entry
             const row = buttonElement.closest('tr');
             const itemId = row?.getAttribute('data-item-id');
             if (!itemId) { console.error(`[${MODULE.id}] Delete failed: Could not find item ID.`); return; }
 
             const item = moduleData.items.find(i => i.id === itemId);
-            // Check item exists and is NOT default (isDefault === false OR custom === true)
-            if (!item || item.isDefault === true) { // Safest check is against isDefault
+            // Check item exists and is NOT default (isDefault === false)
+            if (!item || item.isDefault === true) {
                 console.warn(`[${MODULE.id}] Delete aborted: Item ${itemId} not found or is a default item.`);
                 alert("Default items cannot be deleted.");
                 return;
