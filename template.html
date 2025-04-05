@@ -170,31 +170,33 @@
             background-color: #5a6268;
         }
 
-        /* --- Options button style (Replaced .btn-delete) --- */
+        /* --- Options button style (Updated) --- */
         .btn-options {
-            background-color: #6c757d; /* Grey background */
-            color: white;
+            background-color: transparent; /* Removed background */
             border: none;
-            padding: 4px; /* Adjust padding for icon */
+            padding: 4px; /* Keep padding for clickable area */
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.8em;
-            line-height: 1; /* Keep */
-            display: inline-flex; /* Align icon nicely */
-            align-items: center; /* Vertically center icon */
-            justify-content: center; /* Horizontally center icon */
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease; /* Add transition for hover */
         }
 
         .btn-options:hover {
-            background-color: #5a6268; /* Darker grey on hover */
+            background-color: #e9e9e9; /* Light grey background on hover */
         }
 
+        /* No specific SVG color needed here anymore */
         .btn-options svg {
-            width: 16px; /* Match SVG size */
+            width: 16px;
             height: 16px;
-            stroke: white; /* Ensure icon color matches */
+            /* stroke and stroke-width are defined directly in the SVG */
         }
         /* --- End Options button style --- */
+
 
         .header-actions {
             display: flex;
@@ -613,7 +615,7 @@
                 item.qty > 0 ? (item.qty * item.rate) : 0
             );
 
-            // --- Updated Row InnerHTML ---
+            // --- Updated Row InnerHTML (SVG stroke and stroke-width changed) ---
             row.innerHTML = `
                 <td>
                     <input type="text" class="description-input" value="${item.description || ''}">
@@ -634,7 +636,7 @@
                 <td class="total-cell currency">${totalFormatted}</td>
                 <td>
                     <button class="btn-options options-item-btn" title="More Actions">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
                         </svg>
                     </button>
@@ -675,12 +677,12 @@
             }
 
             // --- Options Button Listener ---
-            const optionsBtn = row.querySelector('.options-item-btn'); // Changed selector
+            const optionsBtn = row.querySelector('.options-item-btn'); // Selector remains the same
             if (optionsBtn) {
                 optionsBtn.addEventListener('click', function() {
                     // *** TODO: Implement options menu logic here ***
                     // For now, just keeping the delete functionality:
-                    deleteItemRow(this); // Still calls delete, but using the new button
+                    deleteItemRow(this); // Still calls delete, using the new button style
                     // Eventually, this button click should open a small menu
                     // with "Delete" and maybe other options like "Duplicate".
                 });
